@@ -24,10 +24,9 @@ Satu baris link di dalam sidebar. Digunakan oleh <x-sidebar>.
     $inactiveCs = 'text-gray-600 hover:bg-gray-100 hover:text-gray-900';
     $cls = $base . ' ' . ($active ? $activeCs : $inactiveCs);
 @endphp
-
-       <a h ref="{{ $href }}" {{ $attributes->merge(['class' => $cls]) }}>
-        @if($icon)
-            <span class="{{ $active ? 'text-indigo-600' : 'text-gray-400' }}">{!! $icon !!}</span>
-        @endif
+               <a href="{{ $href }}" {{ $attributes->merge(['class' => $cls]) }}>
+                @if($icon)
+                    <span class="{{ $active ? 'text-indigo-600' : 'text-gray-400' }}">{!! $icon !!}</span>
+                @endif
     <span>{{ $slot }}</span>
 </a>

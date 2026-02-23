@@ -8,41 +8,41 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
     #sidebar {
         transition: width 0.3s ease, visibility 0.3s ease;
     }
-    
+
     #sidebar.collapsed {
-        width: 80px;
+        width: 150px;
         overflow: hidden;
     }
-    
+
     #sidebar.collapsed .sidebar-header {
         flex-direction: column;
         gap: 0;
     }
-    
+
     #sidebar.collapsed .sidebar-brand-text {
         display: none;
     }
-    
+
     #sidebar.collapsed .sidebar-nav {
         padding: 6px;
     }
-    
+
     #sidebar.collapsed .sidebar-nav p {
         display: none;
     }
-    
+
     #sidebar.collapsed .sidebar-item-text {
         display: none;
     }
-    
+
     #sidebar.collapsed .sidebar-user-info {
         display: none;
     }
-    
+
     #sidebar.collapsed nav {
         padding: 0.75rem 0.5rem;
     }
-    
+
     .sidebar-item-icon {
         display: flex;
         align-items: center;
@@ -52,18 +52,20 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
 </style>
 
 <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-gray-200 flex flex-col min-h-screen shadow-sm">
-    
+
     {{-- ── Brand / Logo ──────────────────────────────────────── --}}
-    <div class="sidebar-header h-16 flex items-center justify-between px-6 border-b border-gray-500 bg-gray-50 gap-2">
+    <div
+        class="sidebar-header h-16 flex items-center justify-between px-6 border-b border-gray-500 bg-gray-50 gap-2 flex-row">
         <div class="flex items-center gap-2 min-w-0">
             <span class="text-2xl font-bold text-indigo-600 tracking-tight">YBS</span>
             <span class="sidebar-brand-text text-lg text-gray-500 font-medium">Management</span>
+            <button id="sidebarToggle" class="block sm:hidden p-2 hover:bg-gray-200 rounded-lg transition flex-shrink-0"
+                title="Toggle Sidebar">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
         </div>
-        <button id="sidebarToggle" class="p-2 hover:bg-gray-200 rounded-lg transition flex-shrink-0" title="Toggle Sidebar">
-            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-        </button>
     </div>
 
     {{-- ── Navigasi ──────────────────────────────────────────── --}}
@@ -141,35 +143,49 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
     </nav>
 
     {{-- ── Info User (bawah sidebar) ──────────────────────── --}}
-    <div class="sidebar-user-info px-4 py-4 border-t border-gray-200 bg-gray-50">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0">
-                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-800 truncate">{{ Auth::user()->name }}</p>
-                <p class="text-xs text-gray-400 truncate">{{ Auth::user()->getRoleNames()->first() ?? '—' }}</p>
-            </div>
+
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <div class="sidebar-user-info px-4 py-4 border-t border-gray-200 bg-gray-50">
+            <button type="submit" class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition"
+                title="Logout">
+
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0">
+                        <!-- {{ strtoupper(substr(Auth::user()->name, 0, 1)) }} -->
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800 truncate">Logout</p>
+                        <!-- <p class="text-sm font-medium text-gray-800 truncate">{{ Auth::user()->name }}</p>
+                <p class="text-xs text-gray-400 truncate">{{ Auth::user()->getRoleNames()->first() ?? '—' }}</p> -->
+                    </div>
+                </div>
+            </button>
         </div>
-    </div>
+    </form>
 
 </aside>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebar = document.getElementById('sidebar');
-        
+
         if (sidebarToggle && sidebar) {
-            sidebarToggle.addEventListener('click', function(e) {
+            sidebarToggle.addEventListener('click', function (e) {
                 e.preventDefault();
                 sidebar.classList.toggle('collapsed');
-                
+
                 // Simpan status ke localStorage
                 const isCollapsed = sidebar.classList.contains('collapsed');
                 localStorage.setItem('sidebarCollapsed', isCollapsed);
             });
-            
+
             // Restore dari localStorage pada load
             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
             if (isCollapsed) {

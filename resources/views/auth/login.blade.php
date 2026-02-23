@@ -30,9 +30,4 @@
         </x-ui.button>
     </form>
 
-    <p class="mt-6 text-center text-sm text-gray-500">
-        Belum punya akun?
-        <a href="{{ route('register') }}" class="text-indigo-600 hover:underline font-medium">Daftar</a>
-    </p>
-
 </x-layouts.auth>

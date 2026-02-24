@@ -150,7 +150,7 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             <button type="submit" class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition"
                 title="Logout">
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 cursor-pointer">
                     <div
                         class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0">
                         <!-- {{ strtoupper(substr(Auth::user()->name, 0, 1)) }} -->

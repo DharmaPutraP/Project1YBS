@@ -32,7 +32,7 @@ Contoh:
         @endisset
 
         {{-- Logout --}}
-        <form method="POST" action="{{ route('logout') }}">
+        <!-- <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition"
                 title="Logout">
@@ -42,7 +42,11 @@ Contoh:
                 </svg>
                 <span class="hidden sm:inline">Logout</span>
             </button>
-        </form>
+        </form> -->
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-800 truncate">{{ Auth::user()->name }}</p>
+            <p class="text-xs text-gray-400 truncate">{{ Auth::user()->getRoleNames()->first() ?? '—' }}</p>
+        </div>
     </div>
 
 </header>

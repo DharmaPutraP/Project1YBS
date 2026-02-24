@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
@@ -46,20 +47,21 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username', 'alpha_dash'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            'role_id' => ['required', 'integer', 'exists:roles,id'],
         ]);
 
         $user = User::create([
-            'name'     => $validated['name'],
+            'name' => $validated['name'],
             'username' => $validated['username'],
             'password' => Hash::make($validated['password']),
         ]);
 
-        Auth::login($user);
+        $user->assignRole(Role::findById($validated['role_id'], 'web'));
 
-        return redirect('/dashboard');
+        return redirect('/users');
     }
 
     // ─── Logout ───────────────────────────────────────────────────────────────

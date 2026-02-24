@@ -40,7 +40,7 @@ Route::middleware('auth')->group(function () {
 
     // ─── Kelola Pengguna ───────────────────────────────────────────────────────
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::post('/users', [AuthController::class, 'register']);
+    Route::post('/users', [AuthController::class, 'register'])->name('users.store');
 
     // ─── Pengaturan ────────────────────────────────────────────────────────────
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');

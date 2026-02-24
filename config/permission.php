@@ -195,8 +195,10 @@ return [
          * You may optionally indicate a specific cache driver to use for permission and
          * role caching using any of the `store` drivers listed in the cache.php config
          * file. Using 'default' here means to use the `default` set in cache.php.
+         *
+         * Set to 'file' to avoid DB-cache serialization issues when CACHE_STORE=database.
          */
 
-        'store' => 'default',
+        'store' => 'file',
     ],
 ];

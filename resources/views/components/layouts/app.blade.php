@@ -2,42 +2,35 @@
 Layout: App (Authenticated)
 Digunakan untuk semua halaman yang membutuhkan autentikasi.
 Menyertakan sidebar navigasi dan topbar.
+--}}
+@props(['title' => 'Dashboard'])
 
-Props:
-- $title (string) : judul halaman (ditampilkan di <title> dan heading)
-    Slots:
-    - $slot : konten utama halaman
-    --}}
-    @props(['title' => 'Dashboard'])
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ $title }} — {{ config('app.name', 'YBS') }}</title>
+    @vite('resources/css/app.css')
+</head>
 
-    <!DOCTYPE html>
-    <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<body class="min-h-screen bg-gray-50 flex overflow-x-hidden">
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{{ $title }} — {{ config('app.name', 'YBS') }}</title>
-        @vite('resources/css/app.css')
-    </head>
+    {{-- ── Sidebar ──────────────────────────────────────────────── --}}
+    <x-sidebar />
 
-    <body class="min-h-screen bg-gray-50 flex">
+    {{-- ── Konten Utama ─────────────────────────────────────────── --}}
+    <div class="flex-1 flex flex-col min-h-screen overflow-x-hidden">
 
-        {{-- ── Sidebar ──────────────────────────────────────────────── --}}
-        <x-sidebar />
+        {{-- Topbar --}}
+        <x-navbar :title="$title" />
 
-        {{-- ── Konten Utama ─────────────────────────────────────────── --}}
-        <div class="flex-1 flex flex-col min-h-screen">
+        {{-- Page Content --}}
+        <main class="flex-1 p-6 overflow-y-auto overflow-x-hidden">
+            {{ $slot }}
+        </main>
 
-            {{-- Topbar --}}
-            <x-navbar :title="$title" />
+    </div>
 
-            {{-- Page Content --}}
-            <main class="flex-1 p-6 overflow-y-auto">
-                {{ $slot }}
-            </main>
-
-        </div>
-
-    </body>
-
-    </html>
+</body>
+</html>

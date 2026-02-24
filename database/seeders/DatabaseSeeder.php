@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         // sudah bisa langsung di-assign role karena role-nya sudah tersedia.
         $this->call([
             RoleAndPermissionSeeder::class,
+            LabMasterDataSeeder::class,
         ]);
     }
 }

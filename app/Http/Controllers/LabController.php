@@ -2,37 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\OilLoss;
-use App\Services\OilLossService;
+use App\Models\LabCalculation;
+use App\Models\LabMasterData;
+use App\Models\LabRecord;
+use App\Services\LabService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class LabController extends Controller
 {
-    protected OilLossService $oilLossService;
+    protected LabService $labService;
 
-    public function __construct(OilLossService $oilLossService)
+    public function __construct(LabService $labService)
     {
-        $this->oilLossService = $oilLossService;
+        $this->labService = $labService;
     }
 
     /**
-     * Display a listing of oil loss records.
+     * Display a listing of lab calculations (oil loss records).
      */
     public function index(Request $request)
     {
-        $query = OilLoss::with(['user', 'approver'])
-            ->orderBy('analysis_date', 'desc')
-            ->orderBy('analysis_time', 'desc');
-
-        // Filter by status if provided
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->status($request->status);
-        }
+        $query = LabCalculation::with(['user'])
+            ->orderBy('analysis_date', 'desc');
 
         // Filter by date range if provided
         if ($request->has('start_date') && $request->has('end_date')) {
-            $query->dateBetween($request->start_date, $request->end_date);
+            $query->whereBetween('analysis_date', [$request->start_date, $request->end_date]);
         }
 
         // Check permission - if user can only view own results
@@ -44,131 +40,126 @@ class LabController extends Controller
 
         // Get statistics
         $statistics = [
-            'total_records' => OilLoss::count(),
-            'pending_approval' => OilLoss::status('submitted')->count(),
-            'approved_today' => OilLoss::status('approved')
-                ->whereDate('approved_at', today())
-                ->count(),
+            'total_records' => LabCalculation::count(),
+            'records_today' => LabCalculation::whereDate('created_at', today())->count(),
         ];
 
         return view('lab.index', compact('oilLosses', 'statistics'));
     }
 
     /**
-     * Show the form for creating a new oil loss record.
+     * Show the form for creating a new lab record with dual-mode input.
      */
     public function create()
     {
         $this->authorize('create lab results');
 
-        return view('lab.create', [
-            'standardOER' => OilLossService::getStandardOER(),
-            'standardKER' => OilLossService::getStandardKER(),
-        ]);
+        // Get dropdown options from master data
+        $kodeOptions = LabMasterData::getKodeDropdown();
+        $jenisOptions = LabMasterData::getJenisDropdown();
+
+        return view('lab.create', compact('kodeOptions', 'jenisOptions'));
     }
 
     /**
-     * Store a newly created oil loss record.
+     * Store lab data with dual-mode input (non-numeric or numeric).
+     * Tanggal dan jam otomatis dari server saat submit (mencegah manipulasi).
      */
     public function store(Request $request)
     {
         $this->authorize('create lab results');
 
+        // Dual-mode validation:
+        // Mode 1 (Non-Numeric): kode (without manual time input)
+        // Mode 2 (Numeric): cawan_kosong + berat_basah
         $validated = $request->validate([
-            'analysis_date' => 'required|date|before_or_equal:today',
-            'analysis_time' => 'required|date_format:H:i',
-            'tbs_weight' => 'required|numeric|min:0.01',
-            'moisture_content' => 'nullable|numeric|min:0|max:100',
-            'ffa_content' => 'nullable|numeric|min:0|max:100',
-            'cpo_produced' => 'required|numeric|min:0',
-            'kernel_produced' => 'nullable|numeric|min:0',
-            'batch_number' => 'nullable|string|max:255',
-            'notes' => 'nullable|string|max:1000',
+            // Mode 1 fields
+            'kode' => 'nullable|string|exists:lab_master_data,kode',
+            'jenis' => 'nullable|string',
+            'operator' => 'nullable|string|max:255',
+            'sampel_boy' => 'nullable|string|max:255',
+            'parameter_lain' => 'nullable|string|max:500',
+            // Mode 2 fields
+            'cawan_kosong' => 'nullable|numeric|min:0',
+            'berat_basah' => 'nullable|numeric|min:0',
+            'cawan_sample_kering' => 'nullable|numeric|min:0',
+            'labu_kosong' => 'nullable|numeric|min:0',
+            'oil_labu' => 'nullable|numeric|min:0',
         ], [
-            'analysis_date.required' => 'Tanggal analisa harus diisi',
-            'analysis_date.before_or_equal' => 'Tanggal analisa tidak boleh di masa depan',
-            'analysis_time.required' => 'Jam analisa harus diisi',
-            'tbs_weight.required' => 'Berat TBS harus diisi',
-            'tbs_weight.min' => 'Berat TBS harus lebih dari 0',
-            'cpo_produced.required' => 'Jumlah CPO yang dihasilkan harus diisi',
+            'kode.exists' => 'Kode tidak valid atau tidak ditemukan di master data',
         ]);
 
         try {
-            $oilLoss = $this->oilLossService->store($validated, Auth::id());
+            // Set tanggal dan jam otomatis dari server (tidak bisa dimanipulasi user)
+            $validated['analysis_date'] = now()->format('Y-m-d');
+            $validated['analysis_time'] = now()->format('H:i');
+
+            $result = $this->labService->store($validated, Auth::id());
 
             return redirect()
-                ->route('lab.show', $oilLoss->id)
-                ->with('success', 'Data oil losses berhasil disimpan dan menunggu approval!');
-
-        } catch (\InvalidArgumentException $e) {
-            return back()
-                ->withInput()
-                ->with('error', $e->getMessage());
+                ->route('lab.index')
+                ->with('success', $result['message']);
 
         } catch (\Exception $e) {
             return back()
                 ->withInput()
-                ->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.');
+                ->with('error', $e->getMessage());
         }
     }
 
     /**
-     * Display the specified oil loss record.
+     * Display the specified lab calculation with results.
      */
-    public function show(OilLoss $oilLoss)
+    public function show(LabCalculation $labCalculation)
     {
         $this->authorize('view lab results');
 
-        $oilLoss->load(['user', 'approver']);
+        $labCalculation->load(['user']);
 
-        return view('lab.show', compact('oilLoss'));
+        return view('lab.show', ['oilLoss' => $labCalculation]);
     }
 
     /**
-     * Show the form for editing the specified oil loss record.
+     * Show the form for editing the specified lab record.
      */
-    public function edit(OilLoss $oilLoss)
+    public function edit(LabCalculation $labCalculation)
     {
         $this->authorize('edit lab results');
 
-        if (!$oilLoss->canBeEdited()) {
-            return redirect()
-                ->route('lab.show', $oilLoss->id)
-                ->with('error', 'Data yang sudah diapprove tidak dapat diedit.');
-        }
+        $kodeOptions = LabMasterData::getKodeDropdown();
+        $jenisOptions = LabMasterData::getJenisDropdown();
 
         return view('lab.edit', [
-            'oilLoss' => $oilLoss,
-            'standardOER' => OilLossService::getStandardOER(),
-            'standardKER' => OilLossService::getStandardKER(),
+            'oilLoss' => $labCalculation,
+            'kodeOptions' => $kodeOptions,
+            'jenisOptions' => $jenisOptions,
         ]);
     }
 
     /**
-     * Update the specified oil loss record.
+     * Update the specified lab calculation (numeric data only).
+     * Non-numeric data should be managed separately via LabRecord.
      */
-    public function update(Request $request, OilLoss $oilLoss)
+    public function update(Request $request, LabCalculation $labCalculation)
     {
         $this->authorize('edit lab results');
 
         $validated = $request->validate([
             'analysis_date' => 'required|date|before_or_equal:today',
-            'analysis_time' => 'required|date_format:H:i',
-            'tbs_weight' => 'required|numeric|min:0.01',
-            'moisture_content' => 'nullable|numeric|min:0|max:100',
-            'ffa_content' => 'nullable|numeric|min:0|max:100',
-            'cpo_produced' => 'required|numeric|min:0',
-            'kernel_produced' => 'nullable|numeric|min:0',
-            'batch_number' => 'nullable|string|max:255',
-            'notes' => 'nullable|string|max:1000',
+            'cawan_kosong' => 'required|numeric|min:0',
+            'berat_basah' => 'required|numeric|min:0',
+            'cawan_sample_kering' => 'required|numeric|min:0',
+            'labu_kosong' => 'required|numeric|min:0',
+            'oil_labu' => 'required|numeric|min:0',
         ]);
 
         try {
-            $this->oilLossService->update($oilLoss, $validated);
+            // Re-calculate and update
+            $result = $this->labService->store($validated, Auth::id());
 
             return redirect()
-                ->route('lab.show', $oilLoss->id)
-                ->with('success', 'Data oil losses berhasil diupdate!');
+                ->route('lab.show', $labCalculation->id)
+                ->with('success', 'Data berhasil diupdate!');
 
         } catch (\Exception $e) {
             return back()
@@ -178,59 +169,17 @@ class LabController extends Controller
     }
 
     /**
-     * Remove the specified oil loss record.
+     * Remove the specified lab calculation.
      */
-    public function destroy(OilLoss $oilLoss)
+    public function destroy(LabCalculation $labCalculation)
     {
         $this->authorize('delete lab results');
 
-        if (!$oilLoss->canBeEdited()) {
-            return back()->with('error', 'Data yang sudah diapprove tidak dapat dihapus.');
-        }
-
-        $oilLoss->delete();
+        $labCalculation->delete();
 
         return redirect()
             ->route('lab.index')
-            ->with('success', 'Data oil losses berhasil dihapus!');
-    }
-
-    /**
-     * Approve oil loss record.
-     */
-    public function approve(OilLoss $oilLoss)
-    {
-        $this->authorize('approve lab results');
-
-        try {
-            $this->oilLossService->approve($oilLoss, Auth::id());
-
-            return back()->with('success', 'Data oil losses berhasil diapprove!');
-
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
-        }
-    }
-
-    /**
-     * Reject oil loss record.
-     */
-    public function reject(Request $request, OilLoss $oilLoss)
-    {
-        $this->authorize('reject lab results');
-
-        $validated = $request->validate([
-            'reason' => 'required|string|max:500',
-        ]);
-
-        try {
-            $this->oilLossService->reject($oilLoss, $validated['reason']);
-
-            return back()->with('success', 'Data oil losses berhasil direject!');
-
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
-        }
+            ->with('success', 'Data berhasil dihapus!');
     }
 
     /**

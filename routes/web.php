@@ -47,27 +47,23 @@ Route::middleware('auth')->group(function () {
             ->name('store')
             ->middleware('permission:create lab results');
 
-        Route::get('/{id}/edit', [LabController::class, 'edit'])
+        Route::get('/{labCalculation}', [LabController::class, 'show'])
+            ->name('show')
+            ->middleware('permission:view lab results');
+
+        Route::get('/{labCalculation}/edit', [LabController::class, 'edit'])
             ->name('edit')
             ->middleware('permission:edit lab results');
 
-        Route::put('/{id}', [LabController::class, 'update'])
+        Route::put('/{labCalculation}', [LabController::class, 'update'])
             ->name('update')
             ->middleware('permission:edit lab results');
 
-        Route::delete('/{id}', [LabController::class, 'destroy'])
+        Route::delete('/{labCalculation}', [LabController::class, 'destroy'])
             ->name('destroy')
             ->middleware('permission:delete lab results');
 
-        Route::post('/{id}/approve', [LabController::class, 'approve'])
-            ->name('approve')
-            ->middleware('permission:approve lab results');
-
-        Route::post('/{id}/reject', [LabController::class, 'reject'])
-            ->name('reject')
-            ->middleware('permission:reject lab results');
-
-        Route::get('/{id}/print', [LabController::class, 'print'])
+        Route::get('/{labCalculation}/print', [LabController::class, 'print'])
             ->name('print')
             ->middleware('permission:print lab certificate');
 

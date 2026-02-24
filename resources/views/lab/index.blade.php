@@ -20,7 +20,7 @@
     @endif
 
     {{-- ── Statistics Cards ──────────────────────────────────────────── --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
             <div class="flex items-center justify-between">
                 <div>
@@ -36,35 +36,20 @@
             </div>
         </div>
 
-        <!-- <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Pending Approval</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $statistics['pending_approval'] }}</p>
-                </div>
-                <div class="p-3 bg-yellow-100 rounded-full">
-                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-
         <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-500 font-medium">Approved Today</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $statistics['approved_today'] }}</p>
+                    <p class="text-sm text-gray-500 font-medium">Records Today</p>
+                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $statistics['records_today'] }}</p>
                 </div>
                 <div class="p-3 bg-green-100 rounded-full">
                     <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
                 </div>
             </div>
-        </div> -->
+        </div>
     </div>
 
     {{-- ── Main Card ─────────────────────────────────────────────────── --}}
@@ -72,15 +57,7 @@
         {{-- Action Buttons --}}
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center gap-3">
-                @can('create lab results')
-                    <a href="{{ route('lab.create') }}"
-                        class="inline-flex items-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Input Data Baru
-                    </a>
-                @endcan
+
             </div>
 
             @can('export lab data')
@@ -93,51 +70,6 @@
                     Export Data
                 </a>
             @endcan
-        </div>
-
-        {{-- Filter Tabs --}}
-        <div class="mb-6 border-b border-gray-200">
-            <nav class="-mb-px flex space-x-8" aria-label="Filter Status">
-                @php
-                    $currentStatus = request('status', 'all');
-                    $tabClass = 'whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition';
-                    $activeClass = 'border-indigo-500 text-indigo-600';
-                    $inactiveClass = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
-                @endphp
-
-                <a href="{{ route('lab.index') }}"
-                    class="{{ $tabClass }} {{ $currentStatus === 'all' ? $activeClass : $inactiveClass }}">
-                    Semua Data
-                    <span
-                        class="ml-2 py-0.5 px-2 rounded-full text-xs {{ $currentStatus === 'all' ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600' }}">
-                        {{ $statistics['total_records'] }}
-                    </span>
-                </a>
-
-                <a href="{{ route('lab.index', ['status' => 'submitted']) }}"
-                    class="{{ $tabClass }} {{ $currentStatus === 'submitted' ? $activeClass : $inactiveClass }}">
-                    Pending Approval
-                    <span
-                        class="ml-2 py-0.5 px-2 rounded-full text-xs {{ $currentStatus === 'submitted' ? 'bg-yellow-100 text-yellow-600' : 'bg-gray-100 text-gray-600' }}">
-                        {{ $statistics['pending_approval'] }}
-                    </span>
-                </a>
-
-                <a href="{{ route('lab.index', ['status' => 'approved']) }}"
-                    class="{{ $tabClass }} {{ $currentStatus === 'approved' ? $activeClass : $inactiveClass }}">
-                    Approved
-                </a>
-
-                <a href="{{ route('lab.index', ['status' => 'rejected']) }}"
-                    class="{{ $tabClass }} {{ $currentStatus === 'rejected' ? $activeClass : $inactiveClass }}">
-                    Rejected
-                </a>
-
-                <a href="{{ route('lab.index', ['status' => 'draft']) }}"
-                    class="{{ $tabClass }} {{ $currentStatus === 'draft' ? $activeClass : $inactiveClass }}">
-                    Draft
-                </a>
-            </nav>
         </div>
 
         @if ($oilLosses->isEmpty())
@@ -160,25 +92,25 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Tanggal/Jam
+                                Tanggal Analisa
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Batch
+                                Kode
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                TBS (kg)
+                                Moist (%)
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                CPO (kg)
+                                DMWM (%)
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                OER (%)
+                                OLWB
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Losses (%)
+                                OLDB
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
+                                Oil Losses (%)
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Input By
@@ -192,47 +124,34 @@
                         @foreach ($oilLosses as $oilLoss)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $oilLoss->analysis_date->format('d/m/Y') }}<br>
-                                    <span class="text-gray-500">{{ $oilLoss->analysis_time->format('H:i') }}</span>
+                                    {{ $oilLoss->analysis_date->format('d/m/Y') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                    {{ $oilLoss->kode }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $oilLoss->batch_number ?? '-' }}
+                                    {{ number_format($oilLoss->moist ?? 0, 4) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ number_format($oilLoss->tbs_weight, 2) }}
+                                    {{ number_format($oilLoss->dmwm ?? 0, 4) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ number_format($oilLoss->cpo_produced, 2) }}
+                                    {{ number_format($oilLoss->olwb ?? 0, 4) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ number_format($oilLoss->oldb ?? 0, 4) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span
-                                        class="font-semibold {{ $oilLoss->oil_to_tbs >= 22 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ number_format($oilLoss->oil_to_tbs, 2) }}%
+                                    @php
+                                        $losses = $oilLoss->oil_losses ?? 0;
+                                        $limit3 = $oilLoss->limit3 ?? 0;
+                                        $isGood = $losses <= $limit3 && $limit3 > 0;
+                                    @endphp
+                                    <span class="font-semibold {{ $isGood ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ number_format($losses, 4) }}
                                     </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span
-                                        class="font-semibold {{ $oilLoss->oil_losses <= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ number_format($oilLoss->oil_losses, 2) }}%
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @if ($oilLoss->status === 'approved')
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                            Approved
-                                        </span>
-                                    @elseif($oilLoss->status === 'submitted')
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                            Pending
-                                        </span>
-                                    @elseif($oilLoss->status === 'rejected')
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                            Rejected
-                                        </span>
-                                    @else
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                            Draft
-                                        </span>
+                                    @if($limit3 > 0)
+                                        <span class="text-xs text-gray-500 block">Limit: {{ number_format($limit3, 4) }}</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -252,18 +171,28 @@
                                             </a>
                                         @endcan
 
-                                        @can('approve lab results')
-                                            @if ($oilLoss->status === 'submitted')
-                                                <form action="{{ route('lab.approve', $oilLoss->id) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    <button type="submit" class="text-green-600 hover:text-green-900" title="Approve">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                    </button>
-                                                </form>
-                                            @endif
+                                        @can('edit lab results')
+                                            <a href="{{ route('lab.edit', $oilLoss->id) }}"
+                                                class="text-yellow-600 hover:text-yellow-900" title="Edit">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </a>
+                                        @endcan
+
+                                        @can('delete lab results')
+                                            <form action="{{ route('lab.destroy', $oilLoss->id) }}" method="POST" class="inline"
+                                                onsubmit="return confirm('Yakin ingin menghapus data ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </form>
                                         @endcan
                                     </div>
                                 </td>

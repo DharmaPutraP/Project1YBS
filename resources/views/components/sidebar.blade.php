@@ -102,13 +102,13 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             @endcan
 
             {{-- Pending Approval --}}
-            @can('approve lab results')
-                <x-sidebar-item href="{{ route('lab.index', ['status' => 'submitted']) }}"
-                    :active="request()->routeIs('lab.index') && request('status') === 'submitted'"
-                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'>
-                    <span class="sidebar-item-text">Pending Approval</span>
-                </x-sidebar-item>
-            @endcan
+            <!-- @can('approve lab results')
+                    <x-sidebar-item href="{{ route('lab.index', ['status' => 'submitted']) }}"
+                        :active="request()->routeIs('lab.index') && request('status') === 'submitted'"
+                        icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'>
+                        <span class="sidebar-item-text">Pending Approval</span>
+                    </x-sidebar-item>
+                @endcan -->
 
             {{-- Lab Samples (for future) --}}
             @can('view lab samples')

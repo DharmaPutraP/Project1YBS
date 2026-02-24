@@ -187,6 +187,92 @@
         </form>
     </x-ui.card>
 
+    {{-- Form Input Data Lab --}}
+    <x-ui.card title="Tambah Data Lab" class="mt-8">
+        <form class="space-y-5">
+            {{-- Row 1--}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Kode
+                </label>
+                <select name="kode" class="w-full px-4 py-2 border border-gray-300 rounded-lg
+                        focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                    <option value="">-- Pilih Kode --</option>
+                    <option value="jbp">JBP</option>
+                    <option value="cd">CD</option>
+                </select>
+            </div>
+
+            {{-- Row 2--}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Operator
+                </label>
+                <select name="operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg
+                        focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                    <option value="">-- Pilih Operator --</option>
+                    <option value="a">a</option>
+                    <option value="b">b</option>
+                </select>
+            </div>
+
+            {{-- Row 3--}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Sampel Boy
+                </label>
+                <select name="sampel_boy" class="w-full px-4 py-2 border border-gray-300 rounded-lg
+                        focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                    <option value="">-- Pilih Sampel Boy --</option>
+                    <option value="a">a</option>
+                    <option value="b">b</option>
+                </select>
+            </div>
+
+            {{-- Row 4--}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Jenis
+                </label>
+                <select name="operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg
+                        focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                    <option value="">-- Pilih Jenis --</option>
+                    <option value="tbs">TBS</option>
+                    <option value="brondolan">Brondolan</option>
+                </select>
+            </div>
+
+            {{-- Row 5--}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <x-form.input label="Cawan Kosong" name="cawan_kosong" placeholder="Masukkan cawan kosong" />
+                <x-form.input label="Berat Basah" name="berat_basah" placeholder="Masukkan berat basah" />
+                <x-form.input label="Cawan Sampel Kering" name="cawan_sampel_kering"
+                    placeholder="Masukkan cawan + sampel kering" />
+            </div>
+
+            {{-- Row 6--}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <x-form.input label="Labu Kosong" name="labu_kosong" placeholder="Masukkan labu kosong" />
+                <x-form.input label="Oil Labu" name="oil_labu" placeholder="Masukkan berat oil labu" />
+            </div>
+
+
+
+
+            {{-- Action Buttons --}}
+            <div class="flex justify-end gap-3 pt-6">
+                <button type="reset"
+                    class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium">
+                    Reset
+                </button>
+
+                <x-ui.button type="submit" variant="primary">
+                    Simpan Data
+                </x-ui.button>
+            </div>
+        </form>
+    </x-ui.card>
+
     {{-- Auto-dismiss flash messages after 4 seconds --}}
     <script>
         const flashEl = document.getElementById('flash-error');

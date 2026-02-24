@@ -23,25 +23,180 @@ Route::middleware('guest')->group(function () {
 
 // ─── Authenticated routes ──────────────────────────────────────────────────────
 Route::middleware('auth')->group(function () {
+
+    // ── Dashboard ──────────────────────────────────────────────────────────────
     Route::get('/dashboard', function () {
         return view('dashboard');
-    })->name('dashboard');
+    })->name('dashboard')->middleware('permission:view dashboard');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // ─── Laboratorium ──────────────────────────────────────────────────────────
-    Route::get('/lab', [LabController::class, 'index'])->name('lab.index');
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── LABORATORIUM ──────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('lab')->name('lab.')->group(function () {
+        Route::get('/', [LabController::class, 'index'])
+            ->name('index')
+            ->middleware('permission:view lab');
 
-    // ─── Timbangan ─────────────────────────────────────────────────────────────
-    Route::get('/timbangan', [TimbanganController::class, 'index'])->name('timbangan.index');
+        Route::get('/create', [LabController::class, 'create'])
+            ->name('create')
+            ->middleware('permission:create lab results');
 
-    // ─── Laporan ───────────────────────────────────────────────────────────────
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::post('/', [LabController::class, 'store'])
+            ->name('store')
+            ->middleware('permission:create lab results');
 
-    // ─── Kelola Pengguna ───────────────────────────────────────────────────────
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::post('/users', [AuthController::class, 'register'])->name('users.store');
+        Route::get('/{id}/edit', [LabController::class, 'edit'])
+            ->name('edit')
+            ->middleware('permission:edit lab results');
 
-    // ─── Pengaturan ────────────────────────────────────────────────────────────
-    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::put('/{id}', [LabController::class, 'update'])
+            ->name('update')
+            ->middleware('permission:edit lab results');
+
+        Route::delete('/{id}', [LabController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware('permission:delete lab results');
+
+        Route::post('/{id}/approve', [LabController::class, 'approve'])
+            ->name('approve')
+            ->middleware('permission:approve lab results');
+
+        Route::post('/{id}/reject', [LabController::class, 'reject'])
+            ->name('reject')
+            ->middleware('permission:reject lab results');
+
+        Route::get('/{id}/print', [LabController::class, 'print'])
+            ->name('print')
+            ->middleware('permission:print lab certificate');
+
+        Route::get('/export', [LabController::class, 'export'])
+            ->name('export')
+            ->middleware('permission:export lab data');
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── TIMBANGAN ─────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('timbangan')->name('timbangan.')->group(function () {
+        Route::get('/', [TimbanganController::class, 'index'])
+            ->name('index')
+            ->middleware('permission:view timbangan');
+
+        Route::get('/create', [TimbanganController::class, 'create'])
+            ->name('create')
+            ->middleware('permission:create timbangan');
+
+        Route::post('/', [TimbanganController::class, 'store'])
+            ->name('store')
+            ->middleware('permission:create timbangan');
+
+        Route::get('/{id}/edit', [TimbanganController::class, 'edit'])
+            ->name('edit')
+            ->middleware('permission:edit timbangan');
+
+        Route::put('/{id}', [TimbanganController::class, 'update'])
+            ->name('update')
+            ->middleware('permission:edit timbangan');
+
+        Route::delete('/{id}', [TimbanganController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware('permission:delete timbangan');
+
+        Route::post('/{id}/verify', [TimbanganController::class, 'verify'])
+            ->name('verify')
+            ->middleware('permission:verify timbangan');
+
+        Route::get('/{id}/print', [TimbanganController::class, 'print'])
+            ->name('print')
+            ->middleware('permission:print timbangan ticket');
+
+        Route::get('/export', [TimbanganController::class, 'export'])
+            ->name('export')
+            ->middleware('permission:export timbangan data');
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── LAPORAN (REPORTS) ─────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])
+            ->name('index')
+            ->middleware('permission:view reports');
+
+        Route::get('/lab', [ReportController::class, 'lab'])
+            ->name('lab')
+            ->middleware('permission:view lab reports');
+
+        Route::get('/timbangan', [ReportController::class, 'timbangan'])
+            ->name('timbangan')
+            ->middleware('permission:view timbangan reports');
+
+        Route::get('/production', [ReportController::class, 'production'])
+            ->name('production')
+            ->middleware('permission:view production reports');
+
+        Route::get('/financial', [ReportController::class, 'financial'])
+            ->name('financial')
+            ->middleware('permission:view financial reports');
+
+        Route::post('/export', [ReportController::class, 'export'])
+            ->name('export')
+            ->middleware('permission:export reports');
+
+        Route::post('/print', [ReportController::class, 'print'])
+            ->name('print')
+            ->middleware('permission:print reports');
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── MANAJEMEN PENGGUNA ────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [UserController::class, 'index'])
+            ->name('index')
+            ->middleware('permission:view users');
+
+        Route::get('/create', [UserController::class, 'create'])
+            ->name('create')
+            ->middleware('permission:create users');
+
+        Route::post('/', [AuthController::class, 'register'])
+            ->name('store')
+            ->middleware('permission:create users');
+
+        Route::get('/{id}/edit', [UserController::class, 'edit'])
+            ->name('edit')
+            ->middleware('permission:edit users');
+
+        Route::put('/{id}', [UserController::class, 'update'])
+            ->name('update')
+            ->middleware('permission:edit users');
+
+        Route::delete('/{id}', [UserController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware('permission:delete users');
+
+        Route::post('/{id}/reset-password', [UserController::class, 'resetPassword'])
+            ->name('reset-password')
+            ->middleware('permission:reset user password');
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── PENGATURAN SISTEM ─────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', [SettingController::class, 'index'])
+            ->name('index')
+            ->middleware('permission:view settings');
+
+        Route::put('/', [SettingController::class, 'update'])
+            ->name('update')
+            ->middleware('permission:edit settings');
+
+        Route::post('/clear-cache', [SettingController::class, 'clearCache'])
+            ->name('clear-cache')
+            ->middleware('permission:clear cache');
+    });
 });

@@ -80,21 +80,47 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
         @endcan
 
         {{-- ── Laboratorium ────────────────────────────────── --}}
-        @canany(['view lab', 'input lab results', 'approve lab results'])
+        @canany(['view lab', 'create lab results', 'approve lab results'])
             <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
                 Laboratorium
             </p>
 
+            {{-- Data Oil Losses --}}
             @can('view lab')
-                <x-sidebar-item href="{{ route('lab.index') }}" :active="request()->routeIs('lab.*')"
+                <x-sidebar-item href="{{ route('lab.index') }}" :active="request()->routeIs('lab.index')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'>
-                    <span class="sidebar-item-text">Data Lab</span>
+                    <span class="sidebar-item-text">Data Oil Losses</span>
+                </x-sidebar-item>
+            @endcan
+
+            {{-- Input Data Baru --}}
+            @can('create lab results')
+                <x-sidebar-item href="{{ route('lab.create') }}" :active="request()->routeIs('lab.create')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
+                    <span class="sidebar-item-text">Input Data Baru</span>
+                </x-sidebar-item>
+            @endcan
+
+            {{-- Pending Approval --}}
+            @can('approve lab results')
+                <x-sidebar-item href="{{ route('lab.index', ['status' => 'submitted']) }}"
+                    :active="request()->routeIs('lab.index') && request('status') === 'submitted'"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'>
+                    <span class="sidebar-item-text">Pending Approval</span>
+                </x-sidebar-item>
+            @endcan
+
+            {{-- Lab Samples (for future) --}}
+            @can('view lab samples')
+                <x-sidebar-item href="#" :active="false"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>'>
+                    <span class="sidebar-item-text">Kelola Sampel</span>
                 </x-sidebar-item>
             @endcan
         @endcanany
 
         {{-- ── Timbangan ───────────────────────────────────── --}}
-        @canany(['view timbangan', 'input timbangan'])
+        @canany(['view timbangan', 'create timbangan'])
             <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
                 Timbangan
             </p>
@@ -120,19 +146,19 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
         @endcan
 
         {{-- ── Admin ───────────────────────────────────────── --}}
-        @canany(['manage users', 'manage roles', 'manage settings'])
+        @canany(['view users', 'view roles', 'view settings'])
             <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
                 Administrasi
             </p>
 
-            @can('manage users')
+            @can('view users')
                 <x-sidebar-item href="{{ route('users.index') }}" :active="request()->routeIs('users.*')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>'>
                     <span class="sidebar-item-text">Kelola Pengguna</span>
                 </x-sidebar-item>
             @endcan
 
-            @can('manage settings')
+            @can('view settings')
                 <x-sidebar-item href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'>
                     <span class="sidebar-item-text">Pengaturan</span>

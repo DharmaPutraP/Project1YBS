@@ -46,6 +46,7 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        // Validation - akan auto redirect back dengan errors jika gagal
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username', 'alpha_dash'],
@@ -53,15 +54,25 @@ class AuthController extends Controller
             'role_id' => ['required', 'integer', 'exists:roles,id'],
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'username' => $validated['username'],
-            'password' => Hash::make($validated['password']),
-        ]);
+        try {
+            $user = User::create([
+                'name' => $validated['name'],
+                'username' => $validated['username'],
+                'password' => Hash::make($validated['password']),
+            ]);
 
-        $user->assignRole(Role::findById($validated['role_id'], 'web'));
+            $user->assignRole(Role::findById($validated['role_id'], 'web'));
 
-        return redirect('/users');
+            return redirect()->route('users.index')
+                ->with('success', "User '{$user->name}' berhasil dibuat dengan role '{$user->getRoleNames()->first()}'.");
+
+        } catch (\Exception $e) {
+            \Log::error('Error creating user: ' . $e->getMessage());
+
+            return redirect()->route('users.index')
+                ->with('error', 'Gagal membuat user: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     // ─── Logout ───────────────────────────────────────────────────────────────

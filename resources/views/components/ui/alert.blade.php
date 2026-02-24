@@ -22,7 +22,6 @@
             @foreach ($errors->all() as $e) <p>{{ $e }}</p> @endforeach
         </x-ui.alert>
     @endif
---}}
 @props([
     'type'    => 'info',
     'title'   => null,

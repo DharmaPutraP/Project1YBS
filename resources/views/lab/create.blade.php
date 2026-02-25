@@ -2,6 +2,64 @@
 
     {{-- Select2 CSS --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    
+    {{-- Custom Select2 Styling to Match Standard Inputs --}}
+    <style>
+        /* Match Select2 container with Tailwind input styling */
+        .select2-container--default .select2-selection--single {
+            height: auto !important;
+            padding: 0.5rem 1rem !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.5rem !important;
+            font-size: 0.875rem !important;
+            line-height: 1.25rem !important;
+            transition: all 0.15s !important;
+        }
+        
+        .select2-container--default .select2-selection--single:focus,
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            outline: none !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding: 0 !important;
+            line-height: inherit !important;
+            color: #374151 !important;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: #9ca3af !important;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100% !important;
+            right: 0.75rem !important;
+        }
+        
+        /* Dropdown styling */
+        .select2-dropdown {
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.5rem !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .select2-results__option {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.875rem !important;
+        }
+        
+        .select2-results__option--highlighted {
+            background-color: #3b82f6 !important;
+        }
+        
+        /* Match error state */
+        .select2-container--default.border-red-400 .select2-selection--single {
+            border-color: #f87171 !important;
+            background-color: #fef2f2 !important;
+        }
+    </style>
 
     {{-- ── Flash Messages ───────────────────────────────────────────── --}}
     @if (session('error'))
@@ -16,27 +74,22 @@
     @endif
 
     {{-- Info Alert: Dual-Mode Input --}}
-    <x-ui.card class="mb-6 bg-amber-50 border-amber-200">
+    <x-ui.card class="mb-6 bg-blue-50 border-blue-200">
         <div class="flex items-start">
-            <svg class="w-6 h-6 text-amber-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor"
+            <svg class="w-6 h-6 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor"
                 viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-                <h4 class="text-sm font-bold text-amber-900 mb-2">⚠️ Aturan Input Data</h4>
-                <p class="text-sm text-amber-800 leading-relaxed">
-                    <strong>PILIH SALAH SATU MODE SAJA:</strong><br>
+                <h4 class="text-sm font-bold text-blue-900 mb-2">ℹ️ Pilihan Input Data</h4>
+                <p class="text-sm text-blue-800 leading-relaxed">
+                    Anda dapat memilih untuk mengisi salah satu atau <strong>kedua mode sekaligus</strong> dalam satu kali submit:<br>
                     <span class="inline-block mt-1">
-                        <strong>Mode 1 (Non-Angka):</strong> Isi <strong>Kode</strong> hingga <strong>Parameter
-                            Lain</strong> → Bisa input berkali-kali dalam 1 hari
+                        <strong>Mode 1 (Non-Angka):</strong> Kode, Jenis, Operator, dll → Bisa input berkali-kali per hari
                     </span><br>
                     <span class="inline-block mt-1">
-                        <strong>Mode 2 (Angka):</strong> Isi <strong>Cawan Kosong</strong> hingga <strong>Oil
-                            Labu</strong> → Hanya 1x per hari (smart shifting otomatis)
-                    </span><br>
-                    <span class="text-xs text-amber-700 italic mt-2 inline-block">
-                        ❌ Tidak boleh isi keduanya sekaligus!
+                        <strong>Mode 2 (Angka):</strong> Kode + Data Perhitungan → Hanya 1x per kode per hari
                     </span>
                 </p>
             </div>
@@ -70,51 +123,18 @@
                 </div>
             </div>
 
-            {{-- Info: Dual Mode dengan Auto Disable --}}
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div class="flex items-start">
-                    <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div class="flex-1">
-                        <h4 class="text-sm font-semibold text-yellow-900 mb-1">🔒 Sistem Auto-Disable</h4>
-                        <p class="text-sm text-yellow-800">
-                            Form ini memiliki 2 mode input. <strong>Saat Anda mulai mengisi salah satu mode, mode lainnya akan otomatis ter-disable</strong> untuk mencegah kesalahan input.
-                        </p>
-                        <ul class="mt-2 text-xs text-yellow-700 space-y-1 list-disc list-inside">
-                            <li>Isi <strong>Mode 1</strong> → Mode 2 otomatis disabled</li>
-                            <li>Isi <strong>Mode 2</strong> → Mode 1 otomatis disabled</li>
-                            <li>Hapus semua isian → Kedua mode aktif kembali</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
             <hr class="my-6 border-gray-200">
 
             {{-- MODE 1: Non-Angka (Bisa Multiple per Day) --}}
-            <div id="mode1Section" class="border-2 border-blue-200 bg-blue-50 rounded-lg p-5 transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center">
-                        <div
-                            class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
-                            1
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-800">
-                            Mode Non-Angka <span class="text-sm text-gray-600 font-normal">(Bisa input berkali-kali)</span>
-                        </h3>
+            <div id="mode1Section" class="border-2 border-blue-200 bg-blue-50 rounded-lg p-5">
+                <div class="flex items-center mb-4">
+                    <div
+                        class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
+                        1
                     </div>
-                    <span id="mode1Status" class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        SIAP
-                    </span>
-                </div>
-
-                <div class="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
-                    <p class="text-sm text-blue-800">
-                        💡 <strong>Tip:</strong> Jika Anda mulai mengisi mode ini, Mode Angka akan otomatis di-disable untuk menghindari kesalahan input.
-                    </p>
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        Mode Non-Angka <span class="text-sm text-gray-600 font-normal">(Bisa input berkali-kali per hari)</span>
+                    </h3>
                 </div>
 
                 <div class="space-y-4">
@@ -198,14 +218,8 @@
                 </div>
             </div>
 
-            <div class="text-center py-2">
-                <span class="bg-gray-100 px-4 py-2 rounded-full text-sm font-medium text-gray-700">
-                    ATAU
-                </span>
-            </div>
-
             {{-- MODE 2: Angka (Hanya 1x per Kode per Day) --}}
-            <div id="mode2Section" class="border-2 border-green-200 bg-green-50 rounded-lg p-5 transition-all duration-300">
+            <div id="mode2Section" class="border-2 border-green-200 bg-green-50 rounded-lg p-5">
                 <div class="flex items-center mb-4">
                     <div
                         class="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
@@ -214,18 +228,12 @@
                     <h3 class="text-lg font-semibold text-gray-800">
                         Mode Angka <span class="text-sm text-gray-600 font-normal">(Hanya 1x per kode per hari)</span>
                     </h3>
-                    <span id="mode2Status" class="ml-auto px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        SIAP
-                    </span>
                 </div>
 
                 <div class="space-y-4">
-                    <div class="text-sm text-green-800 bg-green-100 border border-green-300 rounded-lg p-3 space-y-2">
+                    <div class="text-sm text-green-800 bg-green-100 border border-green-300 rounded-lg p-3">
                         <p>
                             ℹ️ <strong>Perhatian:</strong> Setiap kode hanya bisa diinput sekali per hari. Jika kode sudah ada di tanggal yang sama, data akan ditolak.
-                        </p>
-                        <p>
-                            💡 <strong>Tip:</strong> Jika Anda mulai mengisi mode ini, Mode Non-Angka akan otomatis di-disable untuk menghindari kesalahan input.
                         </p>
                     </div>
 
@@ -234,16 +242,16 @@
                         <label for="kode_mode2" class="block text-sm font-medium text-gray-700 mb-2">
                             Kode <span class="text-red-500">*</span>
                         </label>
-                        <select name="kode" id="kode_mode2" class="w-full select2-kode
-                                   @error('kode') border-red-400 bg-red-50 @enderror">
+                        <select name="kode_mode2" id="kode_mode2" class="w-full select2-kode
+                                   @error('kode_mode2') border-red-400 bg-red-50 @enderror">
                             <option value="">-- Pilih Kode --</option>
                             @foreach ($kodeOptions as $kodeValue => $kodeName)
-                                <option value="{{ $kodeValue }}" {{ old('kode') == $kodeValue ? 'selected' : '' }}>
+                                <option value="{{ $kodeValue }}" {{ old('kode_mode2') == $kodeValue ? 'selected' : '' }}>
                                     {{ $kodeName }}
                                 </option>
                             @endforeach
                         </select>
-                        @error('kode')
+                        @error('kode_mode2')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -377,194 +385,6 @@
                     }
                 }
             });
-
-            // Dual-Mode Validation
-            const form = document.getElementById('labForm');
-
-            // Mode 1 fields (all non-numeric fields)
-            const mode1Fields = ['kode', 'jenis', 'operator', 'sampel_boy', 'parameter_lain'];
-            // Mode 2 fields (kode from Mode 2 dropdown + numeric fields)
-            const mode2Fields = ['kode_mode2', 'cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'];
-
-            // Function to check if any field in array has value
-            function hasAnyValue(fieldNames) {
-                return fieldNames.some(name => {
-                    const field = document.getElementById(name) || document.getElementsByName(name)[0];
-                    if (!field) return false;
-                    return field.value && field.value.trim() !== '';
-                });
-            }
-
-            // Form submit validation
-            form.addEventListener('submit', function (e) {
-                const isMode1Active = hasAnyValue(mode1Fields);
-                const isMode2Active = hasAnyValue(mode2Fields);
-
-                // Validasi: tidak boleh isi keduanya sekaligus
-                if (isMode1Active && isMode2Active) {
-                    e.preventDefault();
-                    alert('❌ KESALAHAN:\n\nPilih SALAH SATU MODE saja:\n• Mode 1 (Non-Angka): Kode + Jenis\n• Mode 2 (Angka): Kode + Data Angka\n\nTidak boleh isi keduanya sekaligus!');
-                    return false;
-                }
-
-                // Validasi: minimal salah satu harus diisi
-                if (!isMode1Active && !isMode2Active) {
-                    e.preventDefault();
-                    alert('⚠️ PERHATIAN:\n\nMinimal salah satu mode harus diisi:\n• Mode 1 (Non-Angka): Pilih Kode\n• Mode 2 (Angka): Pilih Kode + Isi Data Angka');
-                    return false;
-                }
-
-                // Validasi Mode 2: Kode harus diisi
-                if (isMode2Active) {
-                    const kodeMode2 = document.getElementById('kode_mode2');
-                    if (!kodeMode2 || !kodeMode2.value) {
-                        e.preventDefault();
-                        alert('⚠️ PERHATIAN MODE ANGKA:\n\nKode harus dipilih untuk input data angka!');
-                        return false;
-                    }
-                }
-
-                return true;
-            });
-
-            // Visual feedback saat user mengetik
-            const mode1Inputs = mode1Fields.map(name => document.getElementById(name) || document.getElementsByName(name)[0]).filter(el => el);
-            const mode2Inputs = mode2Fields.map(name => document.getElementById(name)).filter(el => el);
-
-            const mode1Section = document.getElementById('mode1Section');
-            const mode2Section = document.getElementById('mode2Section');
-
-            // Function to enable/disable fields
-            function enableFields(fields) {
-                fields.forEach(field => {
-                    if (field) {
-                        field.disabled = false;
-                        field.classList.remove('cursor-not-allowed', 'bg-gray-100');
-                        // Re-enable Select2 if it's a select element
-                        if (field.tagName === 'SELECT' && $(field).hasClass('select2-hidden-accessible')) {
-                            $(field).prop('disabled', false);
-                        }
-                    }
-                });
-            }
-
-            function disableFields(fields) {
-                fields.forEach(field => {
-                    if (field) {
-                        field.disabled = true;
-                        field.classList.add('cursor-not-allowed', 'bg-gray-100');
-                        // Disable Select2 if it's a select element
-                        if (field.tagName === 'SELECT' && $(field).hasClass('select2-hidden-accessible')) {
-                            $(field).prop('disabled', true);
-                        }
-                    }
-                });
-            }
-
-            function updateVisualFeedback() {
-                const isMode1Active = hasAnyValue(mode1Fields);
-                const isMode2Active = hasAnyValue(mode2Fields);
-                
-                const mode1Status = document.getElementById('mode1Status');
-                const mode2Status = document.getElementById('mode2Status');
-
-                if (isMode1Active && !isMode2Active) {
-                    // Mode 1 aktif - Disable Mode 2
-                    mode1Section.classList.add('ring-4', 'ring-blue-400');
-                    mode2Section.classList.remove('ring-4', 'ring-green-400', 'ring-red-400');
-                    mode2Section.classList.add('opacity-50');
-                    
-                    enableFields(mode1Inputs);
-                    disableFields(mode2Inputs);
-                    
-                    // Update status badges
-                    if (mode1Status) {
-                        mode1Status.textContent = 'AKTIF';
-                        mode1Status.className = 'ml-auto px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800';
-                    }
-                    if (mode2Status) {
-                        mode2Status.textContent = 'DISABLED';
-                        mode2Status.className = 'ml-auto px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-500';
-                    }
-                    
-                } else if (isMode2Active && !isMode1Active) {
-                    // Mode 2 aktif - Disable Mode 1
-                    mode2Section.classList.add('ring-4', 'ring-green-400');
-                    mode1Section.classList.remove('ring-4', 'ring-blue-400', 'ring-red-400');
-                    mode1Section.classList.add('opacity-50');
-                    
-                    enableFields(mode2Inputs);
-                    disableFields(mode1Inputs);
-                    
-                    // Update status badges
-                    if (mode1Status) {
-                        mode1Status.textContent = 'DISABLED';
-                        mode1Status.className = 'ml-auto px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-500';
-                    }
-                    if (mode2Status) {
-                        mode2Status.textContent = 'AKTIF';
-                        mode2Status.className = 'ml-auto px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
-                    }
-                    
-                } else if (isMode1Active && isMode2Active) {
-                    // Keduanya aktif (error state - seharusnya tidak terjadi dengan auto-disable)
-                    mode1Section.classList.add('ring-4', 'ring-red-400');
-                    mode2Section.classList.add('ring-4', 'ring-red-400');
-                    mode1Section.classList.remove('opacity-50', 'ring-blue-400');
-                    mode2Section.classList.remove('opacity-50', 'ring-green-400');
-                    
-                    enableFields(mode1Inputs);
-                    enableFields(mode2Inputs);
-                    
-                    // Update status badges (error state)
-                    if (mode1Status) {
-                        mode1Status.textContent = 'ERROR';
-                        mode1Status.className = 'ml-auto px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
-                    }
-                    if (mode2Status) {
-                        mode2Status.textContent = 'ERROR';
-                        mode2Status.className = 'ml-auto px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
-                    }
-                    
-                } else {
-                    // Belum ada yang aktif - Enable semua
-                    mode1Section.classList.remove('ring-4', 'ring-blue-400', 'ring-red-400', 'opacity-50');
-                    mode2Section.classList.remove('ring-4', 'ring-green-400', 'ring-red-400', 'opacity-50');
-                    
-                    enableFields(mode1Inputs);
-                    enableFields(mode2Inputs);
-                    
-                    // Update status badges (ready state)
-                    if (mode1Status) {
-                        mode1Status.textContent = 'SIAP';
-                        mode1Status.className = 'ml-auto px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800';
-                    }
-                    if (mode2Status) {
-                        mode2Status.textContent = 'SIAP';
-                        mode2Status.className = 'ml-auto px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
-                    }
-                }
-            }
-
-            // Attach event listeners
-            [...mode1Inputs, ...mode2Inputs].forEach(input => {
-                if (input) {
-                    // Standard HTML events
-                    input.addEventListener('input', updateVisualFeedback);
-                    input.addEventListener('change', updateVisualFeedback);
-                    input.addEventListener('keyup', updateVisualFeedback);
-                    
-                    // Special handling for Select2 dropdowns
-                    if (input.tagName === 'SELECT' && $(input).hasClass('select2-hidden-accessible')) {
-                        $(input).on('select2:select', updateVisualFeedback);
-                        $(input).on('select2:clear', updateVisualFeedback);
-                        $(input).on('select2:unselect', updateVisualFeedback);
-                    }
-                }
-            });
-
-            // Initial check
-            updateVisualFeedback();
 
             // Live Clock - Update current date/time display every second
             function updateClock() {

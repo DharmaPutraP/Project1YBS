@@ -35,18 +35,18 @@ return new class extends Migration {
             $table->decimal('minyak', 12, 6)->nullable()->comment('Oil labu - labu kosong');
 
             // ── Hasil Perhitungan (%) ────────────────────────────────────────
-            $table->decimal('moist', 10, 6)->nullable()->comment('Moisture content (%)');
-            $table->decimal('dmwm', 10, 6)->nullable()->comment('Dry Matter Wet Matter (%)');
-            $table->decimal('olwb', 10, 6)->nullable()->comment('Oil on Wet Basis');
-            $table->decimal('oldb', 10, 6)->nullable()->comment('Oil on Dry Basis');
-            $table->decimal('oil_losses', 10, 6)->nullable()->comment('Oil Losses (%)');
+            $table->decimal('moist', 15, 6)->nullable()->comment('Moisture content (%)');
+            $table->decimal('dmwm', 15, 6)->nullable()->comment('Dry Matter Wet Matter (%)');
+            $table->decimal('olwb', 15, 6)->nullable()->comment('Oil on Wet Basis');
+            $table->decimal('oldb', 15, 6)->nullable()->comment('Oil on Dry Basis');
+            $table->decimal('oil_losses', 15, 6)->nullable()->comment('Oil Losses (%)');
 
             // ── Limit Values (dari master data) ─────────────────────────────
-            $table->decimal('limit', 10, 6)->nullable()->comment('Limit 1');
-            $table->decimal('limit2', 10, 6)->nullable()->comment('Limit 2');
-            $table->decimal('limit3', 10, 6)->nullable()->comment('Limit 3');
-            $table->decimal('persen', 10, 6)->nullable()->comment('Persen untuk kalkulasi');
-            $table->decimal('persen4', 10, 6)->nullable()->comment('Persen 4');
+            $table->decimal('limitOLWB', 15, 6)->nullable()->comment('Limit OLWB');
+            $table->decimal('limitOLDB', 15, 6)->nullable()->comment('Limit OLDB');
+            $table->decimal('limitOL', 15, 6)->nullable()->comment('Limit Oil Losses');
+            $table->decimal('persen', 15, 6)->nullable()->comment('Persen untuk kalkulasi');
+            $table->decimal('persen4', 15, 6)->nullable()->comment('Persen 4');
 
             $table->timestamps();
             $table->softDeletes();

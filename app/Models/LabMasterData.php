@@ -18,9 +18,9 @@ class LabMasterData extends Model
         'persen',
         'persen4',
         'pivot',
-        'limit',
-        'limit2',
-        'limit3',
+        'limitOLWB',
+        'limitOLDB',
+        'limitOL',
         'description',
         'is_active',
     ];
@@ -28,9 +28,9 @@ class LabMasterData extends Model
     protected $casts = [
         'persen' => 'decimal:4',
         'persen4' => 'decimal:4',
-        'limit' => 'decimal:2',
-        'limit2' => 'decimal:2',
-        'limit3' => 'decimal:2',
+        'limitOLWB' => 'decimal:2',
+        'limitOLDB' => 'decimal:2',
+        'limitOL' => 'decimal:2',
         'is_active' => 'boolean',
     ];
 

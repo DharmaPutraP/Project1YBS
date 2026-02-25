@@ -21,14 +21,14 @@ return new class extends Migration {
             $table->string('jenis')->nullable()->comment('Jenis sample');
 
             // ── Parameter Kalkulasi (dari Apps Script) ──────────────────────
-            $table->decimal('persen', 8, 4)->default(0)->comment('Persen untuk kalkulasi oil losses');
-            $table->decimal('persen4', 8, 4)->default(0)->comment('Persen 4 untuk kalkulasi');
+            $table->decimal('persen', 8, 4)->default(0)->nullable()->comment('Persen untuk kalkulasi oil losses');
+            $table->decimal('persen4', 8, 4)->default(0)->nullable()->comment('Persen 4 untuk kalkulasi');
             $table->string('pivot')->nullable()->comment('Pivot value');
 
             // ── Limit Values (Threshold) ─────────────────────────────────────
-            $table->decimal('limit', 8, 2)->default(0)->comment('Limit 1 - threshold pertama');
-            $table->decimal('limit2', 8, 2)->default(0)->comment('Limit 2 - threshold kedua');
-            $table->decimal('limit3', 8, 2)->default(0)->comment('Limit 3 - threshold ketiga');
+            $table->decimal('limitOLWB', 8, 2)->default(0)->nullable()->comment('Limit OLWB');
+            $table->decimal('limitOLDB', 8, 2)->default(0)->nullable()->comment('Limit OLDB');
+            $table->decimal('limitOL', 8, 2)->default(0)->nullable()->comment('Limit Oil Losses');
 
             // ── Additional Fields ────────────────────────────────────────────
             $table->text('description')->nullable()->comment('Deskripsi tambahan');

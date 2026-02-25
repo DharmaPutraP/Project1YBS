@@ -23,28 +23,38 @@ class LabController extends Controller
      */
     public function index(Request $request)
     {
-        $query = LabCalculation::with(['user'])
+        // Query for Mode 2: Lab Calculations (numeric data)
+        $calculationsQuery = LabCalculation::with(['user'])
             ->orderBy('analysis_date', 'desc');
+
+        // Query for Mode 1: Lab Records (non-numeric data)
+        $recordsQuery = LabRecord::with(['user'])
+            ->orderBy('created_at', 'desc');
 
         // Filter by date range if provided
         if ($request->has('start_date') && $request->has('end_date')) {
-            $query->whereBetween('analysis_date', [$request->start_date, $request->end_date]);
+            $calculationsQuery->whereBetween('analysis_date', [$request->start_date, $request->end_date]);
+            $recordsQuery->whereBetween('created_at', [$request->start_date, $request->end_date]);
         }
 
         // Check permission - if user can only view own results
         if (!Auth::user()->can('view lab results') && Auth::user()->can('view own lab results')) {
-            $query->where('user_id', Auth::id());
+            $calculationsQuery->where('user_id', Auth::id());
+            $recordsQuery->where('user_id', Auth::id());
         }
 
-        $oilLosses = $query->paginate(15);
+        $oilLosses = $calculationsQuery->paginate(15, ['*'], 'calculations');
+        $labRecords = $recordsQuery->paginate(15, ['*'], 'records');
 
         // Get statistics
         $statistics = [
-            'total_records' => LabCalculation::count(),
-            'records_today' => LabCalculation::whereDate('created_at', today())->count(),
+            'total_records' => LabCalculation::count() + LabRecord::count(),
+            'records_today' => LabCalculation::whereDate('created_at', today())->count() + LabRecord::whereDate('created_at', today())->count(),
+            'calculations_count' => LabCalculation::count(),
+            'records_count' => LabRecord::count(),
         ];
 
-        return view('lab.index', compact('oilLosses', 'statistics'));
+        return view('lab.index', compact('oilLosses', 'labRecords', 'statistics'));
     }
 
     /**
@@ -71,7 +81,7 @@ class LabController extends Controller
 
         // Dual-mode validation:
         // Mode 1 (Non-Numeric): kode (without manual time input)
-        // Mode 2 (Numeric): cawan_kosong + berat_basah
+        // Mode 2 (Numeric): kode_mode2 + cawan_kosong + berat_basah
         $validated = $request->validate([
             // Mode 1 fields
             'kode' => 'nullable|string|exists:lab_master_data,kode',
@@ -80,6 +90,7 @@ class LabController extends Controller
             'sampel_boy' => 'nullable|string|max:255',
             'parameter_lain' => 'nullable|string|max:500',
             // Mode 2 fields
+            'kode_mode2' => 'nullable|string|exists:lab_master_data,kode',
             'cawan_kosong' => 'nullable|numeric|min:0',
             'berat_basah' => 'nullable|numeric|min:0',
             'cawan_sample_kering' => 'nullable|numeric|min:0',
@@ -87,6 +98,7 @@ class LabController extends Controller
             'oil_labu' => 'nullable|numeric|min:0',
         ], [
             'kode.exists' => 'Kode tidak valid atau tidak ditemukan di master data',
+            'kode_mode2.exists' => 'Kode tidak valid atau tidak ditemukan di master data',
         ]);
 
         try {

@@ -15,7 +15,8 @@ class LabService
      * Validasi dan simpan data lab dengan dual-mode input
      * 
      * Mode 1: Non-numeric data (kode, jenis, operator, dll) - bisa multiple per day
-     * Mode 2: Numeric data (cawan_kosong, berat_basah, dll) - hanya 1 per day
+     * Mode 2: Numeric data (kode_mode2, cawan_kosong, berat_basah, dll) - hanya 1 per kode per day
+     * User BISA mengisi kedua mode sekaligus dalam satu submission
      * 
      * @param array $data
      * @param int $userId
@@ -24,32 +25,38 @@ class LabService
      */
     public function store(array $data, int $userId): array
     {
-        // Validasi dual-mode: user tidak boleh isi keduanya sekaligus
-        $isDataBaru = !empty($data['kode']); // Mode 1: Non-numeric
-        $isDataAngka = !empty($data['cawan_kosong']) || !empty($data['berat_basah']); // Mode 2: Numeric
+        $isMode1 = !empty($data['kode']); // Mode 1: Non-numeric
+        $isMode2 = !empty($data['kode_mode2']) && (!empty($data['cawan_kosong']) || !empty($data['berat_basah'])); // Mode 2: Numeric
 
-        if ($isDataBaru && $isDataAngka) {
-            throw new Exception('Pilih: Isi data Jam/Kode ATAU isi Angkanya! Tidak boleh keduanya sekaligus.');
-        }
-
-        if (!$isDataBaru && !$isDataAngka) {
-            throw new Exception('Minimal salah satu harus diisi: data Jam/Kode atau data Angka.');
+        if (!$isMode1 && !$isMode2) {
+            throw new Exception('Minimal salah satu mode harus diisi.');
         }
 
         DB::beginTransaction();
         try {
-            $result = [];
+            $results = [];
+            $messages = [];
 
-            if ($isDataBaru) {
-                // Mode 1: Simpan non-numeric data (bisa multiple per day)
-                $result = $this->storeNonNumericData($data, $userId);
-            } else {
-                // Mode 2: Simpan numeric data (hanya 1 per day dengan smart shifting)
-                $result = $this->storeNumericData($data, $userId);
+            // Mode 1: Simpan non-numeric data (jika diisi)
+            if ($isMode1) {
+                $result1 = $this->storeNonNumericData($data, $userId);
+                $results['mode1'] = $result1['record'];
+                $messages[] = $result1['message'];
+            }
+
+            // Mode 2: Simpan numeric data (jika diisi)
+            if ($isMode2) {
+                $result2 = $this->storeNumericData($data, $userId);
+                $results['mode2'] = $result2['calculation'];
+                $messages[] = $result2['message'];
             }
 
             DB::commit();
-            return $result;
+
+            return [
+                'results' => $results,
+                'message' => implode(' ', $messages),
+            ];
 
         } catch (Exception $e) {
             DB::rollBack();
@@ -94,14 +101,14 @@ class LabService
         return [
             'type' => 'non_numeric',
             'record' => $record,
-            'message' => 'Data non-numeric berhasil disimpan. Bisa input lagi untuk tanggal yang sama.',
+            'message' => "Data Jenis & Sampel (Mode 1) untuk kode {$data['kode']} berhasil disimpan.",
         ];
     }
 
     /**
      * Simpan data numeric (Mode 2: hanya 1 per kode per hari)
      * 
-     * FASE 1: Validasi kode harus diisi
+     * FASE 1: Validasi kode_mode2 harus diisi
      * FASE 2: Cek apakah kombinasi (tanggal + kode) sudah ada -> TOLAK jika sudah ada
      * FASE 3: Ambil master data dari kode
      * FASE 4: Hitung semua nilai (moist, dmwm, olwb, oldb, oil_losses)
@@ -113,27 +120,29 @@ class LabService
      */
     private function storeNumericData(array $data, int $userId): array
     {
-        // FASE 1: Validasi - kode harus diisi untuk mode 2
-        if (empty($data['kode'])) {
-            throw new Exception('Kode harus dipilih untuk input data angka.');
+        // FASE 1: Validasi - kode_mode2 harus diisi untuk mode 2
+        if (empty($data['kode_mode2'])) {
+            throw new Exception('Kode harus dipilih untuk input data angka (Mode 2).');
         }
+
+        $kode = $data['kode_mode2'];
 
         // FASE 2: Cek apakah kombinasi (analysis_date, kode) sudah ada
         $existing = LabCalculation::where('analysis_date', $data['analysis_date'])
-            ->where('kode', $data['kode'])
+            ->where('kode', $kode)
             ->first();
 
         if ($existing) {
-            throw new Exception("Kode '{$data['kode']}' untuk tanggal {$data['analysis_date']} sudah ada. Setiap kode hanya boleh diinput sekali per hari.");
+            throw new Exception("Kode '{$kode}' untuk tanggal {$data['analysis_date']} sudah ada. Setiap kode hanya boleh diinput sekali per hari.");
         }
 
         // FASE 3: Ambil master data dari kode
-        $masterData = LabMasterData::where('kode', $data['kode'])
+        $masterData = LabMasterData::where('kode', $kode)
             ->where('is_active', true)
             ->first();
 
         if (!$masterData) {
-            throw new Exception("Kode '{$data['kode']}' tidak ditemukan di master data.");
+            throw new Exception("Kode '{$kode}' tidak ditemukan di master data.");
         }
 
         // FASE 4: Hitung semua nilai menggunakan parseNum
@@ -152,7 +161,7 @@ class LabService
         return [
             'type' => 'numeric',
             'calculation' => $calculation,
-            'message' => "Data numeric untuk kode {$data['kode']} berhasil disimpan.",
+            'message' => "Data perhitungan (Mode 2) untuk kode {$kode} berhasil disimpan.",
         ];
     }
 
@@ -193,13 +202,9 @@ class LabService
         $minyak = $oilLabu - $labuKosong;
 
         // Hitung moist dan dmwm
-        $moist = (($totalCawanBasah - $cawanSampleKering) / $beratBasah) * 100;
-        $dmwm = 100 - $moist;
+        $moist = (($totalCawanBasah - $sampelSetelahOven) / $beratBasah);
 
-        // Validasi dmwm tidak boleh nol
-        if ($dmwm == 0) {
-            throw new Exception('DMWM tidak boleh 0.');
-        }
+        $moist == 0 ? $dmwm = 0 : $dmwm = 100 - $moist;
 
         // Hitung oil losses
         $olwb = ($minyak / $beratBasah) * 100;
@@ -209,17 +214,20 @@ class LabService
         $persen = $this->parseNum($masterData->persen);
         $persen4 = $this->parseNum($masterData->persen4);
 
-        // Validasi persen tidak boleh nol
-        if ($persen == 0) {
-            throw new Exception('Persen tidak boleh 0.');
+        // Hitung oil_losses jika persen tersedia
+        // Beberapa kode (JBP, CD, COT, HP, dll) tidak memerlukan perhitungan ini
+        if ($persen > 0 or $persen === null) {
+            $oilLosses = (($oldb * ($dmwm / 100) * $persen) - $persen4);
+        } else {
+            $oilLosses = 0; // Tidak dihitung untuk kode yang tidak memerlukan
         }
 
-        $oilLosses = (($oldb * ($dmwm / 100) * $persen) - $persen4);
+        $persen > 0 ? $oilLosses = (($oldb * ($dmwm / 100) * $persen) - $persen4) : $oilLosses = 0;
 
         // Get limits dari master data
-        $limit = $this->parseNum($masterData->limit);
-        $limit2 = $this->parseNum($masterData->limit2);
-        $limit3 = $this->parseNum($masterData->limit3);
+        $limitOLWB = $this->parseNum($masterData->limitOLWB);
+        $limitOLDB = $this->parseNum($masterData->limitOLDB);
+        $limitOL = $this->parseNum($masterData->limitOL);
 
         return [
             'cawan_kosong' => $cawanKosong,
@@ -235,9 +243,9 @@ class LabService
             'olwb' => round($olwb, 4),
             'oldb' => round($oldb, 4),
             'oil_losses' => round($oilLosses, 2),
-            'limit' => $limit,
-            'limit2' => $limit2,
-            'limit3' => $limit3,
+            'limitOLWB' => $limitOLWB,
+            'limitOLDB' => $limitOLDB,
+            'limitOL' => $limitOL,
             'persen' => $persen,
             'persen4' => $persen4,
         ];

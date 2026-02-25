@@ -12,62 +12,279 @@
             <x-ui.alert type="error" title="Gagal">{{ session('error') }}</x-ui.alert>
         </div>
     @endif
-    {{-- Form Tambah User --}}
-    <x-ui.card title="Tambah User Baru">
-        <form action="{{ route('users.store') }}" method="POST" class="space-y-6">
-            @csrf
 
-            {{-- Row 1: Nama & Username --}}
+    {{-- Daftar User --}}
+    <x-ui.card class="mt-8" title="Daftar Pengguna">
+        {{-- Search, Filter dan Button Tambah User --}}
+        <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {{-- Search dan Filter (mengambil space sama) --}}
+            <form method="GET" action="{{ route('users.index') }}" class="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
+                {{-- Search Input --}}
+                <div class="flex-1 relative">
+                    <input type="text" name="search" placeholder="Cari nama/username..." 
+                        value="{{ $search ?? '' }}" class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
+                        onkeyup="this.form.submit()">
+                </div>
 
-            <x-form.input label="Nama User" name="name" placeholder="Masukkan nama lengkap" :value="old('name')"
-                required />
+                {{-- Filter Role --}}
+                <div class="flex items-center gap-1 flex-1">
+                    <label for="role_filter" class="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">
+                        Role:
+                    </label>
+                    <select name="role_filter" id="role_filter" onchange="this.form.submit()"
+                        class="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-xs transition focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900">
+                        <option value="all" @selected(!isset($roleFilter) || $roleFilter === 'all')>
+                            Semua
+                        </option>
+                        @foreach ($roles as $role)
+                            <option value="{{ $role->id }}" @selected($roleFilter == $role->id)>
+                                {{ $role->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-            <x-form.input label="Username" name="username" placeholder="Masukkan username" :value="old('username')"
-                required />
+                {{-- Clear Search Button (Hidden by default) --}}
+                @if($search)
+                    <a href="{{ route('users.index') }}" class="hidden sm:inline-flex px-2 py-1.5 text-xs text-gray-600 hover:text-gray-900 rounded-lg border border-gray-300 hover:bg-gray-50 transition whitespace-nowrap bg-white">
+                        Clear
+                    </a>
+                @endif
+            </form>
 
-
-            {{-- Row 2: Password & Konfirmasi Password --}}
-
-            <x-form.input label="Password" name="password" type="password" placeholder="Min. 8 karakter"
-                hint="Minimal 8 karakter" required />
-
-            <x-form.input label="Konfirmasi Password" name="password_confirmation" type="password"
-                placeholder="Ulangi password" required />
-
-
-            {{-- Row 3: Role --}}
-            <div>
-                <label for="role_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Role <span class="text-red-500 ml-0.5">*</span>
-                </label>
-                <select name="role_id" id="role_id" class="w-full px-4 py-2 border rounded-lg text-sm transition focus:outline-none focus:ring-2 
-                           {{ $errors->has('role_id')
-    ? 'border-red-400 bg-red-50 focus:ring-red-400 text-red-800'
-    : 'border-gray-300 focus:ring-indigo-500 text-gray-900' }}" required>
-                    <option value="">-- Pilih Role --</option>
-                    @foreach ($roles as $id => $name)
-                        <option value="{{ $id }}" @selected(old('role_id') == $id)>{{ $name }}</option>
-                    @endforeach
-                </select>
-                @error('role_id')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
-
-
-            {{-- Action Buttons --}}
-            <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-700">
-                <button type="reset"
-                    class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium">
-                    Reset
+            {{-- Button Tambah User --}}
+            @can('create users')
+                <button onclick="openAddUserModal()" 
+                    class="w-full sm:w-auto inline-flex items-center justify-center sm:justify-start px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium whitespace-nowrap text-xs sm:text-sm">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Tambah User
                 </button>
+            @endcan
 
-                <x-ui.button type="submit" variant="primary">
-                    Simpan User
-                </x-ui.button>
+            {{-- Clear Search Button for Mobile --}}
+            @if($search)
+                <a href="{{ route('users.index') }}" class="sm:hidden px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 rounded-lg border border-gray-300 hover:bg-gray-50 transition text-center bg-white">
+                    Clear Search
+                </a>
+            @endif
+        </div>
+
+        @if ($users->isEmpty())
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20a9 9 0 0118 0v2H6v-2z" />
+                </svg>
+                <p class="mt-4 text-base sm:text-lg text-gray-500">Belum ada pengguna</p>
             </div>
-        </form>
+        @else
+            {{-- Desktop Table View --}}
+            <div class="hidden md:block overflow-x-auto -mx-6 sm:-mx-0">
+                <table class="w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Nama User
+                            </th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Username
+                            </th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Role
+                            </th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Aksi
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach ($users as $user)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 sm:px-6 py-4 text-sm font-medium text-gray-900">
+                                    {{ $user->name }}
+                                </td>
+                                <td class="px-4 sm:px-6 py-4 text-sm text-gray-900">
+                                    {{ $user->username }}
+                                </td>
+                                <td class="px-4 sm:px-6 py-4 text-sm">
+                                    @forelse ($user->getRoleNames() as $role)
+                                        <x-ui.badge>{{ $role }}</x-ui.badge>
+                                    @empty
+                                        <span class="text-gray-500 text-sm">-</span>
+                                    @endforelse
+                                </td>
+                                <td class="px-4 sm:px-6 py-4 text-sm font-medium">
+                                    <div class="flex items-center gap-3">
+                                        @can('edit users')
+                                            <a href="{{ route('users.edit', $user->id) }}"
+                                                class="inline-flex p-2 text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 rounded transition" title="Edit">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </a>
+                                        @endcan
+
+                                        @can('delete users')
+                                            <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline"
+                                                onsubmit="return confirm('Yakin ingin menghapus pengguna ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="inline-flex p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition" title="Hapus">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        @endcan
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Mobile Card View --}}
+            <div class="md:hidden space-y-4">
+                @foreach ($users as $user)
+                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-semibold text-gray-900">{{ $user->name }}</h3>
+                                <p class="text-sm text-gray-600">@{{ $user->username }}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                @can('edit users')
+                                    <a href="{{ route('users.edit', $user->id) }}"
+                                        class="inline-flex p-2 text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 rounded transition" title="Edit">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
+                                @can('delete users')
+                                    <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline"
+                                        onsubmit="return confirm('Yakin ingin menghapus pengguna ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="inline-flex p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition" title="Hapus">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                @endcan
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+                            <span class="text-sm text-gray-600">Role:</span>
+                            <div>
+                                @forelse ($user->getRoleNames() as $role)
+                                    <x-ui.badge>{{ $role }}</x-ui.badge>
+                                @empty
+                                    <span class="text-gray-500 text-sm">-</span>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- Pagination --}}
+            <div class="mt-6 overflow-x-auto">
+                {{ $users->appends(request()->query())->links() }}
+            </div>
+        @endif
     </x-ui.card>
+
+    {{-- Modal Add User --}}
+    <div id="addUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
+        
+        {{-- Modal Content --}}
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-screen overflow-y-auto">
+            
+            {{-- Modal Header --}}
+            <div class="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 sticky top-0 bg-white">
+                <h3 class="text-lg font-semibold text-gray-900">Tambah User Baru</h3>
+                <button onclick="closeAddUserModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Modal Body --}}
+            <div class="p-4 sm:p-6">
+                <form action="{{ route('users.store') }}" method="POST" class="space-y-4 sm:space-y-6">
+                    @csrf
+
+                    {{-- Nama User --}}
+                    <x-form.input label="Nama User" name="name" placeholder="Masukkan nama lengkap" 
+                        :value="old('name')" required />
+
+                    {{-- Username --}}
+                    <x-form.input label="Username" name="username" placeholder="Masukkan username" 
+                        :value="old('username')" required />
+
+                    {{-- Password --}}
+                    <x-form.input label="Password" name="password" type="password" 
+                        placeholder="Min. 8 karakter" hint="Minimal 8 karakter" required />
+
+                    {{-- Konfirmasi Password --}}
+                    <x-form.input label="Konfirmasi Password" name="password_confirmation" type="password"
+                        placeholder="Ulangi password" required />
+
+                    {{-- Role (Multi-select dengan max 2) --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Role <span class="text-red-500 ml-0.5">*</span>
+                            <span class="text-gray-500 text-xs font-normal">(Pilih maksimal 2)</span>
+                        </label>
+                        <div class="space-y-2 p-3 border border-gray-300 rounded-lg bg-gray-50">
+                            @forelse ($roles as $role)
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="role_ids[]" value="{{ $role->id }}" 
+                                        id="role_{{ $role->id }}" class="role-checkbox"
+                                        @checked(in_array($role->id, (array)old('role_ids', [])))
+                                        onchange="limitRoleCheckboxes(2)">
+                                    <label for="role_{{ $role->id }}" class="ml-2 text-sm text-gray-900 cursor-pointer">
+                                        {{ $role->name }}
+                                    </label>
+                                </div>
+                            @empty
+                                <p class="text-sm text-gray-500">Tidak ada role tersedia</p>
+                            @endforelse
+                        </div>
+                        @if ($errors->has('role_ids'))
+                            <p class="mt-1 text-xs text-red-600">{{ $errors->first('role_ids') }}</p>
+                        @endif
+                        @if ($errors->has('role_ids.*'))
+                            <p class="mt-1 text-xs text-red-600">{{ $errors->first('role_ids.*') }}</p>
+                        @endif
+                    </div>
+
+                    {{-- Action Buttons --}}
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 sm:pt-6 border-t border-gray-200">
+                        <button type="button" onclick="closeAddUserModal()"
+                            class="w-full sm:w-auto px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium text-sm">
+                            Batal
+                        </button>
+
+                        <x-ui.button type="submit" variant="primary" class="w-full sm:w-auto">
+                            Simpan User
+                        </x-ui.button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     {{-- Auto-dismiss flash messages after 4 seconds --}}
     <script>
@@ -81,6 +298,55 @@
                 }, 4000);
             }
         });
+
+        // Modal Functions
+        function openAddUserModal() {
+            document.getElementById('addUserModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal when clicking outside of it
+        document.getElementById('addUserModal')?.addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeAddUserModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeAddUserModal();
+            }
+        });
+
+        // Limit Role Checkboxes (Max 2)
+        function limitRoleCheckboxes(maxRoles) {
+            const checkboxes = document.querySelectorAll('.role-checkbox');
+            const checkedCount = document.querySelectorAll('.role-checkbox:checked').length;
+            
+            checkboxes.forEach(checkbox => {
+                if (!checkbox.checked && checkedCount >= maxRoles) {
+                    checkbox.disabled = true;
+                } else {
+                    checkbox.disabled = false;
+                }
+            });
+        }
+
+        // Initialize checkbox limit on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            limitRoleCheckboxes(2);
+        });
+
+        // Show modal if there are validation errors
+        @if ($errors->any())
+            openAddUserModal();
+        @endif
     </script>
 
 </x-layouts.app>

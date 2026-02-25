@@ -51,7 +51,8 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username', 'alpha_dash'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role_id' => ['required', 'integer', 'exists:roles,id'],
+            'role_ids' => ['required', 'array', 'min:1', 'max:2'],
+            'role_ids.*' => ['integer', 'exists:roles,id'],
         ]);
 
         try {
@@ -61,10 +62,13 @@ class AuthController extends Controller
                 'password' => Hash::make($validated['password']),
             ]);
 
-            $user->assignRole(Role::findById($validated['role_id'], 'web'));
-
+            // Assign multiple roles
+            $roles = Role::whereIn('id', $validated['role_ids'])->get();
+            $user->syncRoles($roles);
+            
+            $roleNames = $user->getRoleNames()->implode(', ');
             return redirect()->route('users.index')
-                ->with('success', "User '{$user->name}' berhasil dibuat dengan role '{$user->getRoleNames()->first()}'.");
+                ->with('success', "User '{$user->name}' berhasil dibuat dengan role '{$roleNames}'.");
 
         } catch (\Exception $e) {
             \Log::error('Error creating user: ' . $e->getMessage());

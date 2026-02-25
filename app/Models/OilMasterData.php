@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class LabMasterData extends Model
+class OilMasterData extends Model
 {
     use HasFactory;
 
-    protected $table = 'lab_master_data';
+    protected $table = 'oil_master_data';
 
     protected $fillable = [
         'kode',

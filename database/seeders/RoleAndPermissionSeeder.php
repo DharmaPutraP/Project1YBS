@@ -47,23 +47,23 @@ class RoleAndPermissionSeeder extends Seeder
         // ══════════════════════════════════════════════════════════════════════
         // ── LABORATORIUM ──────────────────────────────────────────────────────
         // ══════════════════════════════════════════════════════════════════════
-        'view lab',                       // Lihat halaman lab
-        'view lab results',               // Lihat semua hasil lab
-        'view own lab results',           // Hanya lihat hasil lab yang diinput sendiri
-        'create lab results',             // Input hasil analisa lab baru
-        'edit lab results',               // Edit hasil lab yang belum diapprove
-        'edit own lab results',           // Hanya edit hasil lab sendiri
-        'delete lab results',             // Hapus hasil lab
-        'approve lab results',            // Approve/finalisasi hasil lab
-        'reject lab results',             // Reject hasil lab yang tidak valid
-        'print lab certificate',          // Cetak sertifikat hasil lab
-        'export lab data',                // Export data lab ke Excel/PDF
+        'view oil',                       // Lihat halaman lab
+        'view oil results',               // Lihat semua hasil lab
+        'view own oil results',           // Hanya lihat hasil lab yang diinput sendiri
+        'create oil results',             // Input hasil analisa lab baru
+        'edit oil results',               // Edit hasil oil losses yang belum diapprove
+        'edit own oil results',           // Hanya Edit hasil oil losses sendiri
+        'delete oil results',             // Hapus hasil lab
+        'approve oil results',            // Approve/finalisasi hasil oil losses
+        'reject oil results',             // Reject hasil oil losses yang tidak valid
+        'print oil certificate',          // Cetak sertifikat hasil oil losses
+        'export oil data',                // Export data oil losses ke Excel/PDF
 
         // ── Sample Management (Sampel Lab) ────────────────────────────────────
-        'view lab samples',               // Lihat daftar sampel
-        'create lab samples',             // Daftarkan sampel baru
-        'edit lab samples',               // Edit info sampel
-        'delete lab samples',             // Hapus sampel
+        'view oil samples',               // Lihat daftar sampel
+        'create oil samples',             // Daftarkan sampel baru
+        'edit oil samples',               // Edit info sampel
+        'delete oil samples',             // Hapus sampel
 
         // ══════════════════════════════════════════════════════════════════════
         // ── TIMBANGAN (WEIGHBRIDGE) ───────────────────────────────────────────
@@ -159,16 +159,16 @@ class RoleAndPermissionSeeder extends Seeder
             'export dashboard data',
 
             // Laboratorium - Full Access
-            'view lab',
-            'view lab results',
-            'create lab results',
-            'edit lab results',
-            'approve lab results',
-            'reject lab results',
-            'print lab certificate',
-            'export lab data',
-            'view lab samples',
-            'create lab samples',
+            'view oil',
+            'view oil results',
+            'create oil results',
+            'edit oil results',
+            'approve oil results',
+            'reject oil results',
+            'print oil certificate',
+            'export oil data',
+            'view oil samples',
+            'create oil samples',
 
             // Timbangan - Full Access
             'view timbangan',
@@ -207,28 +207,28 @@ class RoleAndPermissionSeeder extends Seeder
 
         // ══════════════════════════════════════════════════════════════════════
         // ── KEPALA LAB (Lab Supervisor) ───────────────────────────────────────
-        // Mengawasi dan approve hasil lab, manage staff lab
+        // Mengawasi dan approve hasil oil losses, manage staff oil losses
         // ══════════════════════════════════════════════════════════════════════
         'Kepala Lab' => [
             'view dashboard',
             'view dashboard analytics',
 
-            // Lab - supervisory level
-            'view lab',
-            'view lab results',
-            'create lab results',
-            'edit lab results',
-            'delete lab results',
-            'approve lab results',
-            'reject lab results',
-            'print lab certificate',
-            'export lab data',
+            // Oil Losses - supervisory level
+            'view oil',
+            'view oil results',
+            'create oil results',
+            'edit oil results',
+            'delete oil results',
+            'approve oil results',
+            'reject oil results',
+            'print oil certificate',
+            'export oil data',
 
             // Sample management
-            'view lab samples',
-            'create lab samples',
-            'edit lab samples',
-            'delete lab samples',
+            'view oil samples',
+            'create oil samples',
+            'edit oil samples',
+            'delete oil samples',
 
             // Reports
             'view reports',
@@ -248,17 +248,17 @@ class RoleAndPermissionSeeder extends Seeder
             'view dashboard',
 
             // Lab - operational level (own work only)
-            'view lab',
-            'view lab results',
-            'view own lab results',
-            'create lab results',
-            'edit own lab results',
-            'print lab certificate',
+            'view oil',
+            'view oil results',
+            'view own oil results',
+            'create oil results',
+            'edit own oil results',
+            'print oil certificate',
 
             // Sample
-            'view lab samples',
-            'create lab samples',
-            'edit lab samples',
+            'view oil samples',
+            'create oil samples',
+            'edit oil samples',
 
             'receive notifications',
         ],
@@ -346,7 +346,7 @@ class RoleAndPermissionSeeder extends Seeder
 
             // View related data
             'view timbangan',
-            'view lab results',
+            'view oil results',
 
             // Reports
             'view reports',
@@ -432,8 +432,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view dashboard analytics',
 
             // View-only access
-            'view lab',
-            'view lab results',
+            'view oil',
+            'view oil results',
             'view timbangan',
             'view production',
             'view inventory',

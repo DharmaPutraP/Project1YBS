@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\LabController;
+use App\Http\Controllers\OilController;
 use App\Http\Controllers\TimbanganController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
@@ -32,44 +32,44 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // ══════════════════════════════════════════════════════════════════════════
-    // ── LABORATORIUM ──────────────────────────────────────────────────────────
+    // ── OIL LOSSES ──────────────────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════════════════
-    Route::prefix('lab')->name('lab.')->group(function () {
-        Route::get('/', [LabController::class, 'index'])
+    Route::prefix('oil')->name('oil.')->group(function () {
+        Route::get('/', [OilController::class, 'index'])
             ->name('index')
-            ->middleware('permission:view lab');
+            ->middleware('permission:view oil');
 
-        Route::get('/create', [LabController::class, 'create'])
+        Route::get('/create', [OilController::class, 'create'])
             ->name('create')
-            ->middleware('permission:create lab results');
+            ->middleware('permission:create oil results');
 
-        Route::post('/', [LabController::class, 'store'])
+        Route::post('/', [OilController::class, 'store'])
             ->name('store')
-            ->middleware('permission:create lab results');
+            ->middleware('permission:create oil results');
 
-        Route::get('/{labCalculation}', [LabController::class, 'show'])
+        Route::get('/{oilCalculation}', [OilController::class, 'show'])
             ->name('show')
             ->middleware('permission:view lab results');
 
-        Route::get('/{labCalculation}/edit', [LabController::class, 'edit'])
+        Route::get('/{oilCalculation}/edit', [OilController::class, 'edit'])
             ->name('edit')
-            ->middleware('permission:edit lab results');
+            ->middleware('permission:edit oil results');
 
-        Route::put('/{labCalculation}', [LabController::class, 'update'])
+        Route::put('/{oilCalculation}', [OilController::class, 'update'])
             ->name('update')
-            ->middleware('permission:edit lab results');
+            ->middleware('permission:edit oil results');
 
-        Route::delete('/{labCalculation}', [LabController::class, 'destroy'])
+        Route::delete('/{oilCalculation}', [OilController::class, 'destroy'])
             ->name('destroy')
-            ->middleware('permission:delete lab results');
+            ->middleware('permission:delete oil results');
 
-        Route::get('/{labCalculation}/print', [LabController::class, 'print'])
+        Route::get('/{oilCalculation}/print', [OilController::class, 'print'])
             ->name('print')
             ->middleware('permission:print lab certificate');
 
-        Route::get('/export', [LabController::class, 'export'])
+        Route::get('/export', [OilController::class, 'export'])
             ->name('export')
-            ->middleware('permission:export lab data');
+            ->middleware('permission:export oil data');
     });
 
     // ══════════════════════════════════════════════════════════════════════════

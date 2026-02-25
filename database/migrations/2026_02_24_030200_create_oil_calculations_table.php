@@ -9,17 +9,17 @@ return new class extends Migration {
      * Run the migrations.
      * 
      * Table untuk data ANGKA yang HANYA BOLEH 1x PER HARI
-     * Smart shifting: angka otomatis pindah ke record paling atas untuk tanggal tersebut
+     * Menggunakan created_at untuk timestamp (tanggal & jam input)
+     * Unique constraint: 1 kode per hari (divalidasi di application level)
      */
     public function up(): void
     {
-        Schema::create('lab_calculations', function (Blueprint $table) {
+        Schema::create('oil_calculations', function (Blueprint $table) {
             $table->id();
 
-            // ── User & Date & Kode (UNIQUE per hari per kode) ────────────────
+            // ── User & Kode (UNIQUE per hari per kode via validation) ────────
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->date('analysis_date')->comment('Tanggal analisa');
-            $table->foreignId('lab_master_id')->nullable()->constrained('lab_master_data')->onDelete('set null');
+            $table->foreignId('oil_master_id')->nullable()->constrained('oil_master_data')->onDelete('set null');
             $table->string('kode')->comment('Kode sample (setiap kode hanya 1x per hari)');
 
             // ── Input Data Angka ─────────────────────────────────────────────
@@ -52,9 +52,10 @@ return new class extends Migration {
             $table->softDeletes();
 
             // ── Indexes ──────────────────────────────────────────────────────
-            $table->unique(['analysis_date', 'kode'], 'unique_date_kode');
-            $table->index('analysis_date');
+            // Note: Unique constraint (kode + tanggal) divalidasi di application level
+            // karena menggunakan DATE(created_at) yang tidak bisa diindex langsung
             $table->index('kode');
+            $table->index('created_at');
         });
     }
 
@@ -63,6 +64,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('lab_calculations');
+        Schema::dropIfExists('oil_calculations');
     }
 };

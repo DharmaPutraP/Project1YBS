@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\LabCalculation;
-use App\Models\LabMasterData;
-use App\Models\LabRecord;
+use App\Models\OilCalculation;
+use App\Models\OilMasterData;
+use App\Models\OilRecord;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class LabService
+class OilService
 {
     /**
      * Validasi dan simpan data lab dengan dual-mode input
@@ -75,7 +75,7 @@ class LabService
     private function storeNonNumericData(array $data, int $userId): array
     {
         // VLOOKUP equivalent: ambil data dari master berdasarkan kode
-        $masterData = LabMasterData::where('kode', $data['kode'])
+        $masterData = OilMasterData::where('kode', $data['kode'])
             ->where('is_active', true)
             ->first();
 
@@ -84,10 +84,8 @@ class LabService
         }
 
         // Simpan ke lab_records (tidak ada unique constraint, bisa multiple per day)
-        $record = LabRecord::create([
+        $record = OilRecord::create([
             'user_id' => $userId,
-            'analysis_date' => $data['analysis_date'],
-            'analysis_time' => $data['analysis_time'] ?? now()->format('H:i'),
             'lab_master_id' => $masterData->id,
             'kode' => $masterData->kode,
             'column_name' => $masterData->column_name,
@@ -109,7 +107,7 @@ class LabService
      * Simpan data numeric (Mode 2: hanya 1 per kode per hari)
      * 
      * FASE 1: Validasi kode_mode2 harus diisi
-     * FASE 2: Cek apakah kombinasi (tanggal + kode) sudah ada -> TOLAK jika sudah ada
+     * FASE 2: Cek apakah kombinasi (tanggal created_at + kode) sudah ada -> TOLAK jika sudah ada
      * FASE 3: Ambil master data dari kode
      * FASE 4: Hitung semua nilai (moist, dmwm, olwb, oldb, oil_losses)
      * FASE 5: Simpan ke lab_calculations
@@ -127,17 +125,17 @@ class LabService
 
         $kode = $data['kode_mode2'];
 
-        // FASE 2: Cek apakah kombinasi (analysis_date, kode) sudah ada
-        $existing = LabCalculation::where('analysis_date', $data['analysis_date'])
+        // FASE 2: Cek apakah kombinasi (tanggal hari ini + kode) sudah ada
+        $existing = OilCalculation::whereDate('created_at', today())
             ->where('kode', $kode)
             ->first();
 
         if ($existing) {
-            throw new Exception("Kode '{$kode}' untuk tanggal {$data['analysis_date']} sudah ada. Setiap kode hanya boleh diinput sekali per hari.");
+            throw new Exception("Kode '{$kode}' untuk hari ini sudah ada. Setiap kode hanya boleh diinput sekali per hari.");
         }
 
         // FASE 3: Ambil master data dari kode
-        $masterData = LabMasterData::where('kode', $kode)
+        $masterData = OilMasterData::where('kode', $kode)
             ->where('is_active', true)
             ->first();
 
@@ -149,10 +147,9 @@ class LabService
         $calculations = $this->calculateAllValues($data, $masterData);
 
         // FASE 5: Simpan ke lab_calculations
-        $calculation = LabCalculation::create(
+        $calculation = OilCalculation::create(
             array_merge($calculations, [
                 'user_id' => $userId,
-                'analysis_date' => $data['analysis_date'],
                 'lab_master_id' => $masterData->id,
                 'kode' => $masterData->kode,
             ])
@@ -202,13 +199,13 @@ class LabService
         $minyak = $oilLabu - $labuKosong;
 
         // Hitung moist dan dmwm
-        $moist = (($totalCawanBasah - $sampelSetelahOven) / $beratBasah);
+        $moist = (($beratBasah - $sampelSetelahOven) / $beratBasah) * 100;
 
         $moist == 0 ? $dmwm = 0 : $dmwm = 100 - $moist;
 
         // Hitung oil losses
         $olwb = ($minyak / $beratBasah) * 100;
-        $oldb = ($olwb / $dmwm) * 100;
+        $oldb = $dmwm / 100 != 0 ? ($olwb / ($dmwm / 100)) : 0;
 
         // Get persen dari master data
         $persen = $this->parseNum($masterData->persen);
@@ -216,11 +213,6 @@ class LabService
 
         // Hitung oil_losses jika persen tersedia
         // Beberapa kode (JBP, CD, COT, HP, dll) tidak memerlukan perhitungan ini
-        if ($persen > 0 or $persen === null) {
-            $oilLosses = (($oldb * ($dmwm / 100) * $persen) - $persen4);
-        } else {
-            $oilLosses = 0; // Tidak dihitung untuk kode yang tidak memerlukan
-        }
 
         $persen > 0 ? $oilLosses = (($oldb * ($dmwm / 100) * $persen) - $persen4) : $oilLosses = 0;
 

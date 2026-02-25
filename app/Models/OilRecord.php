@@ -7,15 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class LabRecord extends Model
+class OilRecord extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'oil_records';
+
     protected $fillable = [
         'user_id',
-        'analysis_date',
-        'analysis_time',
-        'lab_master_id',
+        'oil_master_id',
         'kode',
         'column_name',
         'pivot',
@@ -26,8 +26,7 @@ class LabRecord extends Model
     ];
 
     protected $casts = [
-        'analysis_date' => 'date',
-        'analysis_time' => 'datetime:H:i',
+        // Using created_at for timestamp
     ];
 
     /**
@@ -43,14 +42,14 @@ class LabRecord extends Model
      */
     public function masterData(): BelongsTo
     {
-        return $this->belongsTo(LabMasterData::class, 'lab_master_id');
+        return $this->belongsTo(OilMasterData::class, 'oil_master_id');
     }
 
     /**
-     * Scope untuk filter berdasarkan tanggal.
+     * Scope untuk filter berdasarkan tanggal created_at.
      */
     public function scopeForDate($query, $date)
     {
-        return $query->whereDate('analysis_date', $date);
+        return $query->whereDate('created_at', $date);
     }
 }

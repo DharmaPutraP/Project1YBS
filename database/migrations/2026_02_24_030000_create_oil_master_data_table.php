@@ -12,7 +12,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('lab_master_data', function (Blueprint $table) {
+        Schema::create('oil_master_data', function (Blueprint $table) {
             $table->id();
 
             // ── Identifikasi Sample ──────────────────────────────────────────
@@ -47,6 +47,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('lab_master_data');
+        Schema::dropIfExists('oil_master_data');
     }
 };

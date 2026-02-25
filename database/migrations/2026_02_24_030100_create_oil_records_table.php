@@ -9,19 +9,18 @@ return new class extends Migration {
      * Run the migrations.
      * 
      * Table untuk data NON-ANGKA yang bisa diinput berkali-kali dalam sehari
+     * Menggunakan created_at untuk timestamp
      */
     public function up(): void
     {
-        Schema::create('lab_records', function (Blueprint $table) {
+        Schema::create('oil_records', function (Blueprint $table) {
             $table->id();
 
-            // ── User & Timestamp ─────────────────────────────────────────────
+            // ── User ─────────────────────────────────────────────────────────────
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->date('analysis_date')->comment('Tanggal analisa');
-            $table->time('analysis_time')->comment('Jam analisa');
 
             // ── Data Non-Angka (bisa banyak per hari) ───────────────────────
-            $table->foreignId('lab_master_id')->nullable()->constrained('lab_master_data')->onDelete('set null');
+            $table->foreignId('oil_master_id')->nullable()->constrained('oil_master_data')->onDelete('set null');
             $table->string('kode')->comment('Kode sample (dari dropdown)');
             $table->string('column_name')->nullable()->comment('Auto-filled dari master');
             $table->string('pivot')->nullable()->comment('Auto-filled dari master');
@@ -34,8 +33,8 @@ return new class extends Migration {
             $table->softDeletes();
 
             // ── Indexes ──────────────────────────────────────────────────────
-            $table->index('analysis_date');
-            $table->index(['analysis_date', 'kode']);
+            $table->index('kode');
+            $table->index('created_at');
             $table->index('user_id');
         });
     }
@@ -45,6 +44,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('lab_records');
+        Schema::dropIfExists('oil_records');
     }
 };

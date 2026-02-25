@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\LabMasterData;
+use App\Models\OilMasterData;
 use Illuminate\Database\Seeder;
 
-class LabMasterDataSeeder extends Seeder
+class OilMasterDataSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -91,10 +91,10 @@ class LabMasterDataSeeder extends Seeder
         ];
 
         // Delete existing data (cannot truncate due to foreign key constraint)
-        LabMasterData::query()->delete();
+        OilMasterData::query()->delete();
 
         foreach ($masterData as $data) {
-            LabMasterData::create($data);
+            OilMasterData::create($data);
         }
 
         $this->command->info('✅ Lab master data seeded successfully!');

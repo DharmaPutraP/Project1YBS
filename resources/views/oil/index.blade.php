@@ -1,4 +1,4 @@
-<x-layouts.app title="Data Lab - Oil Losses">
+<x-layouts.app title="Data Oil Losses - Oil Losses">
 
     {{-- ── Flash Messages ───────────────────────────────────────────── --}}
     @if (session('success'))
@@ -83,23 +83,23 @@
     </div>
 
     {{-- ── Main Card with Tabs ───────────────────────────────────────── --}}
-    <x-ui.card title="Data Lab Oil Losses">
+    <x-ui.card title="Data Oil Losses Oil Losses">
         {{-- Action Buttons --}}
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center gap-3">
-                @can('create lab results')
-                    <a href="{{ route('lab.create') }}"
+                @can('create oil results')
+                    <a href="{{ route('oil.create') }}"
                         class="inline-flex items-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        Input Data Lab
+                        Input Data Oil Losses
                     </a>
                 @endcan
             </div>
 
-            @can('export lab data')
-                <a href="{{ route('lab.export') }}"
+            @can('export oil data')
+                <a href="{{ route('oil.export') }}"
                     class="inline-flex items-center px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -108,6 +108,67 @@
                     Export Data
                 </a>
             @endcan
+        </div>
+
+        {{-- Date Range Filter --}}
+        <div class="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <form method="GET" action="{{ route('oil.index') }}" class="flex flex-col sm:flex-row gap-4 items-end">
+                <div class="flex-1">
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">
+                        Tanggal Mulai
+                    </label>
+                    <input type="date" id="start_date" name="start_date" value="{{ request('start_date') }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+
+                <div class="flex-1">
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">
+                        Tanggal Akhir
+                    </label>
+                    <input type="date" id="end_date" name="end_date" value="{{ request('end_date') }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="submit"
+                        class="inline-flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        Filter
+                    </button>
+
+                    @if(request('start_date') || request('end_date'))
+                        <a href="{{ route('oil.index') }}"
+                            class="inline-flex items-center px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Reset
+                        </a>
+                    @endif
+                </div>
+            </form>
+
+            @if(request('start_date') || request('end_date'))
+                <div class="mt-3 text-sm text-gray-600">
+                    <span class="font-medium">Filter aktif:</span>
+                    @if(request('start_date'))
+                        <span
+                            class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            Dari: {{ \Carbon\Carbon::parse(request('start_date'))->format('d M Y') }}
+                        </span>
+                    @endif
+                    @if(request('end_date'))
+                        <span
+                            class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            Sampai: {{ \Carbon\Carbon::parse(request('end_date'))->format('d M Y') }}
+                        </span>
+                    @endif
+                </div>
+            @endif
         </div>
 
         {{-- Tabs Navigation --}}
@@ -130,15 +191,15 @@
 
         {{-- Tab 1: Data Non-Angka (Lab Records) --}}
         <div id="content-records" class="tab-content">
-            @if ($labRecords->isEmpty())
+            @if ($oilRecords->isEmpty())
                 <div class="text-center py-12">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     <p class="mt-4 text-lg text-gray-500">Belum ada data jenis & sampel</p>
-                    @can('create lab results')
-                        <a href="{{ route('lab.create') }}"
+                    @can('create oil results')
+                        <a href="{{ route('oil.create') }}"
                             class="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                             Input Data Pertama
                         </a>
@@ -176,7 +237,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach ($labRecords as $record)
+                            @foreach (\$oilRecords as $record)
                                 <tr class="hover:bg-blue-50">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ $record->created_at->format('d/m/Y H:i') }}
@@ -204,8 +265,8 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex items-center gap-2">
-                                            @can('delete lab results')
-                                                <form action="{{ route('lab.destroy', $record->id) }}" method="POST" class="inline"
+                                            @can('delete oil results')
+                                                <form action="{{ route('oil.destroy', $record->id) }}" method="POST" class="inline"
                                                     onsubmit="return confirm('Yakin ingin menghapus data ini?')">
                                                     @csrf
                                                     @method('DELETE')
@@ -227,7 +288,7 @@
 
                 {{-- Pagination --}}
                 <div class="mt-6">
-                    {{ $labRecords->links() }}
+                    {{ \$oilRecords->links() }}
                 </div>
             @endif
         </div>
@@ -241,8 +302,8 @@
                             d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                     <p class="mt-4 text-lg text-gray-500">Belum ada data perhitungan lab</p>
-                    @can('create lab results')
-                        <a href="{{ route('lab.create') }}"
+                    @can('create oil results')
+                        <a href="{{ route('oil.create') }}"
                             class="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                             Input Data Pertama
                         </a>
@@ -254,7 +315,7 @@
                         <thead class="bg-purple-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                    Tanggal Analisa
+                                    Tanggal Input
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                     Kode
@@ -286,7 +347,7 @@
                             @foreach ($oilLosses as $oilLoss)
                                 <tr class="hover:bg-purple-50">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $oilLoss->analysis_date->format('d/m/Y') }}
+                                        {{ $oilLoss->created_at->format('d/m/Y H:i') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-purple-900">
                                         {{ $oilLoss->kode }}
@@ -298,10 +359,40 @@
                                         {{ number_format($oilLoss->dmwm ?? 0, 4) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ number_format($oilLoss->olwb ?? 0, 4) }}
+                                        <!-- {{ number_format($oilLoss->olwb ?? 0, 4) }} -->
+                                        @php
+                                            $olwb_calc = $oilLoss->olwb ?? 0;
+                                            $limitolwb = $oilLoss->limitOLWB ?? 0;
+                                            $oilLoss->kode == 'COT IN' ? $isGood = $olwb_calc > $limitolwb && $limitolwb > 0 : $isGood = $olwb_calc <= $limitolwb && $limitolwb > 0;
+                                        @endphp
+                                        <span @class([
+                                            'font-semibold',
+                                            'text-green-600' => $isGood,
+                                            'text-red-600' => !$isGood && $limitolwb > 0,
+                                        ])>
+                                            {{ number_format($olwb_calc, 2) }}
+                                        </span>
+                                        <span class="text-xs text-gray-500 block">Limit:
+                                            {{ $limitolwb > 0 ? number_format($limitolwb, 2) : '-' }}</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ number_format($oilLoss->oldb ?? 0, 4) }}
+                                        <!-- {{ number_format($oilLoss->oldb ?? 0, 4) }} -->
+                                        @php
+                                            $oldb_calc = $oilLoss->oldb ?? 0;
+                                            $limitoldb = $oilLoss->limitOLDB ?? 0;
+                                            $isGood = $oldb_calc <= $limitoldb && $limitoldb > 0;
+                                        @endphp
+                                        <span @class([
+                                            'font-semibold',
+                                            'text-green-600' => $isGood,
+                                            'text-red-600' => !$isGood && $limitoldb > 0,
+                                        ])>
+                                            {{ number_format($oldb_calc, 2) }}
+                                        </span>
+                                        <span class="text-xs text-gray-500 block">
+                                            Limit: {{ $limitoldb > 0 ? number_format($limitoldb, 2) : '-' }}
+                                        </span>
+
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         @php
@@ -309,20 +400,25 @@
                                             $limitOL = $oilLoss->limitOL ?? 0;
                                             $isGood = $losses <= $limitOL && $limitOL > 0;
                                         @endphp
-                                        <span class="font-semibold {{ $isGood ? 'text-green-600' : 'text-red-600' }}">
-                                            {{ number_format($losses, 4) }}
+                                        <span @class([
+                                            'font-semibold',
+                                            'text-green-600' => $isGood,
+                                            'text-red-600' => !$isGood && $limitOL > 0,
+                                        ])>
+                                            {{ number_format($losses, 2) }}
                                         </span>
-                                        @if($limitOL > 0)
-                                            <span class="text-xs text-gray-500 block">Limit: {{ number_format($limitOL, 4) }}</span>
-                                        @endif
+
+                                        <span class="text-xs text-gray-500 block">Limit:
+                                            {{ $limitOL > 0 ? number_format($limitOL, 2) : '-' }}</span>
+
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $oilLoss->user->name }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex items-center gap-2">
-                                            @can('delete lab results')
-                                                <form action="{{ route('lab.destroy', $oilLoss->id) }}" method="POST" class="inline"
+                                            @can('delete oil results')
+                                                <form action="{{ route('oil.destroy', $oilLoss->id) }}" method="POST" class="inline"
                                                     onsubmit="return confirm('Yakin ingin menghapus data ini?')">
                                                     @csrf
                                                     @method('DELETE')
@@ -396,3 +492,5 @@
     </script>
 
 </x-layouts.app>
+
+

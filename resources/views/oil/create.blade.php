@@ -1,4 +1,4 @@
-<x-layouts.app title="Input Data Lab Oil Losses">
+<x-layouts.app title="Input Data Oil Losses Oil Losses">
 
     {{-- Select2 CSS --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -96,9 +96,9 @@
         </div>
     </x-ui.card>
 
-    {{-- Form Input Data Lab dengan Dual-Mode --}}
-    <x-ui.card title="Input Data Lab Oil Losses">
-        <form action="{{ route('lab.store') }}" method="POST" id="labForm" class="space-y-6">
+    {{-- Form Input Data Oil Losses dengan Dual-Mode --}}
+    <x-ui.card title="Input Data Oil Losses Oil Losses">
+        <form action="{{ route('oil.store') }}" method="POST" id="labForm" class="space-y-6">
             @csrf
 
             {{-- Info: Tanggal & Jam Otomatis --}}
@@ -326,7 +326,7 @@
 
             {{-- Action Buttons --}}
             <div class="flex justify-end gap-3 pt-6 border-t border-gray-200">
-                <a href="{{ route('lab.index') }}"
+                <a href="{{ route('oil.index') }}"
                     class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium">
                     Batal
                 </a>
@@ -430,3 +430,4 @@
     </script>
 
 </x-layouts.app>
+

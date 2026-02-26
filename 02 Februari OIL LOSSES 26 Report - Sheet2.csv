@@ -1,0 +1,7 @@
+Jenis,Bobot,100,90,80,70,60,50
+Press,Limit,3.5,3.81,4.1,4.4,4.7,5
+Bunch Press 1,Limit,1,1.31,1.61,1.91,2.21,2.26
+SOLID,Limit,2,2.41,2.81,3.21,3.61,4
+HEAVY PHASE,Limit,0.7,0.81,0.91,1.11,1.21,1.31
+Effluent,Limit,0.5,0.71,0.91,1.11,1.31,1.51
+FEED Decanter,Limit,6,8,10,12,14,16

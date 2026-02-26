@@ -83,7 +83,7 @@
     </div>
 
     {{-- ── Main Card with Tabs ───────────────────────────────────────── --}}
-    <x-ui.card title="Data Oil Losses Oil Losses">
+    <x-ui.card title="Data Oil Losses">
         {{-- Action Buttons --}}
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -114,18 +114,33 @@
         <div class="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
             <form method="GET" action="{{ route('oil.index') }}" class="flex flex-col sm:flex-row gap-4 items-end">
                 <div class="flex-1">
-                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">
-                        Tanggal Mulai
+                    <label for="kode" class="block text-sm font-medium text-gray-700 mb-1">
+                        Filter Kode <span class="text-xs text-gray-500">(Opsional)</span>
                     </label>
-                    <input type="date" id="start_date" name="start_date" value="{{ request('start_date') }}"
+                    <select name="kode" id="kode"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="">-- Semua Kode --</option>
+                        @foreach($kodeOptions as $kodeValue => $kodeLabel)
+                            <option value="{{ $kodeValue }}" {{ request('kode') == $kodeValue ? 'selected' : '' }}>
+                                {{ $kodeLabel }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex-1">
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">
+                        Tanggal Mulai <span class="text-xs text-gray-500">(Default: Hari ini)</span>
+                    </label>
+                    <input type="date" id="start_date" name="start_date" value="{{ $startDate }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
 
                 <div class="flex-1">
                     <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">
-                        Tanggal Akhir
+                        Tanggal Akhir <span class="text-xs text-gray-500">(Default: Hari ini)</span>
                     </label>
-                    <input type="date" id="end_date" name="end_date" value="{{ request('end_date') }}"
+                    <input type="date" id="end_date" name="end_date" value="{{ $endDate }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
 
@@ -139,36 +154,45 @@
                         Filter
                     </button>
 
-                    @if(request('start_date') || request('end_date'))
+                    @if(request('start_date') && request('start_date') != now()->format('Y-m-d') || request('end_date') && request('end_date') != now()->format('Y-m-d') || request('kode'))
                         <a href="{{ route('oil.index') }}"
                             class="inline-flex items-center px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                            Reset
+                            Reset ke Hari Ini
                         </a>
                     @endif
                 </div>
             </form>
 
-            @if(request('start_date') || request('end_date'))
-                <div class="mt-3 text-sm text-gray-600">
-                    <span class="font-medium">Filter aktif:</span>
-                    @if(request('start_date'))
-                        <span
-                            class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                            Dari: {{ \Carbon\Carbon::parse(request('start_date'))->format('d M Y') }}
-                        </span>
-                    @endif
-                    @if(request('end_date'))
-                        <span
-                            class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                            Sampai: {{ \Carbon\Carbon::parse(request('end_date'))->format('d M Y') }}
-                        </span>
-                    @endif
-                </div>
-            @endif
+            <div class="mt-3 text-sm text-gray-600">
+                <span class="font-medium">Menampilkan data:</span>
+                @if($startDate == $endDate)
+                    <span
+                        class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        📅 {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }}
+                    </span>
+                @else
+                    <span
+                        class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        📅 {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} -
+                        {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+                    </span>
+                @endif
+                @if(request('kode'))
+                    <span
+                        class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        🔖 Kode: {{ request('kode') }}
+                    </span>
+                @else
+                    <span
+                        class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        🔖 Semua Kode
+                    </span>
+                @endif
+            </div>
         </div>
 
         {{-- Tabs Navigation --}}
@@ -225,9 +249,9 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                     Sampel Boy
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                    Parameter Lain
-                                </th>
+                                <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        Parameter Lain
+                                    </th> -->
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                     Input By
                                 </th>
@@ -257,9 +281,9 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ $record->sampel_boy ?? '-' }}
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                        {{ $record->parameter_lain ?? '-' }}
-                                    </td>
+                                    <!-- <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                                                {{ $record->parameter_lain ?? '-' }}
+                                            </td> -->
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $record->user->name }}
                                     </td>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\OilCalculation;
 use App\Models\OilMasterData;
 use App\Models\OilRecord;
+use App\Models\BobotConfig;
+use App\Models\DailyBobotAverage;
 use App\Services\OilService;
 use Exception;
 use Illuminate\Http\Request;
@@ -24,18 +26,24 @@ class OilController extends Controller
      */
     public function index(Request $request)
     {
+        // Default filter date: hari ini untuk start dan end
+        $startDate = $request->input('start_date', now()->format('Y-m-d'));
+        $endDate = $request->input('end_date', now()->format('Y-m-d'));
+
         // Query for Mode 2: Lab Calculations (numeric data)
         $calculationsQuery = OilCalculation::with(['user'])
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->orderBy('created_at', 'desc');
 
         // Query for Mode 1: Lab Records (non-numeric data)
         $recordsQuery = OilRecord::with(['user'])
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->orderBy('created_at', 'desc');
 
-        // Filter by date range if provided
-        if ($request->has('start_date') && $request->has('end_date')) {
-            $calculationsQuery->whereBetween('created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
-            $recordsQuery->whereBetween('created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
+        // Filter by kode if provided (optional)
+        if ($request->filled('kode')) {
+            $calculationsQuery->where('kode', $request->kode);
+            $recordsQuery->where('kode', $request->kode);
         }
 
         // Check permission - if user can only view own results
@@ -60,10 +68,13 @@ class OilController extends Controller
         $oilRecords = $recordsQuery->paginate(15, ['*'], 'records');
 
         // Preserve query parameters in pagination links
-        $oilLosses->appends($request->only(['start_date', 'end_date']));
-        $oilRecords->appends($request->only(['start_date', 'end_date']));
+        $oilLosses->appends($request->only(['start_date', 'end_date', 'kode']));
+        $oilRecords->appends($request->only(['start_date', 'end_date', 'kode']));
 
-        return view('oil.index', compact('oilLosses', 'oilRecords', 'statistics'));
+        // Get all kode options for filter dropdown
+        $kodeOptions = OilMasterData::getKodeDropdown();
+
+        return view('oil.index', compact('oilLosses', 'oilRecords', 'statistics', 'kodeOptions', 'startDate', 'endDate'));
     }
 
     /**
@@ -136,6 +147,9 @@ class OilController extends Controller
             // Tanggal dan jam otomatis dari created_at (tidak perlu set manual)
             $result = $this->oilService->store($validated, Auth::id());
 
+            // Recalculate daily bobot average for today
+            $this->recalculateDailyBobotAverage(now()->format('Y-m-d'));
+
             return redirect()
                 ->route('oil.index')
                 ->with('success', $result['message']);
@@ -197,6 +211,9 @@ class OilController extends Controller
             // Re-calculate and update (tanggal tetap menggunakan created_at yang ada)
             $result = $this->oilService->store($validated, Auth::id());
 
+            // Recalculate daily bobot average for the calculation date
+            $this->recalculateDailyBobotAverage($oilCalculation->created_at->format('Y-m-d'));
+
             return redirect()
                 ->route('oil.show', $oilCalculation->id)
                 ->with('success', 'Data berhasil diupdate!');
@@ -215,7 +232,11 @@ class OilController extends Controller
     {
         $this->authorize('delete oil results');
 
+        $calculationDate = $oilCalculation->created_at->format('Y-m-d');
         $oilCalculation->delete();
+
+        // Recalculate daily bobot average after deletion
+        $this->recalculateDailyBobotAverage($calculationDate);
 
         return redirect()
             ->route('oil.index')
@@ -246,5 +267,267 @@ class OilController extends Controller
         // TODO: Implement export to Excel/PDF
         return back()->with('info', 'Fitur export sedang dalam pengembangan.');
     }
+
+    public function report(Request $request)
+    {
+        $this->authorize('view oil samples');
+
+        return view('oil.report');
+    }
+    /**
+     * Display OLWB table view with dates as rows and kode as columns.
+     */
+    public function olwbIndex(Request $request)
+    {
+        $this->authorize('view oil samples');
+
+        // Default date range: awal bulan sampai hari ini
+        $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', now()->format('Y-m-d'));
+
+        // Get all unique kode from master data (ordered)
+        $allKodes = OilMasterData::orderBy('kode')->pluck('kode')->toArray();
+
+        // Get oil calculations data within date range
+        $calculations = OilCalculation::whereBetween('created_at', [
+            $startDate . ' 00:00:00',
+            $endDate . ' 23:59:59'
+        ])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        // Group data by date and kode
+        $dataByDate = [];
+        foreach ($calculations as $calc) {
+            $date = $calc->created_at->format('Y-m-d');
+            $kode = $calc->kode;
+
+            if (!isset($dataByDate[$date])) {
+                $dataByDate[$date] = [];
+            }
+
+            // Store OLWB value for this date and kode
+            $dataByDate[$date][$kode] = [
+                'olwb' => $calc->olwb,
+                'limitOLWB' => $calc->limitOLWB,
+                'id' => $calc->id,
+            ];
+        }
+
+        // Sort dates
+        ksort($dataByDate);
+
+        return view('oil.olwb', compact('allKodes', 'dataByDate', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Display bobot report with performance calculations
+     */
+    public function reportIndex(Request $request)
+    {
+        // Default filter date: hari ini untuk start dan end
+        $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', now()->format('Y-m-d'));
+
+        // Get all bobot configs
+        $bobotConfigs = BobotConfig::all()->keyBy('jenis');
+
+        // Get ALL kodes from OilMasterData that have jenis mapping to bobot configs
+        // Regardless whether they have data in calculations or not
+        $allKodes = OilMasterData::where('is_active', true)
+            ->get()
+            ->filter(function ($masterData) use ($bobotConfigs) {
+                // Check if jenis can be mapped to bobot config
+                $jenisConfig = $this->mapJenisToConfig($masterData->jenis, $bobotConfigs);
+                return $jenisConfig !== null;
+            })
+            ->pluck('kode')
+            ->sort()
+            ->values();
+
+        // Get all dates in range that have calculations
+        $dates = OilCalculation::selectRaw('DATE(created_at) as date')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->groupBy('date')
+            ->orderBy('date', 'desc')
+            ->pluck('date');
+
+        $reportData = [];
+
+        foreach ($dates as $date) {
+            // Get all calculations for this date
+            $calculations = OilCalculation::whereDate('created_at', $date)->get()->keyBy('kode');
+
+            $dateData = [
+                'date' => $date,
+                'kodes' => [],
+            ];
+
+            // Process each kode
+            foreach ($allKodes as $kode) {
+                $masterData = OilMasterData::where('kode', $kode)->first();
+
+                if (isset($calculations[$kode]) && $calculations[$kode]->olwb !== null) {
+                    $olwbValue = $calculations[$kode]->olwb;
+
+                    // Map jenis from master data to bobot config
+                    $jenisConfig = null;
+                    if ($masterData) {
+                        $jenisConfig = $this->mapJenisToConfig($masterData->jenis, $bobotConfigs);
+                    }
+
+                    if ($jenisConfig) {
+                        $bobotScore = $this->calculateBobot($olwbValue, $jenisConfig);
+                    } else {
+                        $bobotScore = null;
+                    }
+
+                    $dateData['kodes'][$kode] = [
+                        'olwb' => $olwbValue,
+                        'bobot' => $bobotScore,
+                    ];
+                } else {
+                    $dateData['kodes'][$kode] = [
+                        'olwb' => null,
+                        'bobot' => null,
+                    ];
+                }
+            }
+
+            // Calculate average bobot for this date
+            // Filter only null values, keep 0 (0 is valid poor performance score)
+            $bobotValues = collect($dateData['kodes'])
+                ->pluck('bobot')
+                ->filter(function ($value) {
+                    return $value !== null;
+                });
+            $averageBobot = $bobotValues->isNotEmpty() ? round($bobotValues->avg(), 2) : null;
+            $dateData['average_bobot'] = $averageBobot;
+
+            // Store/update daily average in database
+            if ($averageBobot !== null) {
+                DailyBobotAverage::updateOrCreate(
+                    ['date' => $date],
+                    ['average_score' => $averageBobot]
+                );
+            }
+
+            $reportData[] = $dateData;
+        }
+
+        return view('oil.report', compact('reportData', 'allKodes', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Map jenis from OilMasterData to BobotConfig
+     * Uses case-insensitive matching with name variations
+     */
+    private function mapJenisToConfig($jenis, $bobotConfigs)
+    {
+        $jenisUpper = strtoupper(trim($jenis));
+
+        // Direct mapping with case-insensitive comparison
+        foreach ($bobotConfigs as $configJenis => $config) {
+            $configJenisUpper = strtoupper($configJenis);
+
+            // Exact match
+            if ($jenisUpper === $configJenisUpper) {
+                return $config;
+            }
+
+            // Pattern matching for variations
+            if ($jenisUpper === 'FEED DECANTER' && str_contains($configJenisUpper, 'FEED')) {
+                return $config;
+            }
+            if ($jenisUpper === 'BUNCH PRESS' && str_contains($configJenisUpper, 'BUNCH PRESS')) {
+                return $config;
+            }
+            if ($jenisUpper === 'PRESS' && $configJenisUpper === 'PRESS') {
+                return $config;
+            }
+            if ($jenisUpper === 'EFFLUENT' && $configJenisUpper === 'EFFLUENT') {
+                return $config;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Calculate bobot score based on OLWB value and limits
+     */
+    private function calculateBobot($olwbValue, $config)
+    {
+        // Check from highest bobot to lowest
+        if ($olwbValue <= $config->limit_100) {
+            return 100;
+        } elseif ($olwbValue <= $config->limit_90) {
+            return 90;
+        } elseif ($olwbValue <= $config->limit_80) {
+            return 80;
+        } elseif ($olwbValue <= $config->limit_70) {
+            return 70;
+        } elseif ($olwbValue <= $config->limit_60) {
+            return 60;
+        } elseif ($olwbValue <= $config->limit_50) {
+            return 50;
+        } else {
+            return 0; // Below all thresholds
+        }
+    }
+
+    /**
+     * Recalculate and update daily bobot average for a specific date
+     */
+    private function recalculateDailyBobotAverage($date)
+    {
+        // Get all bobot configs
+        $bobotConfigs = BobotConfig::all()->keyBy('jenis');
+
+        // Get all calculations for this date
+        $calculations = OilCalculation::whereDate('created_at', $date)->get();
+
+        if ($calculations->isEmpty()) {
+            // No data for this date, delete the average record if exists
+            DailyBobotAverage::where('date', $date)->delete();
+            return;
+        }
+
+        $bobotScores = [];
+
+        foreach ($calculations as $calc) {
+            if ($calc->olwb === null)
+                continue;
+
+            // Get master data to retrieve jenis
+            $masterData = OilMasterData::where('kode', $calc->kode)->first();
+            if (!$masterData)
+                continue;
+
+            // Map jenis to bobot config
+            $jenisConfig = $this->mapJenisToConfig($masterData->jenis, $bobotConfigs);
+            if (!$jenisConfig)
+                continue;
+
+            // Calculate bobot score
+            $bobotScore = $this->calculateBobot($calc->olwb, $jenisConfig);
+
+            // Include ALL bobot scores including 0 (0 means poor performance, still valid)
+            $bobotScores[] = $bobotScore;
+        }
+
+        // Calculate and store average
+        if (!empty($bobotScores)) {
+            $averageBobot = round(array_sum($bobotScores) / count($bobotScores), 2);
+            DailyBobotAverage::updateOrCreate(
+                ['date' => $date],
+                ['average_score' => $averageBobot]
+            );
+        } else {
+            // No valid bobot scores, delete the average record if exists
+            DailyBobotAverage::where('date', $date)->delete();
+        }
+    }
 }
+
 

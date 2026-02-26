@@ -39,6 +39,14 @@ Route::middleware('auth')->group(function () {
             ->name('index')
             ->middleware('permission:view oil');
 
+        Route::get('/olwb', [OilController::class, 'olwbIndex'])
+            ->name('olwb')
+            ->middleware('permission:view oil samples');
+
+        Route::get('/report', [OilController::class, 'reportIndex'])
+            ->name('report')
+            ->middleware('permission:view oil samples');
+
         Route::get('/create', [OilController::class, 'create'])
             ->name('create')
             ->middleware('permission:create oil results');

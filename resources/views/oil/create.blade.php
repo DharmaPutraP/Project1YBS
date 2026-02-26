@@ -73,29 +73,6 @@
         </div>
     @endif
 
-    {{-- Info Alert: Dual-Mode Input --}}
-    <x-ui.card class="mb-6 bg-blue-50 border-blue-200">
-        <div class="flex items-start">
-            <svg class="w-6 h-6 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-                <h4 class="text-sm font-bold text-blue-900 mb-2">ℹ️ Pilihan Input Data</h4>
-                <p class="text-sm text-blue-800 leading-relaxed">
-                    Anda dapat memilih untuk mengisi salah satu atau <strong>kedua mode sekaligus</strong> dalam satu kali submit:<br>
-                    <span class="inline-block mt-1">
-                        <strong>Mode 1 (Non-Angka):</strong> Kode, Jenis, Operator, dll → Bisa input berkali-kali per hari
-                    </span><br>
-                    <span class="inline-block mt-1">
-                        <strong>Mode 2 (Angka):</strong> Kode + Data Perhitungan → Hanya 1x per kode per hari
-                    </span>
-                </p>
-            </div>
-        </div>
-    </x-ui.card>
-
     {{-- Form Input Data Oil Losses dengan Dual-Mode --}}
     <x-ui.card title="Input Data Oil Losses Oil Losses">
         <form action="{{ route('oil.store') }}" method="POST" id="labForm" class="space-y-6">
@@ -179,7 +156,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="operator" class="block text-sm font-medium text-gray-700 mb-2">
-                                Operator <span class="text-gray-400 text-xs">(opsional)</span>
+                                Operator <span class="text-red-500">*</span>
                             </label>
                             <input type="text" name="operator" id="operator" value="{{ old('operator') }}"
                                 placeholder="Nama operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
@@ -191,7 +168,7 @@
 
                         <div>
                             <label for="sampel_boy" class="block text-sm font-medium text-gray-700 mb-2">
-                                Sampel Boy <span class="text-gray-400 text-xs">(opsional)</span>
+                                Sampel Boy <span class="text-red-500">*</span>
                             </label>
                             <input type="text" name="sampel_boy" id="sampel_boy" value="{{ old('sampel_boy') }}"
                                 placeholder="Nama sampel boy" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
@@ -203,7 +180,7 @@
                     </div>
 
                     {{-- Parameter Lain --}}
-                    <div>
+                    <!-- <div>
                         <label for="parameter_lain" class="block text-sm font-medium text-gray-700 mb-2">
                             Parameter Lain <span class="text-gray-400 text-xs">(opsional)</span>
                         </label>
@@ -214,7 +191,7 @@
                         @error('parameter_lain')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
-                    </div>
+                    </div> -->
                 </div>
             </div>
 
@@ -408,6 +385,106 @@
             // Update clock immediately and then every second
             updateClock();
             setInterval(updateClock, 1000);
+
+            // Form validation: Jika 1 field di mode diisi, semua field di mode tersebut WAJIB diisi
+            $('#labForm').on('submit', function(e) {
+                let hasError = false;
+                let errorMessages = [];
+
+                // Mode 1 validation
+                const mode1Fields = {
+                    'kode': 'Kode',
+                    'jenis': 'Jenis',
+                    'operator': 'Operator',
+                    'sampel_boy': 'Sampel Boy'
+                };
+
+                const mode1Values = Object.keys(mode1Fields).map(field => {
+                    const value = $(`#${field}`).val();
+                    return value && value.trim() !== '';
+                });
+
+                const mode1HasAnyValue = mode1Values.some(v => v === true);
+
+                if (mode1HasAnyValue) {
+                    Object.keys(mode1Fields).forEach(field => {
+                        const value = $(`#${field}`).val();
+                        if (!value || value.trim() === '') {
+                            errorMessages.push(`${mode1Fields[field]} wajib diisi (Mode Non-Angka)`);
+                            $(`#${field}`).addClass('border-red-400 bg-red-50');
+                            hasError = true;
+                        } else {
+                            $(`#${field}`).removeClass('border-red-400 bg-red-50');
+                        }
+                    });
+                }
+
+                // Mode 2 validation
+                const mode2Fields = {
+                    'kode_mode2': 'Kode',
+                    'cawan_kosong': 'Cawan Kosong',
+                    'berat_basah': 'Berat Basah',
+                    'cawan_sample_kering': 'Cawan + Sample Kering',
+                    'labu_kosong': 'Labu Kosong',
+                    'oil_labu': 'Oil + Labu'
+                };
+
+                const mode2Values = Object.keys(mode2Fields).map(field => {
+                    const value = $(`#${field}`).val();
+                    return value && value.trim() !== '';
+                });
+
+                const mode2HasAnyValue = mode2Values.some(v => v === true);
+
+                if (mode2HasAnyValue) {
+                    Object.keys(mode2Fields).forEach(field => {
+                        const value = $(`#${field}`).val();
+                        if (!value || value.trim() === '') {
+                            errorMessages.push(`${mode2Fields[field]} wajib diisi (Mode Angka)`);
+                            $(`#${field}`).addClass('border-red-400 bg-red-50');
+                            hasError = true;
+                        } else {
+                            $(`#${field}`).removeClass('border-red-400 bg-red-50');
+                        }
+                    });
+                }
+
+                // Tampilkan error jika ada
+                if (hasError) {
+                    e.preventDefault();
+                    
+                    // Buat alert error
+                    const errorHtml = `
+                        <div id="validation-error" class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                            <div class="flex items-start">
+                                <svg class="w-6 h-6 text-red-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-red-900 mb-2">⚠️ Data Tidak Lengkap</h4>
+                                    <p class="text-sm text-red-800 mb-2">Jika Anda mengisi salah satu field di mode tertentu, maka <strong>SEMUA field di mode tersebut harus diisi lengkap</strong>:</p>
+                                    <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                                        ${errorMessages.map(msg => `<li>${msg}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Hapus error lama jika ada
+                    $('#validation-error').remove();
+                    
+                    // Tambahkan error di atas form
+                    $('#labForm').before(errorHtml);
+                    
+                    // Scroll ke atas untuk melihat error
+                    $('html, body').animate({
+                        scrollTop: $('#validation-error').offset().top - 100
+                    }, 300);
+
+                    return false;
+                }
+            });
         });
     </script>
 

@@ -176,10 +176,10 @@ class OilService
      * - oillosses = (oldb / persen) * 100
      * 
      * @param array $data
-     * @param LabMasterData $masterData
+     * @param OilMasterData $masterData
      * @return array
      */
-    private function calculateAllValues(array $data, LabMasterData $masterData): array
+    private function calculateAllValues(array $data, OilMasterData $masterData): array
     {
         // Parse numbers (Apps Script parseNum function)
         $cawanKosong = $this->parseNum($data['cawan_kosong'] ?? 0);

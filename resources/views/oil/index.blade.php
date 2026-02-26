@@ -237,7 +237,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach (\$oilRecords as $record)
+                            @foreach ($oilRecords as $record)
                                 <tr class="hover:bg-blue-50">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ $record->created_at->format('d/m/Y H:i') }}
@@ -266,8 +266,9 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex items-center gap-2">
                                             @can('delete oil results')
-                                                <form action="{{ route('oil.destroy', $record->id) }}" method="POST" class="inline"
-                                                    onsubmit="return confirm('Yakin ingin menghapus data ini?')">
+                                                <form action="{{ route('oil.records.destroy', $record->id) }}" method="POST"
+                                                    class="inline"
+                                                    onsubmit="return confirm('Yakin ingin menghapus data ini? Data akan di-soft delete dan bisa dipulihkan.')">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
@@ -288,7 +289,7 @@
 
                 {{-- Pagination --}}
                 <div class="mt-6">
-                    {{ \$oilRecords->links() }}
+                    {{ $oilRecords->links() }}
                 </div>
             @endif
         </div>
@@ -492,5 +493,3 @@
     </script>
 
 </x-layouts.app>
-
-

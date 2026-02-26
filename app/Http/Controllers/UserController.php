@@ -13,14 +13,14 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::with('roles')->whereNull('deleted_at');
-        
+
         // Apply search filter if provided
         $search = $request->get('search');
         if ($search) {
             $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('username', 'like', "%{$search}%");
+                ->orWhere('username', 'like', "%{$search}%");
         }
-        
+
         // Apply role filter if provided
         $roleFilter = $request->get('role_filter');
         if ($roleFilter && $roleFilter !== 'all') {
@@ -28,10 +28,10 @@ class UserController extends Controller
                 $q->where('roles.id', $roleFilter);
             });
         }
-        
+
         $users = $query->paginate(10);
         $roles = Role::orderBy('name')->get();
-        
+
         return view('users.index', compact('users', 'roles', 'roleFilter', 'search'));
     }
 
@@ -71,13 +71,13 @@ class UserController extends Controller
             // Update multiple roles
             $roles = Role::whereIn('id', $validated['role_ids'])->get();
             $user->syncRoles($roles);
-            
+
             $roleNames = $user->getRoleNames()->implode(', ');
             return redirect()->route('users.index')
                 ->with('success', "User '{$user->name}' berhasil diupdate dengan role '{$roleNames}'.");
 
-        } catch (\Exception $e) {
-            \Log::error('Error updating user: ' . $e->getMessage());
+        } catch (Exception $e) {
+            Log::error('Error updating user: ' . $e->getMessage());
 
             return redirect()->route('users.index')
                 ->with('error', 'Gagal mengupdate user: ' . $e->getMessage())
@@ -95,8 +95,8 @@ class UserController extends Controller
             return redirect()->route('users.index')
                 ->with('success', "User '{$userName}' berhasil dihapus.");
 
-        } catch (\Exception $e) {
-            \Log::error('Error deleting user: ' . $e->getMessage());
+        } catch (Exception $e) {
+            Log::error('Error deleting user: ' . $e->getMessage());
 
             return redirect()->route('users.index')
                 ->with('error', 'Gagal menghapus user: ' . $e->getMessage());

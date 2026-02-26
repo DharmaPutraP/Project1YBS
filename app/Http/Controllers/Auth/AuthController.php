@@ -65,13 +65,13 @@ class AuthController extends Controller
             // Assign multiple roles
             $roles = Role::whereIn('id', $validated['role_ids'])->get();
             $user->syncRoles($roles);
-            
+
             $roleNames = $user->getRoleNames()->implode(', ');
             return redirect()->route('users.index')
                 ->with('success', "User '{$user->name}' berhasil dibuat dengan role '{$roleNames}'.");
 
-        } catch (\Exception $e) {
-            \Log::error('Error creating user: ' . $e->getMessage());
+        } catch (Exception $e) {
+            Log::error('Error creating user: ' . $e->getMessage());
 
             return redirect()->route('users.index')
                 ->with('error', 'Gagal membuat user: ' . $e->getMessage())

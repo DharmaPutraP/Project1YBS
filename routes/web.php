@@ -63,6 +63,10 @@ Route::middleware('auth')->group(function () {
             ->name('destroy')
             ->middleware('permission:delete oil results');
 
+        Route::delete('/records/{oilRecord}', [OilController::class, 'destroyRecord'])
+            ->name('records.destroy')
+            ->middleware('permission:delete oil results');
+
         Route::get('/{oilCalculation}/print', [OilController::class, 'print'])
             ->name('print')
             ->middleware('permission:print lab certificate');

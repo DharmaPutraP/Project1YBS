@@ -6,6 +6,7 @@ use App\Models\OilCalculation;
 use App\Models\OilMasterData;
 use App\Models\OilRecord;
 use App\Services\OilService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -87,26 +88,48 @@ class OilController extends Controller
     {
         $this->authorize('create oil results');
 
-        // Dual-mode validation:
-        // Mode 1 (Non-Numeric): kode
-        // Mode 2 (Numeric): kode_mode2 + cawan_kosong + berat_basah
+        // Custom validation: Jika 1 field di mode diisi, semua field di mode tersebut WAJIB diisi
+        $mode1Fields = ['kode', 'jenis', 'operator', 'sampel_boy'];
+        $mode2Fields = ['kode_mode2', 'cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'];
+
+        // Cek apakah ada field Mode 1 yang diisi
+        $mode1HasAnyValue = collect($mode1Fields)->contains(fn($field) => $request->filled($field));
+
+        // Cek apakah ada field Mode 2 yang diisi
+        $mode2HasAnyValue = collect($mode2Fields)->contains(fn($field) => $request->filled($field));
+
+        // Validate fields
         $validated = $request->validate([
-            // Mode 1 fields
-            'kode' => 'nullable|string|exists:oil_master_data,kode',
-            'jenis' => 'nullable|string',
-            'operator' => 'nullable|string|max:255',
-            'sampel_boy' => 'nullable|string|max:255',
+            // Mode 1 fields - required jika salah satu field mode 1 diisi
+            'kode' => $mode1HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
+            'jenis' => $mode1HasAnyValue ? 'required|string' : 'nullable|string',
+            'operator' => $mode1HasAnyValue ? 'required|string|max:255' : 'nullable|string|max:255',
+            'sampel_boy' => $mode1HasAnyValue ? 'required|string|max:255' : 'nullable|string|max:255',
             'parameter_lain' => 'nullable|string|max:500',
-            // Mode 2 fields
-            'kode_mode2' => 'nullable|string|exists:oil_master_data,kode',
-            'cawan_kosong' => 'nullable|numeric|min:0',
-            'berat_basah' => 'nullable|numeric|min:0',
-            'cawan_sample_kering' => 'nullable|numeric|min:0',
-            'labu_kosong' => 'nullable|numeric|min:0',
-            'oil_labu' => 'nullable|numeric|min:0',
+
+            // Mode 2 fields - required jika salah satu field mode 2 diisi
+            'kode_mode2' => $mode2HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
+            'cawan_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+            'berat_basah' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+            'cawan_sample_kering' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+            'labu_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+            'oil_labu' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
         ], [
+            // Mode 1 error messages
+            'kode.required' => 'Kode wajib diisi jika Anda mengisi Mode Non-Angka',
             'kode.exists' => 'Kode tidak valid atau tidak ditemukan di master data',
+            'jenis.required' => 'Jenis wajib diisi jika Anda mengisi Mode Non-Angka',
+            'operator.required' => 'Operator wajib diisi jika Anda mengisi Mode Non-Angka',
+            'sampel_boy.required' => 'Sampel Boy wajib diisi jika Anda mengisi Mode Non-Angka',
+
+            // Mode 2 error messages
+            'kode_mode2.required' => 'Kode wajib diisi jika Anda mengisi Mode Angka',
             'kode_mode2.exists' => 'Kode tidak valid atau tidak ditemukan di master data',
+            'cawan_kosong.required' => 'Cawan Kosong wajib diisi jika Anda mengisi Mode Angka',
+            'berat_basah.required' => 'Berat Basah wajib diisi jika Anda mengisi Mode Angka',
+            'cawan_sample_kering.required' => 'Cawan + Sample Kering wajib diisi jika Anda mengisi Mode Angka',
+            'labu_kosong.required' => 'Labu Kosong wajib diisi jika Anda mengisi Mode Angka',
+            'oil_labu.required' => 'Oil + Labu wajib diisi jika Anda mengisi Mode Angka',
         ]);
 
         try {
@@ -117,7 +140,7 @@ class OilController extends Controller
                 ->route('oil.index')
                 ->with('success', $result['message']);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return back()
                 ->withInput()
                 ->with('error', $e->getMessage());
@@ -178,7 +201,7 @@ class OilController extends Controller
                 ->route('oil.show', $oilCalculation->id)
                 ->with('success', 'Data berhasil diupdate!');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return back()
                 ->withInput()
                 ->with('error', $e->getMessage());
@@ -196,7 +219,21 @@ class OilController extends Controller
 
         return redirect()
             ->route('oil.index')
-            ->with('success', 'Data berhasil dihapus!');
+            ->with('success', 'Data perhitungan berhasil dihapus!');
+    }
+
+    /**
+     * Remove the specified oil record (soft delete for non-numeric data).
+     */
+    public function destroyRecord(OilRecord $oilRecord)
+    {
+        $this->authorize('delete oil results');
+
+        $oilRecord->delete(); // Soft delete karena model menggunakan SoftDeletes trait
+
+        return redirect()
+            ->route('oil.index')
+            ->with('success', 'Data non-angka berhasil dihapus!');
     }
 
     /**

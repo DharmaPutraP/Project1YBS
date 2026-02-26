@@ -75,6 +75,18 @@ class OilCalculation extends Model
     }
 
     /**
+     * Get the related oil record (metadata).
+     */
+    public function record()
+    {
+        return $this->hasOne(
+            OilRecord::class,
+            'kode', // kolom di oil_records
+            'kode'  // kolom di oil_calculations
+        );
+    }
+
+    /**
      * Scope untuk filter berdasarkan tanggal.
      */
     public function scopeForDate($query, $date)

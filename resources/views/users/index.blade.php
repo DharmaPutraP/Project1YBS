@@ -83,7 +83,7 @@
             {{-- Desktop Table View --}}
             <div class="hidden md:block overflow-x-auto -mx-6 sm:-mx-0">
                 <table class="w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                    <thead class="bg-blue-50">
                         <tr>
                             <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Nama User

@@ -10,24 +10,20 @@ class ReportController extends Controller
     public function index()
     {
         /**
-         * CALCULATION + RECORD PAIR
-         * Digabung JIKA:
-         * - kode sama
-         * - user_id sama
-         * - waktu input sama persis (detik)
+         * 1️⃣ CALCULATION + RECORD
+         * prioritas = 1
          */
         $calculationWithRecord = DB::table('oil_calculations as c')
-            ->leftJoin('oil_records as r', function ($join) {
-                $join->on('c.kode', '=', 'r.kode') //KODE SAMA
+            ->join('oil_records as r', function ($join) {
+                $join->on('c.kode', '=', 'r.kode')
                     ->on('c.user_id', '=', 'r.user_id')
-                    ->whereRaw("
-                        DATE_FORMAT(c.created_at, '%Y-%m-%d %H:%i:%s')
-                        =
-                        DATE_FORMAT(r.created_at, '%Y-%m-%d %H:%i:%s')
-                    "); //  WAKTU SAMA SAMPAI DETIK
+                    ->on('c.created_at', '=', 'r.created_at');
             })
             ->leftJoin('users as u', 'u.id', '=', 'c.user_id')
+            ->whereNull('c.deleted_at')
+            ->whereNull('r.deleted_at')
             ->select([
+                DB::raw('1 as priority'),
                 'c.created_at',
                 'c.kode',
                 'u.name as user_name',
@@ -52,28 +48,68 @@ class ReportController extends Controller
                 'c.oil_losses',
                 'c.limitOL',
                 'c.persen4',
-            ])
-            ->whereNull('c.deleted_at');
+            ]);
 
         /**
-         * RECORD ONLY
-         * (record yang TIDAK punya pasangan calculation)
+         * 2️⃣ CALCULATION ONLY
+         * prioritas = 2
+         */
+        $calculationOnly = DB::table('oil_calculations as c')
+            ->leftJoin('users as u', 'u.id', '=', 'c.user_id')
+            ->whereNull('c.deleted_at')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('oil_records as r')
+                    ->whereColumn('c.kode', 'r.kode')
+                    ->whereColumn('c.user_id', 'r.user_id')
+                    ->whereColumn('c.created_at', 'r.created_at')
+                    ->whereNull('r.deleted_at');
+            })
+            ->select([
+                DB::raw('2 as priority'),
+                'c.created_at',
+                'c.kode',
+                'u.name as user_name',
+                DB::raw('NULL as pivot'),
+                DB::raw('NULL as operator'),
+                DB::raw('NULL as sampel_boy'),
+                DB::raw('NULL as jenis'),
+                'c.cawan_kosong',
+                'c.berat_basah',
+                'c.total_cawan_basah',
+                'c.cawan_sample_kering',
+                'c.sampel_setelah_oven',
+                'c.labu_kosong',
+                'c.oil_labu',
+                'c.minyak',
+                'c.moist',
+                'c.dmwm',
+                'c.olwb',
+                'c.limitOLWB',
+                'c.oldb',
+                'c.limitOLDB',
+                'c.oil_losses',
+                'c.limitOL',
+                'c.persen4',
+            ]);
+
+        /**
+         * 3️⃣ RECORD ONLY
+         * prioritas = 3
          */
         $recordOnly = DB::table('oil_records as r')
             ->leftJoin('users as u', 'u.id', '=', 'r.user_id')
+            ->whereNull('r.deleted_at')
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('oil_calculations as c')
-                    ->whereColumn('c.kode', '=', 'r.kode')
-                    ->whereColumn('c.user_id', '=', 'r.user_id')
-                    ->whereRaw("
-                        DATE_FORMAT(c.created_at, '%Y-%m-%d %H:%i:%s')
-                        =
-                        DATE_FORMAT(r.created_at, '%Y-%m-%d %H:%i:%s')
-                    ")
+                    ->whereColumn('c.kode', 'r.kode')
+                    ->whereColumn('c.user_id', 'r.user_id')
+                    ->whereColumn('c.created_at', 'r.created_at')
                     ->whereNull('c.deleted_at');
             })
             ->select([
+                DB::raw('3 as priority'),
                 'r.created_at',
                 'r.kode',
                 'u.name as user_name',
@@ -98,20 +134,22 @@ class ReportController extends Controller
                 DB::raw('NULL as oil_losses'),
                 DB::raw('NULL as limitOL'),
                 DB::raw('NULL as persen4'),
-            ])
-            ->whereNull('r.deleted_at');
+            ]);
 
         /**
-         * UNION + SORT
+         * 4️⃣ UNION + ORDERING
          */
         $allReports = $calculationWithRecord
+            ->unionAll($calculationOnly)
             ->unionAll($recordOnly)
+            ->orderBy('kode', 'asc')
+            ->orderBy('priority', 'asc')
             ->orderBy('created_at', 'asc')
             ->get()
             ->toArray();
 
         /**
-         * MANUAL PAGINATION
+         * 5️⃣ MANUAL PAGINATION
          */
         $perPage = 50;
         $page = request()->get('page', 1);

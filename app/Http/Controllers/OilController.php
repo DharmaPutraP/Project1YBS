@@ -82,7 +82,10 @@ class OilController extends Controller
      */
     public function create()
     {
-        $this->authorize('create lab results');
+        // Allow both 'create oil results' (PPIC) and 'input oil losses' (Sampel Boy)
+        if (!Auth::user()->can('create oil results') && !Auth::user()->can('input oil losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk input data oil losses.');
+        }
 
         // Get dropdown options from master data
         $kodeOptions = OilMasterData::getKodeDropdown();
@@ -97,7 +100,10 @@ class OilController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('create oil results');
+        // Allow both 'create oil results' (PPIC) and 'input oil losses' (Sampel Boy)
+        if (!Auth::user()->can('create oil results') && !Auth::user()->can('input oil losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk input data oil losses.');
+        }
 
         // Custom validation: Jika 1 field di mode diisi, semua field di mode tersebut WAJIB diisi
         $mode1Fields = ['kode', 'jenis', 'operator', 'sampel_boy'];
@@ -166,7 +172,10 @@ class OilController extends Controller
      */
     public function show(OilCalculation $oilCalculation)
     {
-        $this->authorize('view oil results');
+        // Allow both 'view oil results' (PPIC) and 'view oil losses' (Sampel Boy, others)
+        if (!Auth::user()->can('view oil results') && !Auth::user()->can('view oil losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk melihat data oil losses.');
+        }
 
         $oilCalculation->load(['user']);
 
@@ -178,7 +187,10 @@ class OilController extends Controller
      */
     public function edit(OilCalculation $oilCalculation)
     {
-        $this->authorize('edit oil results');
+        // Allow both 'edit oil results' (PPIC) and 'edit oil losses' (PPIC)
+        if (!Auth::user()->can('edit oil results') && !Auth::user()->can('edit oil losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk edit data oil losses.');
+        }
 
         $kodeOptions = OilMasterData::getKodeDropdown();
         $jenisOptions = OilMasterData::getJenisDropdown();
@@ -191,15 +203,23 @@ class OilController extends Controller
     }
 
     /**
-     * Update the specified oil calculation (numeric data only).
-     * Non-numeric data should be managed separately via OilRecord.
+     * Update the specified oil calculation (numeric data + related record).
      * Tanggal menggunakan created_at (tidak bisa diubah).
      */
     public function update(Request $request, OilCalculation $oilCalculation)
     {
-        $this->authorize('edit oil results');
+        // Allow both 'edit oil results' (PPIC) and 'edit oil losses' (PPIC)
+        if (!Auth::user()->can('edit oil results') && !Auth::user()->can('edit oil losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk edit data oil losses.');
+        }
 
         $validated = $request->validate([
+            // Mode 1: Non-numeric fields (optional)
+            'kode' => 'nullable|string|exists:oil_master_data,kode',
+            'jenis' => 'nullable|string',
+            'operator' => 'nullable|string|max:255',
+            'sampel_boy' => 'nullable|string|max:255',
+            // Mode 2: Numeric fields
             'cawan_kosong' => 'required|numeric|min:0',
             'berat_basah' => 'required|numeric|min:0',
             'cawan_sample_kering' => 'required|numeric|min:0',
@@ -208,14 +228,77 @@ class OilController extends Controller
         ]);
 
         try {
-            // Re-calculate and update (tanggal tetap menggunakan created_at yang ada)
-            $result = $this->oilService->store($validated, Auth::id());
+            // Get kode for calculation (use validated kode or existing kode)
+            $kodeForCalculation = $validated['kode'] ?? $oilCalculation->kode;
+
+            // Calculate derived values using OilService
+            $result = $this->oilService->calculate([
+                'cawan_kosong' => $validated['cawan_kosong'],
+                'berat_basah' => $validated['berat_basah'],
+                'cawan_sample_kering' => $validated['cawan_sample_kering'],
+                'labu_kosong' => $validated['labu_kosong'],
+                'oil_labu' => $validated['oil_labu'],
+            ], $kodeForCalculation);
+
+            // Update OilCalculation (numeric data)
+            $oilCalculation->update([
+                'kode' => $kodeForCalculation,
+                'cawan_kosong' => $result['cawan_kosong'],
+                'berat_basah' => $result['berat_basah'],
+                'cawan_sample_kering' => $result['cawan_sample_kering'],
+                'labu_kosong' => $result['labu_kosong'],
+                'oil_labu' => $result['oil_labu'],
+                'total_cawan_basah' => $result['total_cawan_basah'],
+                'sampel_setelah_oven' => $result['sampel_setelah_oven'],
+                'minyak' => $result['minyak'],
+                'moist' => $result['moist'],
+                'dmwm' => $result['dmwm'],
+                'olwb' => $result['olwb'],
+                'oldb' => $result['oldb'],
+                'oil_losses' => $result['oil_losses'],
+                'limitOLWB' => $result['limitOLWB'],
+                'limitOLDB' => $result['limitOLDB'],
+                'limitOL' => $result['limitOL'],
+                'persen' => $result['persen'],
+                'persen4' => $result['persen4'],
+                'user_id' => Auth::id(),
+            ]);
+
+            // Update or create related OilRecord (non-numeric data) if provided
+            if ($validated['kode'] && $validated['jenis']) {
+                $recordDate = $oilCalculation->created_at->format('Y-m-d');
+
+                $relatedRecord = OilRecord::where('kode', $oilCalculation->kode)
+                    ->whereDate('created_at', $recordDate)
+                    ->first();
+
+                if ($relatedRecord) {
+                    // Update existing record
+                    $relatedRecord->update([
+                        'kode' => $validated['kode'],
+                        'jenis' => $validated['jenis'],
+                        'operator' => $validated['operator'],
+                        'sampel_boy' => $validated['sampel_boy'],
+                        'user_id' => Auth::id(),
+                    ]);
+                } else {
+                    // Create new record if doesn't exist
+                    OilRecord::create([
+                        'kode' => $validated['kode'],
+                        'jenis' => $validated['jenis'],
+                        'operator' => $validated['operator'],
+                        'sampel_boy' => $validated['sampel_boy'],
+                        'user_id' => Auth::id(),
+                        'created_at' => $oilCalculation->created_at,
+                    ]);
+                }
+            }
 
             // Recalculate daily bobot average for the calculation date
             $this->recalculateDailyBobotAverage($oilCalculation->created_at->format('Y-m-d'));
 
             return redirect()
-                ->route('oil.show', $oilCalculation->id)
+                ->route('oil.index')
                 ->with('success', 'Data berhasil diupdate!');
 
         } catch (Exception $e) {
@@ -230,7 +313,10 @@ class OilController extends Controller
      */
     public function destroy(OilCalculation $oilCalculation)
     {
-        $this->authorize('delete oil results');
+        // Allow both 'delete oil results' (PPIC) and 'delete oil losses' (PPIC)
+        if (!Auth::user()->can('delete oil results') && !Auth::user()->can('delete oil losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk hapus data oil losses.');
+        }
 
         $calculationDate = $oilCalculation->created_at->format('Y-m-d');
         $oilCalculation->delete();
@@ -248,7 +334,10 @@ class OilController extends Controller
      */
     public function destroyRecord(OilRecord $oilRecord)
     {
-        $this->authorize('delete oil results');
+        // Allow both 'delete oil results' (PPIC) and 'delete oil losses' (PPIC)
+        if (!Auth::user()->can('delete oil results') && !Auth::user()->can('delete oil losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk hapus data oil losses.');
+        }
 
         $oilRecord->delete(); // Soft delete karena model menggunakan SoftDeletes trait
 
@@ -270,7 +359,10 @@ class OilController extends Controller
 
     public function report(Request $request)
     {
-        $this->authorize('view oil samples');
+        // Allow both 'view oil samples' (PPIC) and 'view performance' (Asisten Lab, others)
+        if (!Auth::user()->can('view oil samples') && !Auth::user()->can('view performance')) {
+            abort(403, 'Anda tidak memiliki akses untuk melihat performance.');
+        }
 
         return view('oil.report');
     }
@@ -279,7 +371,10 @@ class OilController extends Controller
      */
     public function olwbIndex(Request $request)
     {
-        $this->authorize('view oil samples');
+        // Allow both 'view oil samples' (PPIC) and 'view olwb' (Asisten Lab, others)
+        if (!Auth::user()->can('view oil samples') && !Auth::user()->can('view olwb')) {
+            abort(403, 'Anda tidak memiliki akses untuk melihat data OLWB.');
+        }
 
         // Default date range: awal bulan sampai hari ini
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
@@ -333,16 +428,22 @@ class OilController extends Controller
         $bobotConfigs = BobotConfig::all()->keyBy('jenis');
 
         // Get ALL kodes from OilMasterData that have jenis mapping to bobot configs
-        // Regardless whether they have data in calculations or not
-        $allKodes = OilMasterData::where('is_active', true)
+        // Return with pivot info for header display
+        $allKodesData = OilMasterData::where('is_active', true)
             ->get()
             ->filter(function ($masterData) use ($bobotConfigs) {
                 // Check if jenis can be mapped to bobot config
                 $jenisConfig = $this->mapJenisToConfig($masterData->jenis, $bobotConfigs);
                 return $jenisConfig !== null;
             })
-            ->pluck('kode')
-            ->sort()
+            ->sortBy('kode')
+            ->map(function ($masterData) {
+                return [
+                    'kode' => $masterData->kode,
+                    'pivot' => $masterData->pivot ?: $masterData->kode,
+                    'jenis' => $masterData->jenis,
+                ];
+            })
             ->values();
 
         // Get all dates in range that have calculations
@@ -363,18 +464,19 @@ class OilController extends Controller
                 'kodes' => [],
             ];
 
+            $pressScores = [];
+            $clarificationScores = [];
+
             // Process each kode
-            foreach ($allKodes as $kode) {
-                $masterData = OilMasterData::where('kode', $kode)->first();
+            foreach ($allKodesData as $kodeInfo) {
+                $kode = $kodeInfo['kode'];
+                $jenis = $kodeInfo['jenis'];
 
                 if (isset($calculations[$kode]) && $calculations[$kode]->olwb !== null) {
                     $olwbValue = $calculations[$kode]->olwb;
 
                     // Map jenis from master data to bobot config
-                    $jenisConfig = null;
-                    if ($masterData) {
-                        $jenisConfig = $this->mapJenisToConfig($masterData->jenis, $bobotConfigs);
-                    }
+                    $jenisConfig = $this->mapJenisToConfig($jenis, $bobotConfigs);
 
                     if ($jenisConfig) {
                         $bobotScore = $this->calculateBobot($olwbValue, $jenisConfig);
@@ -386,6 +488,16 @@ class OilController extends Controller
                         'olwb' => $olwbValue,
                         'bobot' => $bobotScore,
                     ];
+
+                    // Categorize by Press or Clarification
+                    if ($bobotScore !== null) {
+                        $jenisUpper = strtoupper($jenis);
+                        if (str_contains($jenisUpper, 'PRESS')) {
+                            $pressScores[] = $bobotScore;
+                        } else {
+                            $clarificationScores[] = $bobotScore;
+                        }
+                    }
                 } else {
                     $dateData['kodes'][$kode] = [
                         'olwb' => null,
@@ -394,28 +506,80 @@ class OilController extends Controller
                 }
             }
 
-            // Calculate average bobot for this date
-            // Filter only null values, keep 0 (0 is valid poor performance score)
-            $bobotValues = collect($dateData['kodes'])
-                ->pluck('bobot')
-                ->filter(function ($value) {
-                    return $value !== null;
-                });
-            $averageBobot = $bobotValues->isNotEmpty() ? round($bobotValues->avg(), 2) : null;
-            $dateData['average_bobot'] = $averageBobot;
+            // Calculate separate averages for Press and Clarification
+            $averagePress = !empty($pressScores) ? round(array_sum($pressScores) / count($pressScores), 2) : null;
+            $averageClarification = !empty($clarificationScores) ? round(array_sum($clarificationScores) / count($clarificationScores), 2) : null;
 
-            // Store/update daily average in database
-            if ($averageBobot !== null) {
+            $dateData['average_press'] = $averagePress;
+            $dateData['average_clarification'] = $averageClarification;
+
+            // Store/update daily average in database (use average of both if available)
+            $overallForDb = null;
+            if ($averagePress !== null && $averageClarification !== null) {
+                $overallForDb = round(($averagePress + $averageClarification) / 2, 2);
+            } elseif ($averagePress !== null) {
+                $overallForDb = $averagePress;
+            } elseif ($averageClarification !== null) {
+                $overallForDb = $averageClarification;
+            }
+
+            if ($overallForDb !== null) {
                 DailyBobotAverage::updateOrCreate(
                     ['date' => $date],
-                    ['average_score' => $averageBobot]
+                    ['average_score' => $overallForDb]
                 );
             }
 
             $reportData[] = $dateData;
         }
 
-        return view('oil.report', compact('reportData', 'allKodes', 'startDate', 'endDate'));
+        // Get operator data for the same date range
+        $operatorRecords = OilRecord::select('oil_records.*', 'oil_master_data.jenis')
+            ->join('oil_master_data', 'oil_records.kode', '=', 'oil_master_data.kode')
+            ->whereBetween('oil_records.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereNotNull('oil_records.operator')
+            ->where('oil_records.operator', '!=', '')
+            ->orderBy('oil_records.created_at', 'desc')
+            ->get();
+
+        // Group operators by Press and Clarification
+        $operatorPress = $operatorRecords->filter(function ($record) {
+            return str_contains(strtoupper($record->jenis), 'PRESS');
+        })->unique('operator')->pluck('operator')->sort()->values();
+
+        $operatorClarification = $operatorRecords->filter(function ($record) {
+            return !str_contains(strtoupper($record->jenis), 'PRESS');
+        })->unique('operator')->pluck('operator')->sort()->values();
+
+        // Get recent activities for each operator
+        $operatorActivities = $operatorRecords->groupBy('operator')->map(function ($records) {
+            return [
+                'total_input' => $records->count(),
+                'last_input' => $records->first()->created_at,
+                'jenis_types' => $records->pluck('jenis')->unique()->sort()->values(),
+            ];
+        });
+
+        // Prepare dates and daily performance for operator table
+        $reportDates = collect($reportData)->pluck('date');
+        $dailyPerformance = collect($reportData)->keyBy('date')->map(function ($item) {
+            return [
+                'average_press' => $item['average_press'],
+                'average_clarification' => $item['average_clarification'],
+            ];
+        });
+
+        return view('oil.report', compact(
+            'reportData',
+            'allKodesData',
+            'startDate',
+            'endDate',
+            'operatorPress',
+            'operatorClarification',
+            'operatorActivities',
+            'reportDates',
+            'dailyPerformance'
+        ));
     }
 
     /**

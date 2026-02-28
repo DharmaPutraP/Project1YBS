@@ -235,7 +235,7 @@
 
                     {{-- Password --}}
                     <x-form.input label="Password" name="password" type="password" 
-                        placeholder="Min. 8 karakter" hint="Minimal 8 karakter" required />
+                        placeholder="Min. 3 karakter" hint="Minimal 3 karakter" required />
 
                     {{-- Konfirmasi Password --}}
                     <x-form.input label="Konfirmasi Password" name="password_confirmation" type="password"

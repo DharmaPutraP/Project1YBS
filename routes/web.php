@@ -37,43 +37,43 @@ Route::middleware('auth')->group(function () {
     Route::prefix('oil')->name('oil.')->group(function () {
         Route::get('/', [OilController::class, 'index'])
             ->name('index')
-            ->middleware('permission:view oil');
+            ->middleware('permission:view oil losses');
 
         Route::get('/olwb', [OilController::class, 'olwbIndex'])
             ->name('olwb')
-            ->middleware('permission:view oil samples');
+            ->middleware('permission:view olwb');
 
         Route::get('/report', [OilController::class, 'reportIndex'])
             ->name('report')
-            ->middleware('permission:view oil samples');
+            ->middleware('permission:view performance');
 
         Route::get('/create', [OilController::class, 'create'])
             ->name('create')
-            ->middleware('permission:create oil results');
+            ->middleware('permission:input oil losses');
 
         Route::post('/', [OilController::class, 'store'])
             ->name('store')
-            ->middleware('permission:create oil results');
+            ->middleware('permission:input oil losses');
 
         Route::get('/{oilCalculation}', [OilController::class, 'show'])
             ->name('show')
-            ->middleware('permission:view lab results');
+            ->middleware('permission:view oil losses');
 
         Route::get('/{oilCalculation}/edit', [OilController::class, 'edit'])
             ->name('edit')
-            ->middleware('permission:edit oil results');
+            ->middleware('permission:edit oil losses');
 
         Route::put('/{oilCalculation}', [OilController::class, 'update'])
             ->name('update')
-            ->middleware('permission:edit oil results');
+            ->middleware('permission:edit oil losses');
 
         Route::delete('/{oilCalculation}', [OilController::class, 'destroy'])
             ->name('destroy')
-            ->middleware('permission:delete oil results');
+            ->middleware('permission:delete oil losses');
 
         Route::delete('/records/{oilRecord}', [OilController::class, 'destroyRecord'])
             ->name('records.destroy')
-            ->middleware('permission:delete oil results');
+            ->middleware('permission:delete oil losses');
 
         Route::get('/{oilCalculation}/print', [OilController::class, 'print'])
             ->name('print')
@@ -131,7 +131,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])
             ->name('index')
-            ->middleware('permission:view reports');
+            ->middleware('permission:view reports', 'permission:view laporan oil losses');
 
         Route::get('/lab', [ReportController::class, 'lab'])
             ->name('lab')

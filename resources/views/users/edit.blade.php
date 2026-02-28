@@ -81,7 +81,7 @@
 
                     {{-- Password --}}
                     <x-form.input label="Password Baru (Opsional)" name="password" type="password" 
-                        placeholder="Biarkan kosong jika tidak ingin ubah" hint="Minimal 8 karakter" />
+                        placeholder="Biarkan kosong jika tidak ingin ubah" hint="Minimal 3 karakter" />
 
                     {{-- Konfirmasi Password --}}
                     <x-form.input label="Konfirmasi Password" name="password_confirmation" type="password"

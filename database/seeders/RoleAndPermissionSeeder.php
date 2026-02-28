@@ -138,6 +138,14 @@ class RoleAndPermissionSeeder extends Seeder
         // ══════════════════════════════════════════════════════════════════════
         'receive notifications',          // Terima notifikasi sistem
         'manage notification settings',   // Atur preferensi notifikasi
+
+        'input oil losses',
+        'edit oil losses',
+        'delete oil losses',
+        'view oil losses',
+        'view olwb',
+        'view performance',
+        'view laporan oil losses',
     ];
 
     /**
@@ -149,118 +157,82 @@ class RoleAndPermissionSeeder extends Seeder
     private array $rolePermissions = [
 
         // ══════════════════════════════════════════════════════════════════════
-        // ── MILL MANAGER (Manajer Pabrik) ─────────────────────────────────────
-        // Memiliki akses penuh kecuali system settings & user management
-        // ══════════════════════════════════════════════════════════════════════
-        'Mill Manager' => [
-            // Dashboard
-            'view dashboard',
-            'view dashboard analytics',
-            'export dashboard data',
-
-            // Laboratorium - Full Access
-            'view oil',
-            'view oil results',
-            'create oil results',
-            'edit oil results',
-            'approve oil results',
-            'reject oil results',
-            'print oil certificate',
-            'export oil data',
-            'view oil samples',
-            'create oil samples',
-
-            // Timbangan - Full Access
-            'view timbangan',
-            'create timbangan',
-            'edit timbangan',
-            'verify timbangan',
-            'print timbangan ticket',
-            'export timbangan data',
-            'view vehicles',
-            'view suppliers',
-
-            // Produksi - Full Access
-            'view production',
-            'create production',
-            'edit production',
-            'approve production',
-            'export production data',
-
-            // Inventory
-            'view inventory',
-            'view inventory reports',
-
-            // Laporan - Full Access
-            'view reports',
-            'view lab reports',
-            'view timbangan reports',
-            'view production reports',
-            'view financial reports',
-            'export reports',
-            'print reports',
-
-            // Notifikasi
-            'receive notifications',
-            'manage notification settings',
-        ],
-
-        // ══════════════════════════════════════════════════════════════════════
-        // ── KEPALA LAB (Lab Supervisor) ───────────────────────────────────────
+        // ── PPIC (Lab Supervisor) ───────────────────────────────────────
         // Mengawasi dan approve hasil oil losses, manage staff oil losses
         // ══════════════════════════════════════════════════════════════════════
-        'Kepala Lab' => [
+        'PPIC' => [
             'view dashboard',
             'view dashboard analytics',
-
-            // Oil Losses - supervisory level
             'view oil',
             'view oil results',
             'create oil results',
             'edit oil results',
             'delete oil results',
-            'approve oil results',
-            'reject oil results',
-            'print oil certificate',
-            'export oil data',
-
-            // Sample management
             'view oil samples',
             'create oil samples',
             'edit oil samples',
-            'delete oil samples',
-
-            // Reports
             'view reports',
-            'view lab reports',
-            'export reports',
-            'print reports',
+            'view users',                     // Lihat daftar pengguna
+            'create users',                   // Tambah pengguna baru
+            'edit users',                     // Edit data pengguna
+            'delete users',                   // Hapus pengguna
+            'reset user password',            // Reset password pengguna lain
+            'view user activity log',         // Lihat log aktivitas pengguna
 
-            'receive notifications',
-            'manage notification settings',
+            'input oil losses',
+            'edit oil losses',
+            'delete oil losses',
+            'view oil losses',
+            'view olwb',
+            'view performance',
+            'view laporan oil losses',
         ],
 
         // ══════════════════════════════════════════════════════════════════════
-        // ── STAF LAB (Lab Staff) ──────────────────────────────────────────────
+        // ── sampel boy (Lab Staff) ──────────────────────────────────────────────
         // Input hasil lab, hanya bisa edit hasil sendiri
         // ══════════════════════════════════════════════════════════════════════
-        'Staf Lab' => [
+        'Sampel Boy' => [
             'view dashboard',
+            'input oil losses',
+            'view oil losses',
+            'view reports',
+        ],
 
-            // Lab - operational level (own work only)
-            'view oil',
-            'view oil results',
-            'view own oil results',
-            'create oil results',
-            'edit own oil results',
-            'print oil certificate',
+        'Asisten Lab' => [
+            'view dashboard',
+            'view oil losses',
+            'view olwb',
+            'view performance',
+            'view laporan oil losses',
+            'view reports',
+        ],
 
-            // Sample
-            'view oil samples',
-            'create oil samples',
-            'edit oil samples',
+        'PCM' => [
+            'view dashboard',
+            'view oil losses',
+            'view olwb',
+            'view performance',
+            'view laporan oil losses',
+            'view reports',
+        ],
 
-            'receive notifications',
+        'Direksi' => [
+            'view dashboard',
+            'view oil losses',
+            'view olwb',
+            'view performance',
+            'view laporan oil losses',
+            'view reports',
+        ],
+
+        'Koor Sistem Informasi' => [
+            'view dashboard',
+            'view oil losses',
+            'view olwb',
+            'view performance',
+            'view laporan oil losses',
+            'view reports',
         ],
 
         // ══════════════════════════════════════════════════════════════════════

@@ -66,6 +66,30 @@ class OilService
     }
 
     /**
+     * Calculate all values for numeric data only (untuk edit/update)
+     * Tidak perlu unique check dan database save
+     * 
+     * @param array $data Data numeric yang akan dihitung
+     * @param string $kode Kode untuk mengambil master data
+     * @return array Hasil perhitungan
+     * @throws Exception
+     */
+    public function calculate(array $data, string $kode): array
+    {
+        // Ambil master data dari kode
+        $masterData = OilMasterData::where('kode', $kode)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$masterData) {
+            throw new Exception("Kode '{$kode}' tidak ditemukan di master data.");
+        }
+
+        // Hitung semua nilai
+        return $this->calculateAllValues($data, $masterData);
+    }
+
+    /**
      * Simpan data non-numeric (Mode 1: bisa multiple per day)
      * 
      * @param array $data

@@ -24,7 +24,7 @@
             placeholder="Pilih username (huruf, angka, _ -)" required />
 
         <x-form.input label="Password" name="password" type="password" placeholder="Buat password baru" required
-            hint="Minimal 8 karakter" />
+            hint="Minimal 3 karakter" />
 
         <x-form.input label="Konfirmasi Password" name="password_confirmation" type="password"
             placeholder="Ulangi password" required />

@@ -30,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Define the default password rules used across the app.
-        Password::defaults(fn() => Password::min(8));
+        // Min 3 characters for internal use only
+        Password::defaults(fn() => Password::min(3));
     }
 }

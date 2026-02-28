@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Models\OilMasterData;
+use App\Models\BobotConfig;
 
 class ReportController extends Controller
 {
@@ -16,12 +17,12 @@ class ReportController extends Controller
          * FILTER PARAM
          * ======================================================
          */
-        $startDate = $request->input('start_date', now()->format('Y-m-d'));
-        $endDate   = $request->input('end_date', now()->format('Y-m-d'));
-        $kode      = $request->input('kode');
+        $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', now()->format('Y-m-d'));
+        $kode = $request->input('kode');
 
         $startDateTime = $startDate . ' 00:00:00';
-        $endDateTime   = $endDate . ' 23:59:59';
+        $endDateTime = $endDate . ' 23:59:59';
 
         /**
          * ======================================================
@@ -41,7 +42,7 @@ class ReportController extends Controller
             })
             ->whereNull('c.deleted_at')
             ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
-            ->when($kode, fn ($q) => $q->where('c.kode', $kode))
+            ->when($kode, fn($q) => $q->where('c.kode', $kode))
             ->select([
                 DB::raw('1 as priority'),
                 'c.created_at',
@@ -84,7 +85,7 @@ class ReportController extends Controller
             })
             ->whereNull('c.deleted_at')
             ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
-            ->when($kode, fn ($q) => $q->where('c.kode', $kode))
+            ->when($kode, fn($q) => $q->where('c.kode', $kode))
             ->whereNotExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('oil_records as r')
@@ -135,7 +136,7 @@ class ReportController extends Controller
             })
             ->whereNull('r.deleted_at')
             ->whereBetween('r.created_at', [$startDateTime, $endDateTime])
-            ->when($kode, fn ($q) => $q->where('r.kode', $kode))
+            ->when($kode, fn($q) => $q->where('r.kode', $kode))
             ->whereNotExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('oil_calculations as c')
@@ -220,9 +221,63 @@ class ReportController extends Controller
 
         return view('reports.index', [
             'calculations' => $reports,
-            'kodeOptions'  => $kodeOptions,
-            'startDate'    => $startDate,
-            'endDate'      => $endDate,
+            'kodeOptions' => $kodeOptions,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
         ]);
+    }
+
+    /**
+     * Map jenis to bobot config (same logic as OilController)
+     */
+    private function mapJenisToConfig($jenis, $bobotConfigs)
+    {
+        $jenisUpper = strtoupper(trim($jenis));
+
+        foreach ($bobotConfigs as $configJenis => $config) {
+            $configJenisUpper = strtoupper($configJenis);
+            if ($jenisUpper === $configJenisUpper) {
+                return $config;
+            }
+            if (str_contains($jenisUpper, $configJenisUpper) || str_contains($configJenisUpper, $jenisUpper)) {
+                return $config;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Calculate bobot score (same logic as OilController)
+     */
+    private function calculateBobot($olwbValue, $jenisConfig)
+    {
+        if ($olwbValue === null) {
+            return null;
+        }
+
+        $limits = [
+            100 => $jenisConfig->limit_100,
+            90 => $jenisConfig->limit_90,
+            80 => $jenisConfig->limit_80,
+            70 => $jenisConfig->limit_70,
+            60 => $jenisConfig->limit_60,
+            50 => $jenisConfig->limit_50,
+        ];
+
+        if ($olwbValue <= $limits[100])
+            return 100;
+        if ($olwbValue <= $limits[90])
+            return 90;
+        if ($olwbValue <= $limits[80])
+            return 80;
+        if ($olwbValue <= $limits[70])
+            return 70;
+        if ($olwbValue <= $limits[60])
+            return 60;
+        if ($olwbValue <= $limits[50])
+            return 50;
+
+        return 0;
     }
 }

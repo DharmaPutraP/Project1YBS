@@ -2,35 +2,57 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\OilMasterData;
 
 class ReportController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         /**
+         * ======================================================
+         * FILTER PARAM
+         * ======================================================
+         */
+        $startDate = $request->input('start_date', now()->format('Y-m-d'));
+        $endDate   = $request->input('end_date', now()->format('Y-m-d'));
+        $kode      = $request->input('kode');
+
+        $startDateTime = $startDate . ' 00:00:00';
+        $endDateTime   = $endDate . ' 23:59:59';
+
+        /**
+         * ======================================================
          * 1️⃣ CALCULATION + RECORD
-         * prioritas = 1
+         * ======================================================
          */
         $calculationWithRecord = DB::table('oil_calculations as c')
             ->join('oil_records as r', function ($join) {
                 $join->on('c.kode', '=', 'r.kode')
                     ->on('c.user_id', '=', 'r.user_id')
-                    ->on('c.created_at', '=', 'r.created_at');
+                    ->on('c.created_at', '=', 'r.created_at')
+                    ->whereNull('r.deleted_at');
             })
-            ->leftJoin('users as u', 'u.id', '=', 'c.user_id')
+            ->leftJoin('users as u', function ($join) {
+                $join->on('u.id', '=', 'c.user_id')
+                    ->whereNull('u.deleted_at');
+            })
             ->whereNull('c.deleted_at')
-            ->whereNull('r.deleted_at')
+            ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
+            ->when($kode, fn ($q) => $q->where('c.kode', $kode))
             ->select([
                 DB::raw('1 as priority'),
                 'c.created_at',
                 'c.kode',
                 'u.name as user_name',
+
                 'r.pivot',
                 'r.operator',
                 'r.sampel_boy',
                 'r.jenis',
+
                 'c.cawan_kosong',
                 'c.berat_basah',
                 'c.total_cawan_basah',
@@ -51,18 +73,24 @@ class ReportController extends Controller
             ]);
 
         /**
+         * ======================================================
          * 2️⃣ CALCULATION ONLY
-         * prioritas = 2
+         * ======================================================
          */
         $calculationOnly = DB::table('oil_calculations as c')
-            ->leftJoin('users as u', 'u.id', '=', 'c.user_id')
+            ->leftJoin('users as u', function ($join) {
+                $join->on('u.id', '=', 'c.user_id')
+                    ->whereNull('u.deleted_at');
+            })
             ->whereNull('c.deleted_at')
-            ->whereNotExists(function ($query) {
-                $query->select(DB::raw(1))
+            ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
+            ->when($kode, fn ($q) => $q->where('c.kode', $kode))
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
                     ->from('oil_records as r')
-                    ->whereColumn('c.kode', 'r.kode')
-                    ->whereColumn('c.user_id', 'r.user_id')
-                    ->whereColumn('c.created_at', 'r.created_at')
+                    ->whereColumn('r.kode', 'c.kode')
+                    ->whereColumn('r.user_id', 'c.user_id')
+                    ->whereColumn('r.created_at', 'c.created_at')
                     ->whereNull('r.deleted_at');
             })
             ->select([
@@ -70,10 +98,12 @@ class ReportController extends Controller
                 'c.created_at',
                 'c.kode',
                 'u.name as user_name',
+
                 DB::raw('NULL as pivot'),
                 DB::raw('NULL as operator'),
                 DB::raw('NULL as sampel_boy'),
                 DB::raw('NULL as jenis'),
+
                 'c.cawan_kosong',
                 'c.berat_basah',
                 'c.total_cawan_basah',
@@ -94,14 +124,20 @@ class ReportController extends Controller
             ]);
 
         /**
+         * ======================================================
          * 3️⃣ RECORD ONLY
-         * prioritas = 3
+         * ======================================================
          */
         $recordOnly = DB::table('oil_records as r')
-            ->leftJoin('users as u', 'u.id', '=', 'r.user_id')
+            ->leftJoin('users as u', function ($join) {
+                $join->on('u.id', '=', 'r.user_id')
+                    ->whereNull('u.deleted_at');
+            })
             ->whereNull('r.deleted_at')
-            ->whereNotExists(function ($query) {
-                $query->select(DB::raw(1))
+            ->whereBetween('r.created_at', [$startDateTime, $endDateTime])
+            ->when($kode, fn ($q) => $q->where('r.kode', $kode))
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
                     ->from('oil_calculations as c')
                     ->whereColumn('c.kode', 'r.kode')
                     ->whereColumn('c.user_id', 'r.user_id')
@@ -113,10 +149,12 @@ class ReportController extends Controller
                 'r.created_at',
                 'r.kode',
                 'u.name as user_name',
+
                 'r.pivot',
                 'r.operator',
                 'r.sampel_boy',
                 'r.jenis',
+
                 DB::raw('NULL as cawan_kosong'),
                 DB::raw('NULL as berat_basah'),
                 DB::raw('NULL as total_cawan_basah'),
@@ -137,23 +175,29 @@ class ReportController extends Controller
             ]);
 
         /**
-         * 4️⃣ UNION + ORDERING
+         * ======================================================
+         * 4️⃣ UNION + SORT
+         * ======================================================
          */
         $allReports = $calculationWithRecord
             ->unionAll($calculationOnly)
             ->unionAll($recordOnly)
-            ->orderBy('kode', 'asc')
-            ->orderBy('priority', 'asc')
-            ->orderBy('created_at', 'asc')
+            ->orderByRaw('DATE(created_at) ASC')
+            ->orderBy('kode', 'ASC')
+            ->orderBy('priority', 'ASC')
+            ->orderBy('created_at', 'ASC')
             ->get()
             ->toArray();
 
         /**
-         * 5️⃣ MANUAL PAGINATION
+         * ======================================================
+         * 5️⃣ PAGINATION
+         * ======================================================
          */
         $perPage = 50;
-        $page = request()->get('page', 1);
+        $page = $request->get('page', 1);
         $total = count($allReports);
+
         $items = array_slice($allReports, ($page - 1) * $perPage, $perPage);
 
         $reports = new LengthAwarePaginator(
@@ -162,13 +206,23 @@ class ReportController extends Controller
             $perPage,
             $page,
             [
-                'path' => request()->url(),
-                'query' => request()->query(),
+                'path' => $request->url(),
+                'query' => $request->query(),
             ]
         );
 
+        /**
+         * ======================================================
+         * 6️⃣ KODE OPTIONS
+         * ======================================================
+         */
+        $kodeOptions = OilMasterData::getKodeDropdown();
+
         return view('reports.index', [
-            'calculations' => $reports
+            'calculations' => $reports,
+            'kodeOptions'  => $kodeOptions,
+            'startDate'    => $startDate,
+            'endDate'      => $endDate,
         ]);
     }
 }

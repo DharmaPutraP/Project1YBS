@@ -13,6 +13,60 @@
         </div>
     @endif
 
+    {{-- Date Range Filter --}}
+<div class="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
+    <form method="GET" action="{{ route('reports.index') }}"
+        class="flex flex-col sm:flex-row gap-4 items-end">
+
+        <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Filter Kode
+            </label>
+            <select name="kode"
+                class="w-full px-4 py-2 border rounded-lg">
+                <option value="">-- Semua Kode --</option>
+                @foreach($kodeOptions as $kodeValue => $kodeLabel)
+                    <option value="{{ $kodeValue }}"
+                        {{ request('kode') == $kodeValue ? 'selected' : '' }}>
+                        {{ $kodeLabel }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Tanggal Mulai
+            </label>
+            <input type="date" name="start_date"
+                value="{{ $startDate }}"
+                class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Tanggal Akhir
+            </label>
+            <input type="date" name="end_date"
+                value="{{ $endDate }}"
+                class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div class="flex gap-2">
+            <button class="px-6 py-2 bg-indigo-600 text-white rounded-lg">
+                Filter
+            </button>
+
+            @if(request()->hasAny(['kode','start_date','end_date']))
+                <a href="{{ route('reports.index') }}"
+                    class="px-6 py-2 bg-gray-500 text-white rounded-lg">
+                    Reset
+                </a>
+            @endif
+        </div>
+    </form>
+</div>
+
     {{-- TABLE DATA LAB --}}
     <x-ui.card class="mt-8" title="Data Laporan">
         <div class="relative overflow-x-auto overflow-y-auto max-h-[500px] border rounded-lg">

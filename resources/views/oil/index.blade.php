@@ -251,8 +251,8 @@
                                         Sampel Boy
                                     </th>
                                     <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                                        Parameter Lain
-                                                                    </th> -->
+                                                                                Parameter Lain
+                                                                            </th> -->
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Input By
                                     </th>
@@ -283,8 +283,8 @@
                                             {{ $record->sampel_boy ?? '-' }}
                                         </td>
                                         <!-- <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                                                                    {{ $record->parameter_lain ?? '-' }}
-                                                                                                </td> -->
+                                                                                                                {{ $record->parameter_lain ?? '-' }}
+                                                                                                            </td> -->
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $record->user->name }}
                                         </td>
@@ -396,10 +396,23 @@
                                                 'text-green-600' => $isGood,
                                                 'text-red-600' => !$isGood && $limitolwb > 0,
                                             ])>
-                                                {{ number_format($olwb_calc, 2) }}
+                                                @if($olwb_calc < 0)
+                                                    ({{ number_format(abs($olwb_calc), 2) }})
+                                                @else
+                                                    {{ number_format($olwb_calc, 2) }}
+                                                @endif
                                             </span>
                                             <span class="text-xs text-gray-500 block">Limit:
-                                                {{ $limitolwb > 0 ? number_format($limitolwb, 2) : '-' }}</span>
+                                                @if($limitolwb > 0)
+                                                    @if($limitolwb < 0)
+                                                        ({{ number_format(abs($limitolwb), 2) }})
+                                                    @else
+                                                        {{ number_format($limitolwb, 2) }}
+                                                    @endif
+                                                @else
+                                                    -
+                                                @endif
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             <!-- {{ number_format($oilLoss->oldb ?? 0, 4) }} -->
@@ -413,10 +426,23 @@
                                                 'text-green-600' => $isGood,
                                                 'text-red-600' => !$isGood && $limitoldb > 0,
                                             ])>
-                                                {{ number_format($oldb_calc, 2) }}
+                                                @if($oldb_calc < 0)
+                                                    ({{ number_format(abs($oldb_calc), 2) }})
+                                                @else
+                                                    {{ number_format($oldb_calc, 2) }}
+                                                @endif
                                             </span>
                                             <span class="text-xs text-gray-500 block">
-                                                Limit: {{ $limitoldb > 0 ? number_format($limitoldb, 2) : '-' }}
+                                                Limit:
+                                                @if($limitoldb > 0)
+                                                    @if($limitoldb < 0)
+                                                        ({{ number_format(abs($limitoldb), 2) }})
+                                                    @else
+                                                        {{ number_format($limitoldb, 2) }}
+                                                    @endif
+                                                @else
+                                                    -
+                                                @endif
                                             </span>
 
                                         </td>
@@ -431,11 +457,24 @@
                                                 'text-green-600' => $isGood,
                                                 'text-red-600' => !$isGood && $limitOL > 0,
                                             ])>
-                                                {{ number_format($losses, 2) }}
+                                                @if($losses < 0)
+                                                    ({{ number_format(abs($losses), 2) }})
+                                                @else
+                                                    {{ number_format($losses, 2) }}
+                                                @endif
                                             </span>
 
                                             <span class="text-xs text-gray-500 block">Limit:
-                                                {{ $limitOL > 0 ? number_format($limitOL, 2) : '-' }}</span>
+                                                @if($limitOL > 0)
+                                                    @if($limitOL < 0)
+                                                        ({{ number_format(abs($limitOL), 2) }})
+                                                    @else
+                                                        {{ number_format($limitOL, 2) }}
+                                                    @endif
+                                                @else
+                                                    -
+                                                @endif
+                                            </span>
 
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

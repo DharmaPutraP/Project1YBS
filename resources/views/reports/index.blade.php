@@ -47,16 +47,36 @@
             </div>
 
             <div class="flex gap-2">
-                <button class="px-6 py-2 bg-indigo-600 text-white rounded-lg">
+                <button type="submit"
+                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
                     Filter
                 </button>
 
                 @if(request()->hasAny(['kode', 'start_date', 'end_date']))
-                    <a href="{{ route('reports.index') }}" class="px-6 py-2 bg-gray-500 text-white rounded-lg">
+                    <a href="{{ route('reports.index') }}"
+                        class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                         Reset
                     </a>
                 @endif
             </div>
+        </form>
+
+        {{-- Export Button --}}
+        <form method="POST" action="{{ route('reports.export') }}" class="mt-4">
+            @csrf
+            <input type="hidden" name="kode" value="{{ request('kode') }}">
+            <input type="hidden" name="start_date" value="{{ $startDate }}">
+            <input type="hidden" name="end_date" value="{{ $endDate }}">
+
+            <button type="submit"
+                class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export ke Excel
+            </button>
         </form>
     </div>
 
@@ -93,11 +113,11 @@
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">MOIST (%)</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">DM/WM (%)</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">OLWB (%)</th>
-                        <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">LIMIT (%)</th>
+                        <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">LIMIT OLWB (%)</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">OLDB (%)</th>
-                        <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">LIMIT (%)</th>
+                        <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">LIMIT OLDB (%)</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">OIL LOSSES</th>
-                        <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">LIMIT</th>
+                        <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">LIMIT OL</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">PERSEN 4</th>
                     </tr>
                 </thead>
@@ -105,7 +125,7 @@
                 {{-- ================= BODY ================= --}}
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse ($calculations as $calc)
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-200">
 
                             <td class="sticky left-0 bg-white border px-4 py-2">
                                 {{ ($calculations->currentPage() - 1) * $calculations->perPage() + $loop->iteration }}
@@ -159,7 +179,7 @@
                                 {{ $calc->oil_labu === null ? '-' : number_format($calc->oil_labu, 4) }}
                             </td>
 
-                            <td class="border px-4 py-2 text-right font-bold">
+                            <td class="border px-4 py-2 text-right">
                                 {{ $calc->minyak === null ? '-' : number_format($calc->minyak, 4) }}
                             </td>
 
@@ -170,25 +190,58 @@
                                 {{ $calc->dmwm === null ? '-' : number_format($calc->dmwm, 2) }}
                             </td>
                             <td class="border px-4 py-2 text-right">
-                                {{ $calc->olwb === null ? '-' : number_format($calc->olwb, 2) }}
+                                @php
+                                    $olwb_calc = $calc->olwb ?? 0;
+                                    $limit_olwb_calc = $calc->limitOLWB ?? 0;
+                                    $isGood = $olwb_calc <= $limit_olwb_calc;
+                                @endphp
+                                <span @class([
+                                    'font-semibold',
+                                    'text-green-600' => $isGood && $limit_olwb_calc > 0,
+                                    'text-red-600' => !$isGood && $limit_olwb_calc > 0,
+                                ])>
+                                    {{ $calc->olwb === null ? '-' : number_format($calc->olwb, 2) }}
+                                </span>
                             </td>
                             <td class="border px-4 py-2 text-right">
-                                {{ $calc->limitOLWB === null ? '-' : number_format($calc->limitOLWB, 2) }}
+                                {{ $calc->limitOLWB === null || $calc->limitOLWB == 0 ? '-' : number_format($calc->limitOLWB, 2) }}
+                            </td>
+                            <td class="border px-4 py-2 text-right">@php
+                                $oldb_calc = $calc->oldb ?? 0;
+                                $limit_oldb_calc = $calc->limitOLDB ?? 0;
+                                $isGood = $oldb_calc <= $limit_oldb_calc;
+                            @endphp
+                                <span @class([
+                                    'font-semibold',
+                                    'text-green-600' => $isGood && $limit_oldb_calc > 0,
+                                    'text-red-600' => !$isGood && $limit_oldb_calc > 0,
+                                ])>
+                                    {{ $calc->oldb === null ? '-' : number_format($calc->oldb, 2) }}
+                                </span>
                             </td>
                             <td class="border px-4 py-2 text-right">
-                                {{ $calc->oldb === null ? '-' : number_format($calc->oldb, 2) }}
+
+                                {{ $calc->limitOLDB === null || $calc->limitOLDB == 0 ? '-' : number_format($calc->limitOLDB, 2) }}
                             </td>
                             <td class="border px-4 py-2 text-right">
-                                {{ $calc->limitOLDB === null ? '-' : number_format($calc->limitOLDB, 2) }}
-                            </td>
-                            <td class="border px-4 py-2 text-right font-semibold">
-                                {{ $calc->oil_losses === null ? '-' : number_format($calc->oil_losses, 2) }}
+                                @php
+                                    $oil_losses_calc = $calc->oil_losses ?? 0;
+                                    $limit_oil_losses_calc = $calc->limitOL ?? 0;
+                                    $isGood = $oil_losses_calc <= $limit_oil_losses_calc;
+                                @endphp
+                                <span @class([
+                                    'font-semibold',
+                                    'text-green-600' => $isGood && $limit_oil_losses_calc > 0,
+                                    'text-red-600' => !$isGood && $limit_oil_losses_calc > 0,
+                                ])>
+                                    {{ $calc->oil_losses === null ? '-' : number_format($calc->oil_losses, 2) }}
+                                </span>
                             </td>
                             <td class="border px-4 py-2 text-right">
-                                {{ $calc->limitOL === null ? '-' : number_format($calc->limitOL, 2) }}
+                                {{ $calc->limitOL === null || $calc->limitOL == 0 ? '-' : number_format($calc->limitOL, 2) }}
                             </td>
                             <td class="border px-4 py-2 text-right">
-                                {{ $calc->persen4 === null ? '-' : number_format($calc->persen4, 2) }}
+                                {{ $calc->persen4 === null || $calc->persen4 == 0 ? '-' : number_format($calc->persen4, 2) }}
                             </td>
                         </tr>
                     @empty

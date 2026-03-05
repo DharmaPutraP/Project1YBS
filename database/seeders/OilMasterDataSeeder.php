@@ -18,15 +18,15 @@ class OilMasterDataSeeder extends Seeder
             // ═══════════════════════════════════════════════════════════════════
             // JUS & CONDENSAT (No specific limits)
             // ═══════════════════════════════════════════════════════════════════
-            ['kode' => 'JBP', 'column_name' => 'JUS BUNCH PRESS', 'jenis' => 'JUS', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Jus Bunch Press', 'is_active' => true],
-            ['kode' => 'CD', 'column_name' => 'CONDENSAT', 'jenis' => 'CONDENSAT', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Condensat', 'is_active' => true],
+            // ['kode' => 'JBP', 'column_name' => 'JUS BUNCH PRESS', 'jenis' => 'JUS', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Jus Bunch Press', 'is_active' => true],
+            // ['kode' => 'CD', 'column_name' => 'CONDENSAT', 'jenis' => 'CONDENSAT', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Condensat', 'is_active' => true],
 
             // ═══════════════════════════════════════════════════════════════════
             // CLARIFIER TANK (COT)
             // ═══════════════════════════════════════════════════════════════════
-            ['kode' => 'COT IN', 'column_name' => 'COT INLET to COT 2', 'jenis' => 'COT', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => 45.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'COT Inlet to COT 2, OLWB > 45', 'is_active' => true],
-            ['kode' => 'COT 2', 'column_name' => 'U/F COT 2', 'jenis' => 'COT', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => 8, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Under Flow COT 2, OLWB ≤ 8', 'is_active' => true],
-            ['kode' => 'CST', 'column_name' => 'U/F CST', 'jenis' => 'CST', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => 6, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Under Flow CST, OLWB ≤ 6', 'is_active' => true],
+            // ['kode' => 'COT IN', 'column_name' => 'COT INLET to COT 2', 'jenis' => 'COT', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => 45.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'COT Inlet to COT 2, OLWB > 45', 'is_active' => true],
+            // ['kode' => 'COT 2', 'column_name' => 'U/F COT 2', 'jenis' => 'COT', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => 8, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Under Flow COT 2, OLWB ≤ 8', 'is_active' => true],
+            // ['kode' => 'CST', 'column_name' => 'U/F CST', 'jenis' => 'CST', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => 6, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Under Flow CST, OLWB ≤ 6', 'is_active' => true],
 
             // ═══════════════════════════════════════════════════════════════════
             // FEED DECANTER (FD1-4)
@@ -55,17 +55,17 @@ class OilMasterDataSeeder extends Seeder
             // ═══════════════════════════════════════════════════════════════════
             // HEAVY PHASE CENTRIFUGE (HPL1-3)
             // ═══════════════════════════════════════════════════════════════════
-            ['kode' => 'HPL1', 'column_name' => 'HEAVY PHASE CENTRIFUGE 1', 'jenis' => 'CENTRIFUGE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'CENTRIFUGE 1', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase Centrifuge 1', 'is_active' => true],
-            ['kode' => 'HPL2', 'column_name' => 'HEAVY PHASE CENTRIFUGE 2', 'jenis' => 'CENTRIFUGE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'CENTRIFUGE 2', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase Centrifuge 2', 'is_active' => true],
-            ['kode' => 'HPL3', 'column_name' => 'HEAVY PHASE CENTRIFUGE 3', 'jenis' => 'CENTRIFUGE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'CENTRIFUGE 3', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase Centrifuge 3', 'is_active' => true],
+            // ['kode' => 'HPL1', 'column_name' => 'HEAVY PHASE CENTRIFUGE 1', 'jenis' => 'CENTRIFUGE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'CENTRIFUGE 1', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase Centrifuge 1', 'is_active' => true],
+            // ['kode' => 'HPL2', 'column_name' => 'HEAVY PHASE CENTRIFUGE 2', 'jenis' => 'CENTRIFUGE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'CENTRIFUGE 2', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase Centrifuge 2', 'is_active' => true],
+            // ['kode' => 'HPL3', 'column_name' => 'HEAVY PHASE CENTRIFUGE 3', 'jenis' => 'CENTRIFUGE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'CENTRIFUGE 3', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase Centrifuge 3', 'is_active' => true],
 
             // ═══════════════════════════════════════════════════════════════════
             // EFFLUENT & OTHERS
             // ═══════════════════════════════════════════════════════════════════
-            ['kode' => 'LP', 'column_name' => 'LIGHT PHASE', 'jenis' => 'LIGHT PHASE', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Light Phase', 'is_active' => true],
+            // ['kode' => 'LP', 'column_name' => 'LIGHT PHASE', 'jenis' => 'LIGHT PHASE', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Light Phase', 'is_active' => true],
             ['kode' => 'FE', 'column_name' => 'FINAL EFFLUENT', 'jenis' => 'EFFLUENT', 'persen' => 0.5, 'persen4' => 0, 'pivot' => 'EFFLUENT', 'limitOLWB' => 0.70, 'limitOLDB' => null, 'limitOL' => 0.5, 'description' => 'Final Effluent, persen 0.50 = 50%', 'is_active' => true],
-            ['kode' => 'ST', 'column_name' => 'SLUDGE TANK', 'jenis' => 'SLUDGE', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Sludge Tank', 'is_active' => true],
-            ['kode' => 'JK1', 'column_name' => 'JANJANGAN KOSONG 1', 'jenis' => 'JANJANGAN', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Janjangan Kosong 1', 'is_active' => true],
+            // ['kode' => 'ST', 'column_name' => 'SLUDGE TANK', 'jenis' => 'SLUDGE', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Sludge Tank', 'is_active' => true],
+            // ['kode' => 'JK1', 'column_name' => 'JANJANGAN KOSONG 1', 'jenis' => 'JANJANGAN', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Janjangan Kosong 1', 'is_active' => true],
 
             // ═══════════════════════════════════════════════════════════════════
             // FIBRE EX BUNCH PRESS (FBP1-5)

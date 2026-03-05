@@ -2,10 +2,10 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\OilController;
-use App\Http\Controllers\TimbanganController;
+// use App\Http\Controllers\TimbanganController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\SettingController;
+// use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -43,8 +43,16 @@ Route::middleware('auth')->group(function () {
             ->name('olwb')
             ->middleware('permission:view olwb');
 
+        Route::post('/olwb/export', [OilController::class, 'exportOlwb'])
+            ->name('olwb.export')
+            ->middleware('permission:view olwb');
+
         Route::get('/report', [OilController::class, 'reportIndex'])
             ->name('report')
+            ->middleware('permission:view performance');
+
+        Route::post('/report/export', [OilController::class, 'exportPerformance'])
+            ->name('report.export')
             ->middleware('permission:view performance');
 
         Route::get('/create', [OilController::class, 'create'])
@@ -85,47 +93,6 @@ Route::middleware('auth')->group(function () {
     });
 
     // ══════════════════════════════════════════════════════════════════════════
-    // ── TIMBANGAN ─────────────────────────────────────────────────────────────
-    // ══════════════════════════════════════════════════════════════════════════
-    Route::prefix('timbangan')->name('timbangan.')->group(function () {
-        Route::get('/', [TimbanganController::class, 'index'])
-            ->name('index')
-            ->middleware('permission:view timbangan');
-
-        Route::get('/create', [TimbanganController::class, 'create'])
-            ->name('create')
-            ->middleware('permission:create timbangan');
-
-        Route::post('/', [TimbanganController::class, 'store'])
-            ->name('store')
-            ->middleware('permission:create timbangan');
-
-        Route::get('/{id}/edit', [TimbanganController::class, 'edit'])
-            ->name('edit')
-            ->middleware('permission:edit timbangan');
-
-        Route::put('/{id}', [TimbanganController::class, 'update'])
-            ->name('update')
-            ->middleware('permission:edit timbangan');
-
-        Route::delete('/{id}', [TimbanganController::class, 'destroy'])
-            ->name('destroy')
-            ->middleware('permission:delete timbangan');
-
-        Route::post('/{id}/verify', [TimbanganController::class, 'verify'])
-            ->name('verify')
-            ->middleware('permission:verify timbangan');
-
-        Route::get('/{id}/print', [TimbanganController::class, 'print'])
-            ->name('print')
-            ->middleware('permission:print timbangan ticket');
-
-        Route::get('/export', [TimbanganController::class, 'export'])
-            ->name('export')
-            ->middleware('permission:export timbangan data');
-    });
-
-    // ══════════════════════════════════════════════════════════════════════════
     // ── LAPORAN (REPORTS) ─────────────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════════════════
     Route::prefix('reports')->name('reports.')->group(function () {
@@ -133,29 +100,9 @@ Route::middleware('auth')->group(function () {
             ->name('index')
             ->middleware('permission:view reports', 'permission:view laporan oil losses');
 
-        Route::get('/lab', [ReportController::class, 'lab'])
-            ->name('lab')
-            ->middleware('permission:view lab reports');
-
-        Route::get('/timbangan', [ReportController::class, 'timbangan'])
-            ->name('timbangan')
-            ->middleware('permission:view timbangan reports');
-
-        Route::get('/production', [ReportController::class, 'production'])
-            ->name('production')
-            ->middleware('permission:view production reports');
-
-        Route::get('/financial', [ReportController::class, 'financial'])
-            ->name('financial')
-            ->middleware('permission:view financial reports');
-
         Route::post('/export', [ReportController::class, 'export'])
             ->name('export')
             ->middleware('permission:export reports');
-
-        Route::post('/print', [ReportController::class, 'print'])
-            ->name('print')
-            ->middleware('permission:print reports');
     });
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -191,20 +138,4 @@ Route::middleware('auth')->group(function () {
             ->middleware('permission:reset user password');
     });
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // ── PENGATURAN SISTEM ─────────────────────────────────────────────────────
-    // ══════════════════════════════════════════════════════════════════════════
-    Route::prefix('settings')->name('settings.')->group(function () {
-        Route::get('/', [SettingController::class, 'index'])
-            ->name('index')
-            ->middleware('permission:view settings');
-
-        Route::put('/', [SettingController::class, 'update'])
-            ->name('update')
-            ->middleware('permission:edit settings');
-
-        Route::post('/clear-cache', [SettingController::class, 'clearCache'])
-            ->name('clear-cache')
-            ->middleware('permission:clear cache');
-    });
 });

@@ -8,9 +8,13 @@ use App\Models\OilRecord;
 use App\Models\BobotConfig;
 use App\Models\DailyBobotAverage;
 use App\Services\OilService;
+use App\Exports\OlwbExport;
+use App\Exports\PerformanceExport;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OilController extends Controller
 {
@@ -380,8 +384,16 @@ class OilController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
-        // Get all unique kode from master data (ordered)
-        $allKodes = OilMasterData::orderBy('kode')->pluck('kode')->toArray();
+        // Get all kode with pivot from master data (ordered)
+        $allKodesData = OilMasterData::where('is_active', true)
+            ->orderBy('kode')
+            ->get()
+            ->map(function ($masterData) {
+                return [
+                    'kode' => $masterData->kode,
+                    'pivot' => $masterData->pivot ?: $masterData->kode,
+                ];
+            });
 
         // Get oil calculations data within date range
         $calculations = OilCalculation::whereBetween('created_at', [
@@ -412,7 +424,66 @@ class OilController extends Controller
         // Sort dates
         ksort($dataByDate);
 
-        return view('oil.olwb', compact('allKodes', 'dataByDate', 'startDate', 'endDate'));
+        return view('oil.olwb', compact('allKodesData', 'dataByDate', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Export OLWB data to Excel
+     */
+    public function exportOlwb(Request $request)
+    {
+        // Allow both 'view oil samples' (PPIC) and 'view olwb' (Asisten Lab, others)
+        if (!Auth::user()->can('view oil samples') && !Auth::user()->can('view olwb')) {
+            abort(403, 'Anda tidak memiliki akses untuk export data OLWB.');
+        }
+
+        $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', now()->format('Y-m-d'));
+
+        // Get all kode with pivot from master data (ordered)
+        $allKodesData = OilMasterData::where('is_active', true)
+            ->orderBy('kode')
+            ->get()
+            ->map(function ($masterData) {
+                return [
+                    'kode' => $masterData->kode,
+                    'pivot' => $masterData->pivot ?: $masterData->kode,
+                ];
+            });
+
+        // Get oil calculations data within date range
+        $calculations = OilCalculation::whereBetween('created_at', [
+            $startDate . ' 00:00:00',
+            $endDate . ' 23:59:59'
+        ])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        // Group data by date and kode
+        $dataByDate = [];
+        foreach ($calculations as $calc) {
+            $date = $calc->created_at->format('Y-m-d');
+            $kode = $calc->kode;
+
+            if (!isset($dataByDate[$date])) {
+                $dataByDate[$date] = [];
+            }
+
+            $dataByDate[$date][$kode] = [
+                'olwb' => $calc->olwb,
+                'limitOLWB' => $calc->limitOLWB,
+                'id' => $calc->id,
+            ];
+        }
+
+        ksort($dataByDate);
+
+        // Generate filename with date range
+        $startFormatted = Carbon::parse($startDate)->format('Ymd');
+        $endFormatted = Carbon::parse($endDate)->format('Ymd');
+        $filename = "OLWB_{$startFormatted}_{$endFormatted}.xlsx";
+
+        return Excel::download(new OlwbExport($dataByDate, $allKodesData, $startDate, $endDate), $filename);
     }
 
     /**
@@ -580,6 +651,143 @@ class OilController extends Controller
             'reportDates',
             'dailyPerformance'
         ));
+    }
+
+    /**
+     * Export Performance report to Excel
+     */
+    public function exportPerformance(Request $request)
+    {
+        $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', now()->format('Y-m-d'));
+
+        // Get all bobot configs
+        $bobotConfigs = BobotConfig::all()->keyBy('jenis');
+
+        // Get ALL kodes from OilMasterData that have jenis mapping to bobot configs
+        $allKodesData = OilMasterData::where('is_active', true)
+            ->get()
+            ->filter(function ($masterData) use ($bobotConfigs) {
+                $jenisConfig = $this->mapJenisToConfig($masterData->jenis, $bobotConfigs);
+                return $jenisConfig !== null;
+            })
+            ->sortBy('kode')
+            ->map(function ($masterData) {
+                return [
+                    'kode' => $masterData->kode,
+                    'pivot' => $masterData->pivot ?: $masterData->kode,
+                    'jenis' => $masterData->jenis,
+                ];
+            })
+            ->values();
+
+        // Get all dates in range that have calculations
+        $dates = OilCalculation::selectRaw('DATE(created_at) as date')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->groupBy('date')
+            ->orderBy('date', 'desc')
+            ->pluck('date');
+
+        $reportData = [];
+
+        foreach ($dates as $date) {
+            $calculations = OilCalculation::whereDate('created_at', $date)->get()->keyBy('kode');
+
+            $dateData = [
+                'date' => $date,
+                'kodes' => [],
+            ];
+
+            $pressScores = [];
+            $clarificationScores = [];
+
+            foreach ($allKodesData as $kodeInfo) {
+                $kode = $kodeInfo['kode'];
+                $jenis = $kodeInfo['jenis'];
+
+                if (isset($calculations[$kode]) && $calculations[$kode]->olwb !== null) {
+                    $olwbValue = $calculations[$kode]->olwb;
+                    $jenisConfig = $this->mapJenisToConfig($jenis, $bobotConfigs);
+
+                    if ($jenisConfig) {
+                        $bobotScore = $this->calculateBobot($olwbValue, $jenisConfig);
+                    } else {
+                        $bobotScore = null;
+                    }
+
+                    $dateData['kodes'][$kode] = [
+                        'olwb' => $olwbValue,
+                        'bobot' => $bobotScore,
+                    ];
+
+                    if ($bobotScore !== null) {
+                        $jenisUpper = strtoupper($jenis);
+                        if (str_contains($jenisUpper, 'PRESS')) {
+                            $pressScores[] = $bobotScore;
+                        } else {
+                            $clarificationScores[] = $bobotScore;
+                        }
+                    }
+                } else {
+                    $dateData['kodes'][$kode] = [
+                        'olwb' => null,
+                        'bobot' => null,
+                    ];
+                }
+            }
+
+            $averagePress = !empty($pressScores) ? round(array_sum($pressScores) / count($pressScores), 2) : null;
+            $averageClarification = !empty($clarificationScores) ? round(array_sum($clarificationScores) / count($clarificationScores), 2) : null;
+
+            $dateData['average_press'] = $averagePress;
+            $dateData['average_clarification'] = $averageClarification;
+
+            $reportData[] = $dateData;
+        }
+
+        // Get operator data
+        $operatorRecords = OilRecord::select('oil_records.*', 'oil_master_data.jenis')
+            ->join('oil_master_data', 'oil_records.kode', '=', 'oil_master_data.kode')
+            ->whereBetween('oil_records.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereNotNull('oil_records.operator')
+            ->where('oil_records.operator', '!=', '')
+            ->orderBy('oil_records.created_at', 'desc')
+            ->get();
+
+        $operatorPress = $operatorRecords->filter(function ($record) {
+            return str_contains(strtoupper($record->jenis), 'PRESS');
+        })->unique('operator')->pluck('operator')->sort()->values();
+
+        $operatorClarification = $operatorRecords->filter(function ($record) {
+            return !str_contains(strtoupper($record->jenis), 'PRESS');
+        })->unique('operator')->pluck('operator')->sort()->values();
+
+        $reportDates = collect($reportData)->pluck('date');
+        $dailyPerformance = collect($reportData)->keyBy('date')->map(function ($item) {
+            return [
+                'average_press' => $item['average_press'],
+                'average_clarification' => $item['average_clarification'],
+            ];
+        });
+
+        // Generate filename
+        $startFormatted = Carbon::parse($startDate)->format('Ymd');
+        $endFormatted = Carbon::parse($endDate)->format('Ymd');
+        $filename = "Performance_{$startFormatted}_{$endFormatted}.xlsx";
+
+        return Excel::download(
+            new PerformanceExport(
+                $reportData,
+                $allKodesData,
+                $operatorPress,
+                $operatorClarification,
+                $reportDates,
+                $dailyPerformance,
+                $startDate,
+                $endDate
+            ),
+            $filename
+        );
     }
 
     /**

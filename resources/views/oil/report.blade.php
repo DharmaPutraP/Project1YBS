@@ -73,6 +73,24 @@
                     {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
                 </span>
             </div>
+
+            {{-- Export Button --}}
+            <div class="mt-3">
+                <form action="{{ route('oil.report.export') }}" method="POST" class="inline">
+                    @csrf
+                    <input type="hidden" name="start_date" value="{{ $startDate }}">
+                    <input type="hidden" name="end_date" value="{{ $endDate }}">
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Export ke Excel
+                    </button>
+                </form>
+            </div>
         </div>
 
         {{-- Bobot Report Table --}}
@@ -122,8 +140,15 @@
                                     @php $kode = $kodeInfo['kode']; @endphp
                                     <td class="px-3 py-3 text-center text-sm border-r border-gray-300">
                                         @if(isset($dateData['kodes'][$kode]) && $dateData['kodes'][$kode]['olwb'] !== null)
+                                            @php
+                                                $olwb = $dateData['kodes'][$kode]['olwb'];
+                                            @endphp
                                             <span class="font-semibold text-gray-900">
-                                                {{ number_format($dateData['kodes'][$kode]['olwb'], 2) }}
+                                                @if($olwb < 0)
+                                                    ({{ number_format(abs($olwb), 2) }})
+                                                @else
+                                                    {{ number_format($olwb, 2) }}
+                                                @endif
                                             </span>
                                         @else
                                             <span class="text-gray-400">-</span>
@@ -298,7 +323,7 @@
                                         </svg>
                                         Operator Clarification
                                         <!-- <span class="ml-2 text-xs text-green-700">(FEED, SOLID, HEAVY PHASE,
-                                                EFFLUENT)</span> -->
+                                                            EFFLUENT)</span> -->
                                     </div>
                                 </td>
                             </tr>

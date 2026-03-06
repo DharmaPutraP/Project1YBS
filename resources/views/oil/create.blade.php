@@ -61,21 +61,9 @@
         }
     </style>
 
-    {{-- ── Flash Messages ───────────────────────────────────────────── --}}
-    @if (session('error'))
-        <div id="flash-error" class="mb-6">
-            <x-ui.alert type="error" title="Gagal">{{ session('error') }}</x-ui.alert>
-        </div>
-    @endif
-    @if (session('success'))
-        <div id="flash-success" class="mb-6">
-            <x-ui.alert type="success" title="Berhasil">{{ session('success') }}</x-ui.alert>
-        </div>
-    @endif
-
     {{-- Form Input Data Oil Losses dengan Dual-Mode --}}
     <x-ui.card title="Input Data Oil Losses Oil Losses">
-        <form action="{{ route('oil.store') }}" method="POST" id="labForm" class="space-y-6">
+        <form action="{{ route('oil.store') }}" method="POST" id="labForm" class="space-y-6" onsubmit="return handleFormSubmit(event, this)">
             @csrf
 
             {{-- Info: Tanggal & Jam Otomatis --}}
@@ -488,22 +476,16 @@
         });
     </script>
 
-    {{-- Auto-dismiss flash messages --}}
     <script>
-        const flashError = document.getElementById('flash-error');
-        const flashSuccess = document.getElementById('flash-success');
-
-        [flashError, flashSuccess].forEach(flashEl => {
-            if (flashEl) {
-                setTimeout(function () {
-                    flashEl.style.transition = 'opacity 0.5s ease';
-                    flashEl.style.opacity = '0';
-                    setTimeout(function () {
-                        flashEl.remove();
-                    }, 500);
-                }, 4000);
+        // Confirmation handler for form submission
+        async function handleFormSubmit(event, form) {
+            event.preventDefault();
+            const confirmed = await window.confirmSave();
+            if (confirmed) {
+                form.submit();
             }
-        });
+            return false;
+        }
     </script>
 
 </x-layouts.app>

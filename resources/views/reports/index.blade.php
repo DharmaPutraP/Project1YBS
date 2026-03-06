@@ -1,18 +1,5 @@
 <x-layouts.app title="Laporan">
 
-    {{-- ── Flash Messages ───────────────────────────────────────────── --}}
-    @if (session('success'))
-        <div id="flash-success" class="mb-6">
-            <x-ui.alert type="success" title="Berhasil">{{ session('success') }}</x-ui.alert>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div id="flash-error" class="mb-6">
-            <x-ui.alert type="error" title="Gagal">{{ session('error') }}</x-ui.alert>
-        </div>
-    @endif
-
     <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-900">Laporan</h1>
         <p class="mt-2 text-sm text-gray-600">

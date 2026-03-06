@@ -1,18 +1,5 @@
 <x-layouts.app title="Edit Pengguna">
 
-    {{-- ── Flash Messages ───────────────────────────────────────────── --}}
-    @if (session('success'))
-        <div id="flash-success" class="mb-6">
-            <x-ui.alert type="success" title="Berhasil">{{ session('success') }}</x-ui.alert>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div id="flash-error" class="mb-6">
-            <x-ui.alert type="error" title="Gagal">{{ session('error') }}</x-ui.alert>
-        </div>
-    @endif
-
     {{-- Modal Background --}}
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         
@@ -31,7 +18,7 @@
 
             {{-- Modal Body --}}
             <div class="p-4 sm:p-6">
-                <form action="{{ route('users.update', $user->id) }}" method="POST" class="space-y-4 sm:space-y-6">
+                <form action="{{ route('users.update', $user->id) }}" method="POST" class="space-y-4 sm:space-y-6" onsubmit="return handleUpdateUserSubmit(event, this)">
                     @csrf
                     @method('PUT')
 
@@ -103,19 +90,7 @@
         </div>
     </div>
 
-    {{-- Auto-dismiss flash messages after 4 seconds --}}
     <script>
-        ['flash-success', 'flash-error'].forEach(function (id) {
-            const el = document.getElementById(id);
-            if (el) {
-                setTimeout(function () {
-                    el.style.transition = 'opacity 0.5s ease';
-                    el.style.opacity = '0';
-                    setTimeout(function () { el.remove(); }, 500);
-                }, 4000);
-            }
-        });
-
         // Limit Role Checkboxes (Max 2)
         function limitRoleCheckboxes(maxRoles) {
             const checkboxes = document.querySelectorAll('.role-checkbox');
@@ -134,6 +109,16 @@
         document.addEventListener('DOMContentLoaded', function () {
             limitRoleCheckboxes(2);
         });
+
+        // Confirmation handler for update form submission
+        async function handleUpdateUserSubmit(event, form) {
+            event.preventDefault();
+            const confirmed = await window.confirmUpdate();
+            if (confirmed) {
+                form.submit();
+            }
+            return false;
+        }
     </script>
 
 </x-layouts.app>

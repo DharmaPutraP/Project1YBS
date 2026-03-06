@@ -1,18 +1,5 @@
 <x-layouts.app title="Kelola Pengguna">
 
-    {{-- ── Flash Messages ───────────────────────────────────────────── --}}
-    @if (session('success'))
-        <div id="flash-success" class="mb-6">
-            <x-ui.alert type="success" title="Berhasil">{{ session('success') }}</x-ui.alert>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div id="flash-error" class="mb-6">
-            <x-ui.alert type="error" title="Gagal">{{ session('error') }}</x-ui.alert>
-        </div>
-    @endif
-
     {{-- Daftar User --}}
     <x-ui.card class="mt-8" title="Daftar Pengguna">
         {{-- Search, Filter dan Button Tambah User --}}
@@ -128,8 +115,8 @@
                                         @endcan
 
                                         @can('delete users')
-                                            <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline"
-                                                onsubmit="return confirm('Yakin ingin menghapus pengguna ini?')">
+                                            <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline delete-form"
+                                                data-item-name="{{ $user->name }}">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="inline-flex p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition" title="Hapus">
@@ -169,8 +156,8 @@
                                 @endcan
 
                                 @can('delete users')
-                                    <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline"
-                                        onsubmit="return confirm('Yakin ingin menghapus pengguna ini?')">
+                                    <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline delete-form"
+                                        data-item-name="{{ $user->name }}">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="inline-flex p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition" title="Hapus">
@@ -222,7 +209,7 @@
 
             {{-- Modal Body --}}
             <div class="p-4 sm:p-6">
-                <form action="{{ route('users.store') }}" method="POST" class="space-y-4 sm:space-y-6">
+                <form action="{{ route('users.store') }}" method="POST" class="space-y-4 sm:space-y-6" id="createUserForm" onsubmit="return handleCreateUserSubmit(event, this)">
                     @csrf
 
                     {{-- Nama User --}}
@@ -286,19 +273,7 @@
         </div>
     </div>
 
-    {{-- Auto-dismiss flash messages after 4 seconds --}}
     <script>
-        ['flash-success', 'flash-error'].forEach(function (id) {
-            const el = document.getElementById(id);
-            if (el) {
-                setTimeout(function () {
-                    el.style.transition = 'opacity 0.5s ease';
-                    el.style.opacity = '0';
-                    setTimeout(function () { el.remove(); }, 500);
-                }, 4000);
-            }
-        });
-
         // Modal Functions
         function openAddUserModal() {
             document.getElementById('addUserModal').classList.remove('hidden');
@@ -341,7 +316,29 @@
         // Initialize checkbox limit on page load
         document.addEventListener('DOMContentLoaded', function () {
             limitRoleCheckboxes(2);
+
+            // Handle delete confirmations
+            document.querySelectorAll('.delete-form').forEach(form => {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const itemName = this.dataset.itemName || 'pengguna ini';
+                    const confirmed = await window.confirmDelete(itemName);
+                    if (confirmed) {
+                        this.submit();
+                    }
+                });
+            });
         });
+
+        // Handle create user form submission
+        async function handleCreateUserSubmit(event, form) {
+            event.preventDefault();
+            const confirmed = await window.confirmSave();
+            if (confirmed) {
+                form.submit();
+            }
+            return false;
+        }
 
         // Show modal if there are validation errors
         @if ($errors->any())

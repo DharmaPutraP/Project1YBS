@@ -166,33 +166,6 @@ class RoleAndPermissionSeeder extends Seeder
             'view laporan oil losses',
             'view reports',
         ],
-
-        // ══════════════════════════════════════════════════════════════════════
-        // ── VIEWER / AUDITOR ──────────────────────────────────────────────────
-        // Hanya bisa melihat, untuk keperluan audit atau monitoring
-        // ══════════════════════════════════════════════════════════════════════
-        'Viewer' => [
-            'view dashboard',
-            'view dashboard analytics',
-
-            // View-only access
-            'view oil',
-            'view oil results',
-            'view timbangan',
-            'view production',
-            'view inventory',
-            'view vehicles',
-            'view suppliers',
-
-            // Reports
-            'view reports',
-            'view lab reports',
-            'view timbangan reports',
-            'view production reports',
-            'export reports',
-
-            'receive notifications',
-        ],
     ];
 
     public function run(): void

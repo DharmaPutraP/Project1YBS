@@ -1,0 +1,314 @@
+
+
+<style>
+    #sidebar {
+        transition: width 0.3s ease, visibility 0.3s ease;
+    }
+
+    #sidebar.collapsed {
+        width: 150px;
+        overflow: hidden;
+    }
+
+    #sidebar.collapsed .sidebar-header {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    #sidebar.collapsed .sidebar-brand-text {
+        display: none;
+    }
+
+    #sidebar.collapsed .sidebar-nav {
+        padding: 6px;
+    }
+
+    #sidebar.collapsed .sidebar-nav p {
+        display: none;
+    }
+
+    #sidebar.collapsed .sidebar-item-text {
+        display: none;
+    }
+
+    #sidebar.collapsed .sidebar-user-info {
+        display: none;
+    }
+
+    #sidebar.collapsed nav {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .sidebar-item-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+</style>
+
+<aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-gray-200 flex flex-col min-h-screen shadow-sm">
+
+    
+    <div
+        class="sidebar-header h-16 flex items-center justify-between px-6 border-b border-gray-500 bg-gray-50 gap-2 flex-row">
+        <div class="flex items-center gap-2 min-w-0">
+            <span class="text-2xl font-bold text-indigo-600 tracking-tight">YBS</span>
+            <span class="sidebar-brand-text text-lg text-gray-500 font-medium">Management</span>
+            <button id="sidebarToggle" class="block sm:hidden p-2 hover:bg-gray-200 rounded-lg transition flex-shrink-0"
+                title="Toggle Sidebar">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    
+    <nav class="sidebar-nav flex-1 px-3 py-6 mt-6 space-y-1.5 overflow-y-auto">
+
+        
+        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('view dashboard')): ?>
+            <?php if (isset($component)) { $__componentOriginal5bfd3bb159ce0000260348a653d76773 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5bfd3bb159ce0000260348a653d76773 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.sidebar-item','data' => ['href' => ''.e(route('dashboard')).'','active' => request()->routeIs('dashboard'),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('sidebar-item'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => ''.e(route('dashboard')).'','active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('dashboard')),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>']); ?>
+                <span class="sidebar-item-text">Dashboard</span>
+             <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $attributes = $__attributesOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__attributesOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $component = $__componentOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__componentOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+        <?php endif; ?>
+
+        
+        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->any(['view oil losses', 'input oil losses', 'view olwb', 'view performance'])): ?>
+            <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
+                Oil Losses
+            </p>
+
+            
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('view oil losses')): ?>
+                <?php if (isset($component)) { $__componentOriginal5bfd3bb159ce0000260348a653d76773 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5bfd3bb159ce0000260348a653d76773 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.sidebar-item','data' => ['href' => ''.e(route('oil.index')).'','active' => request()->routeIs('oil.index'),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('sidebar-item'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => ''.e(route('oil.index')).'','active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('oil.index')),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>']); ?>
+                    <span class="sidebar-item-text">Data Oil Losses</span>
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $attributes = $__attributesOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__attributesOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $component = $__componentOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__componentOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+            <?php endif; ?>
+
+            
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('input oil losses')): ?>
+                <?php if (isset($component)) { $__componentOriginal5bfd3bb159ce0000260348a653d76773 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5bfd3bb159ce0000260348a653d76773 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.sidebar-item','data' => ['href' => ''.e(route('oil.create')).'','active' => request()->routeIs('oil.create'),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('sidebar-item'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => ''.e(route('oil.create')).'','active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('oil.create')),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>']); ?>
+                    <span class="sidebar-item-text">Input Data Baru</span>
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $attributes = $__attributesOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__attributesOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $component = $__componentOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__componentOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+            <?php endif; ?>
+
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('view olwb')): ?>
+                <?php if (isset($component)) { $__componentOriginal5bfd3bb159ce0000260348a653d76773 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5bfd3bb159ce0000260348a653d76773 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.sidebar-item','data' => ['href' => ''.e(route('oil.olwb')).'','active' => request()->routeIs('oil.olwb'),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('sidebar-item'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => ''.e(route('oil.olwb')).'','active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('oil.olwb')),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>']); ?>
+                    <span class="sidebar-item-text">OLWB</span>
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $attributes = $__attributesOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__attributesOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $component = $__componentOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__componentOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+            <?php endif; ?>
+
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('view performance')): ?>
+                <?php if (isset($component)) { $__componentOriginal5bfd3bb159ce0000260348a653d76773 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5bfd3bb159ce0000260348a653d76773 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.sidebar-item','data' => ['href' => ''.e(route('oil.report')).'','active' => request()->routeIs('oil.report'),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('sidebar-item'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => ''.e(route('oil.report')).'','active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('oil.report')),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>']); ?>
+                    <span class="sidebar-item-text">Performance</span>
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $attributes = $__attributesOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__attributesOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $component = $__componentOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__componentOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        
+        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('view reports')): ?>
+            <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
+                Laporan
+            </p>
+
+            <?php if (isset($component)) { $__componentOriginal5bfd3bb159ce0000260348a653d76773 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5bfd3bb159ce0000260348a653d76773 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.sidebar-item','data' => ['href' => ''.e(route('reports.index')).'','active' => request()->routeIs('reports.*'),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('sidebar-item'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => ''.e(route('reports.index')).'','active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('reports.*')),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>']); ?>
+                <span class="sidebar-item-text">Laporan</span>
+             <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $attributes = $__attributesOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__attributesOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $component = $__componentOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__componentOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+        <?php endif; ?>
+
+        
+        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->any(['view users', 'view roles', 'view settings'])): ?>
+            <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
+                Administrasi
+            </p>
+
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('view users')): ?>
+                <?php if (isset($component)) { $__componentOriginal5bfd3bb159ce0000260348a653d76773 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5bfd3bb159ce0000260348a653d76773 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.sidebar-item','data' => ['href' => ''.e(route('users.index')).'','active' => request()->routeIs('users.*'),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('sidebar-item'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => ''.e(route('users.index')).'','active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('users.*')),'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>']); ?>
+                    <span class="sidebar-item-text">Kelola Pengguna</span>
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $attributes = $__attributesOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__attributesOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5bfd3bb159ce0000260348a653d76773)): ?>
+<?php $component = $__componentOriginal5bfd3bb159ce0000260348a653d76773; ?>
+<?php unset($__componentOriginal5bfd3bb159ce0000260348a653d76773); ?>
+<?php endif; ?>
+            <?php endif; ?>
+
+        <?php endif; ?>
+
+    </nav>
+
+    
+
+    <form method="POST" action="<?php echo e(route('logout')); ?>">
+        <?php echo csrf_field(); ?>
+        <div class="sidebar-user-info px-4 py-4 border-t border-gray-200 bg-gray-50">
+            <button type="submit" class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition"
+                title="Logout">
+
+                <div class="flex items-center gap-3 cursor-pointer">
+                    <div
+                        class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0">
+                        <!-- <?php echo e(strtoupper(substr(Auth::user()->name, 0, 1))); ?> -->
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800 truncate">Logout</p>
+                        <!-- <p class="text-sm font-medium text-gray-800 truncate"><?php echo e(Auth::user()->name); ?></p>
+                <p class="text-xs text-gray-400 truncate"><?php echo e(Auth::user()->getRoleNames()->first() ?? '—'); ?></p> -->
+                    </div>
+                </div>
+            </button>
+        </div>
+    </form>
+
+</aside>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+
+        if (sidebarToggle && sidebar) {
+            sidebarToggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                sidebar.classList.toggle('collapsed');
+
+                // Simpan status ke localStorage
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                localStorage.setItem('sidebarCollapsed', isCollapsed);
+            });
+
+            // Restore dari localStorage pada load
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+            }
+        }
+    });
+</script><?php /**PATH D:\Project1YBS\resources\views/components/sidebar.blade.php ENDPATH**/ ?>

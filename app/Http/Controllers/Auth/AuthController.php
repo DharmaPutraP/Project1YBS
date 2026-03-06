@@ -28,13 +28,17 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-
             return redirect()->intended('/dashboard');
         }
 
-        return back()->withErrors([
-            'username' => 'The provided credentials do not match our records.',
-        ])->onlyInput('username');
+        // Return view directly - NO SESSION, NO REDIRECT
+        return response()->make(
+            view('auth.login', [
+                '__username_error' => 'Username atau Password Salah.',
+                '__old_username' => $request->input('username'),
+            ]),
+            422
+        );
     }
 
     // ─── Register ─────────────────────────────────────────────────────────────

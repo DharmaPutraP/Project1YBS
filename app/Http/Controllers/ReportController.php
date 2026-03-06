@@ -195,10 +195,32 @@ class ReportController extends Controller
 
         /**
          * ======================================================
-         * 5️⃣ PAGINATION
+         * 5️⃣ FORMAT NUMBERS & PAGINATION
          * ======================================================
          */
-        $perPage = 50;
+        // Format negative numbers before pagination to reduce Blade complexity
+        foreach ($allReports as &$report) {
+            // Format all numeric fields with proper negative handling
+            $report->cawan_kosong_fmt = $this->formatNumber($report->cawan_kosong, 4);
+            $report->berat_basah_fmt = $this->formatNumber($report->berat_basah, 4);
+            $report->total_cawan_basah_fmt = $this->formatNumber($report->total_cawan_basah, 4);
+            $report->cawan_sample_kering_fmt = $this->formatNumber($report->cawan_sample_kering, 4);
+            $report->sampel_setelah_oven_fmt = $this->formatNumber($report->sampel_setelah_oven, 4);
+            $report->labu_kosong_fmt = $this->formatNumber($report->labu_kosong, 4);
+            $report->oil_labu_fmt = $this->formatNumber($report->oil_labu, 4);
+            $report->minyak_fmt = $this->formatNumber($report->minyak, 4);
+            $report->moist_fmt = $this->formatNumber($report->moist, 2);
+            $report->dmwm_fmt = $this->formatNumber($report->dmwm, 2);
+            $report->olwb_fmt = $this->formatNumber($report->olwb, 2);
+            $report->limitOLWB_fmt = ($report->limitOLWB === null || $report->limitOLWB == 0) ? '-' : $this->formatNumber($report->limitOLWB, 2);
+            $report->oldb_fmt = $this->formatNumber($report->oldb, 2);
+            $report->limitOLDB_fmt = ($report->limitOLDB === null || $report->limitOLDB == 0) ? '-' : $this->formatNumber($report->limitOLDB, 2);
+            $report->oil_losses_fmt = $this->formatNumber($report->oil_losses, 2);
+            $report->limitOL_fmt = ($report->limitOL === null || $report->limitOL == 0) ? '-' : $this->formatNumber($report->limitOL, 2);
+            $report->persen4_fmt = ($report->persen4 === null || $report->persen4 == 0) ? '-' : $this->formatNumber($report->persen4, 2);
+        }
+        
+        $perPage = 25; // Reduced from 50 to improve performance
         $page = $request->get('page', 1);
         $total = count($allReports);
 
@@ -449,5 +471,21 @@ class ReportController extends Controller
             new ReportsExport($allReports, $startDate, $endDate, $kode),
             $filename
         );
+    }
+
+    /**
+     * Format number with parentheses for negative values
+     */
+    private function formatNumber($value, $decimals = 2)
+    {
+        if ($value === null) {
+            return '-';
+        }
+        
+        if ($value < 0) {
+            return '(' . number_format(abs($value), $decimals) . ')';
+        }
+        
+        return number_format($value, $decimals);
     }
 }

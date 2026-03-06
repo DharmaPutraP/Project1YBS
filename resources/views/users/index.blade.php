@@ -142,7 +142,7 @@
                         <div class="flex justify-between items-start mb-3">
                             <div>
                                 <h3 class="font-semibold text-gray-900">{{ $user->name }}</h3>
-                                <p class="text-sm text-gray-600">@{{ $user->username }}</p>
+                                <p class="text-sm text-gray-600">{{ $user->username }}</p>
                             </div>
                             <div class="flex gap-2">
                                 @can('edit users')

@@ -19,10 +19,19 @@ Contoh:
 --}}
 @props(['title' => ''])
 
-<header class="h-16 shrink-0 bg-white border-b border-gray-200 flex items-center justify-between px-6 gap-4">
+<header
+    class="h-16 shrink-0 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 gap-3 md:gap-4">
+
+    {{-- Hamburger Menu (Mobile Only) --}}
+    <button id="mobileMenuToggle" class="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        aria-label="Toggle Menu">
+        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+    </button>
 
     {{-- Judul Halaman --}}
-    <h1 class="text-base font-semibold text-gray-800">{{ $title }}</h1>
+    <h1 class="text-sm md:text-base font-semibold text-gray-800 truncate">{{ $title }}</h1>
 
     {{-- Aksi kanan: slot opsional + info user --}}
     <div class="flex items-center gap-3">

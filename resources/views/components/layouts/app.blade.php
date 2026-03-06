@@ -16,21 +16,24 @@ Menyertakan sidebar navigasi dan topbar.
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="min-h-screen bg-gray-50 flex overflow-x-hidden">
+<body class="min-h-screen bg-gray-50">
     {{-- Offline Indicator --}}
     <x-offline-indicator />
+
+    {{-- Mobile Backdrop Overlay --}}
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden hidden"></div>
 
     {{-- ── Sidebar ──────────────────────────────────────────────── --}}
     <x-sidebar />
 
     {{-- ── Konten Utama ─────────────────────────────────────────── --}}
-    <div class="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+    <div class="flex-1 flex flex-col min-h-screen">
 
         {{-- Topbar --}}
         <x-navbar :title="$title" />
 
         {{-- Page Content --}}
-        <main class="flex-1 p-6 overflow-y-auto overflow-x-hidden">
+        <main class="flex-1 p-4 md:p-6 overflow-x-hidden">
             {{ $slot }}
         </main>
 
@@ -70,6 +73,32 @@ Menyertakan sidebar navigasi dan topbar.
                     timerProgressBar: true
                 });
             @endif
+        });
+
+        // Mobile Sidebar Toggle
+        const mobileToggle = document.getElementById('mobileMenuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
+
+        function toggleMobileSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', toggleMobileSidebar);
+        }
+
+        if (backdrop) {
+            backdrop.addEventListener('click', toggleMobileSidebar);
+        }
+
+        // Close sidebar saat resize ke desktop
+        window.addEventListener('resize', function () {
+            if (window.innerWidth >= 1024) {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
         });
     </script>
 

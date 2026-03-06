@@ -8,14 +8,15 @@
     </div>
 
     {{-- Date Range Filter --}}
-    <div class="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <form method="GET" action="{{ route('reports.index') }}" class="flex flex-col sm:flex-row gap-4 items-end">
+    <div class="mb-6 bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
+        <form method="GET" action="{{ route('reports.index') }}"
+            class="flex flex-col sm:flex-row gap-2 sm:gap-4 items-end">
 
-            <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+            <div class="flex-1 w-full">
+                <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     Filter Kode
                 </label>
-                <select name="kode" class="w-full px-4 py-2 border rounded-lg">
+                <select name="kode" class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border rounded-lg text-sm">
                     <option value="">-- Semua Kode --</option>
                     @foreach($kodeOptions as $kodeValue => $kodeLabel)
                         <option value="{{ $kodeValue }}" {{ request('kode') == $kodeValue ? 'selected' : '' }}>
@@ -25,30 +26,31 @@
                 </select>
             </div>
 
-            <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+            <div class="flex-1 w-full">
+                <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     Tanggal Mulai
                 </label>
                 <input type="date" name="start_date" value="{{ $startDate }}"
-                    class="w-full px-4 py-2 border rounded-lg">
+                    class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border rounded-lg text-sm">
             </div>
 
-            <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+            <div class="flex-1 w-full">
+                <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     Tanggal Akhir
                 </label>
-                <input type="date" name="end_date" value="{{ $endDate }}" class="w-full px-4 py-2 border rounded-lg">
+                <input type="date" name="end_date" value="{{ $endDate }}"
+                    class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border rounded-lg text-sm">
             </div>
 
-            <div class="flex gap-2">
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <button type="submit"
-                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                    class="px-4 sm:px-6 py-1.5 sm:py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium">
                     Filter
                 </button>
 
                 @if(request()->hasAny(['kode', 'start_date', 'end_date']))
                     <a href="{{ route('reports.index') }}"
-                        class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                        class="px-4 sm:px-6 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm font-medium text-center">
                         Reset
                     </a>
                 @endif
@@ -84,11 +86,11 @@
                 <thead class="bg-blue-50 sticky top-0 z-40">
                     <tr>
                         <th class="sticky top-0 left-0 z-[60] bg-blue-50 border px-4 py-3 w-[60px]">NO</th>
-                        <th class="sticky top-0 left-[60px] z-[55] bg-blue-50 border px-4 py-3 w-[120px]">BULAN</th>
-                        <th class="sticky top-0 left-[180px] z-[55] bg-blue-50 border px-4 py-3 w-[120px]">TANGGAL</th>
-                        <th class="sticky top-0 left-[300px] z-[55] bg-blue-50 border px-4 py-3 w-[100px]">JAM</th>
-                        <th class="sticky top-0 left-[400px] z-[55] bg-blue-50 border px-4 py-3 w-[120px]">KODE</th>
-                        <th class="sticky top-0 left-[520px] z-[55] bg-blue-50 border px-4 py-3 w-[160px]">INPUTED BY
+                        <th class="sticky top-0 lg:left-[60px] bg-blue-50 border px-4 py-3 w-[120px]">BULAN</th>
+                        <th class="sticky top-0 lg:left-[180px] bg-blue-50 border px-4 py-3 w-[120px]">TANGGAL</th>
+                        <th class="sticky top-0 lg:left-[300px] bg-blue-50 border px-4 py-3 w-[100px]">JAM</th>
+                        <th class="sticky top-0 lg:left-[400px] bg-blue-50 border px-4 py-3 w-[120px]">KODE</th>
+                        <th class="sticky top-0 lg:left-[520px] bg-blue-50 border px-4 py-3 w-[160px]">INPUTED BY
                         </th>
 
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">NAMA PIVOT</th>
@@ -125,23 +127,23 @@
                                 {{ ($calculations->currentPage() - 1) * $calculations->perPage() + $loop->iteration }}
                             </td>
 
-                            <td class="sticky left-[60px] bg-white border px-4 py-2">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[60px] bg-white">
                                 {{ \Carbon\Carbon::parse($calc->created_at)->format('F Y') }}
                             </td>
 
-                            <td class="sticky left-[180px] bg-white border px-4 py-2">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[180px] bg-white">
                                 {{ \Carbon\Carbon::parse($calc->created_at)->format('d-m-Y') }}
                             </td>
 
-                            <td class="sticky left-[300px] bg-white border px-4 py-2">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[300px] bg-white">
                                 {{ \Carbon\Carbon::parse($calc->created_at)->format('H:i:s') }}
                             </td>
 
-                            <td class="sticky left-[400px] bg-white border px-4 py-2 font-semibold">
+                            <td class="border px-4 py-2 font-semibold lg:sticky lg:left-[400px] bg-white">
                                 {{ $calc->kode }}
                             </td>
 
-                            <td class="sticky left-[520px] bg-white border px-4 py-2">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[520px] bg-white">
                                 {{ $calc->user_name ?? '-' }}
                             </td>
 

@@ -1,15 +1,16 @@
 <x-layouts.app title="Data Oil Losses - Oil Losses">
 
     {{-- ── Statistics Cards ──────────────────────────────────────────── --}}
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-indigo-500">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+        <div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-indigo-500">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Total Records</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $statistics['total_records'] }}</p>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs md:text-sm text-gray-500 font-medium truncate">Total Records</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ $statistics['total_records'] }}</p>
                 </div>
-                <div class="p-3 bg-indigo-100 rounded-full">
-                    <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="p-2 md:p-3 bg-indigo-100 rounded-full flex-shrink-0">
+                    <svg class="w-6 h-6 md:w-8 md:h-8 text-indigo-600" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -17,14 +18,15 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+        <div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-green-500">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Records Today</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $statistics['records_today'] }}</p>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs md:text-sm text-gray-500 font-medium truncate">Records Today</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ $statistics['records_today'] }}</p>
                 </div>
-                <div class="p-3 bg-green-100 rounded-full">
-                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="p-2 md:p-3 bg-green-100 rounded-full flex-shrink-0">
+                    <svg class="w-6 h-6 md:w-8 md:h-8 text-green-600" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
@@ -32,14 +34,15 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+        <div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-blue-500">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Data Non-Angka</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $statistics['records_count'] }}</p>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs md:text-sm text-gray-500 font-medium truncate">Data Non-Angka</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ $statistics['records_count'] }}</p>
                 </div>
-                <div class="p-3 bg-blue-100 rounded-full">
-                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="p-2 md:p-3 bg-blue-100 rounded-full flex-shrink-0">
+                    <svg class="w-6 h-6 md:w-8 md:h-8 text-blue-600" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
@@ -47,14 +50,16 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
+        <div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-purple-500">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Data Perhitungan</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $statistics['calculations_count'] }}</p>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs md:text-sm text-gray-500 font-medium truncate">Data Perhitungan</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ $statistics['calculations_count'] }}
+                    </p>
                 </div>
-                <div class="p-3 bg-purple-100 rounded-full">
-                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="p-2 md:p-3 bg-purple-100 rounded-full flex-shrink-0">
+                    <svg class="w-6 h-6 md:w-8 md:h-8 text-purple-600" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
@@ -66,12 +71,12 @@
     {{-- ── Main Card with Tabs ───────────────────────────────────────── --}}
     <x-ui.card title="Data Oil Losses">
         {{-- Action Buttons --}}
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex items-center gap-3">
+        <div class="mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 @can('input oil losses')
                     <a href="{{ route('oil.create') }}"
-                        class="inline-flex items-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="inline-flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm">
+                        <svg class="w-4 h-4 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
                         Input Data Oil Losses
@@ -81,25 +86,27 @@
 
             @can('export oil data')
                 <a href="{{ route('oil.export') }}"
-                    class="inline-flex items-center px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="inline-flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm">
+                    <svg class="w-4 h-4 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Export Data
+                    <span class="hidden sm:inline">Export Data</span>
+                    <span class="sm:hidden">Export</span>
                 </a>
             @endcan
         </div>
 
         {{-- Date Range Filter --}}
-        <div class="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <form method="GET" action="{{ route('oil.index') }}" class="flex flex-col sm:flex-row gap-4 items-end">
-                <div class="flex-1">
-                    <label for="kode" class="block text-sm font-medium text-gray-700 mb-1">
+        <div class="mb-4 md:mb-6 bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-200">
+            <form method="GET" action="{{ route('oil.index') }}"
+                class="flex flex-col sm:flex-row gap-3 md:gap-4 items-end">
+                <div class="flex-1 w-full">
+                    <label for="kode" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                         Filter Kode <span class="text-xs text-gray-500">(Opsional)</span>
                     </label>
                     <select name="kode" id="kode"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                         <option value="">-- Semua Kode --</option>
                         @foreach($kodeOptions as $kodeValue => $kodeLabel)
                             <option value="{{ $kodeValue }}" {{ request('kode') == $kodeValue ? 'selected' : '' }}>
@@ -109,26 +116,26 @@
                     </select>
                 </div>
 
-                <div class="flex-1">
-                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">
+                <div class="flex-1 w-full">
+                    <label for="start_date" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                         Tanggal Mulai <span class="text-xs text-gray-500">(Default: Hari ini)</span>
                     </label>
                     <input type="date" id="start_date" name="start_date" value="{{ $startDate }}"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
 
-                <div class="flex-1">
-                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">
+                <div class="flex-1 w-full">
+                    <label for="end_date" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                         Tanggal Akhir <span class="text-xs text-gray-500">(Default: Hari ini)</span>
                     </label>
                     <input type="date" id="end_date" name="end_date" value="{{ $endDate }}"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
 
-                <div class="flex gap-2">
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button type="submit"
-                        class="inline-flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="inline-flex items-center justify-center px-4 md:px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm whitespace-nowrap">
+                        <svg class="w-4 h-4 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                         </svg>
@@ -137,39 +144,40 @@
 
                     @if(request('start_date') && request('start_date') != now()->format('Y-m-d') || request('end_date') && request('end_date') != now()->format('Y-m-d') || request('kode'))
                         <a href="{{ route('oil.index') }}"
-                            class="inline-flex items-center px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="inline-flex items-center justify-center px-4 md:px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium text-sm whitespace-nowrap">
+                            <svg class="w-4 h-4 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                            Reset ke Hari Ini
+                            <span class="hidden sm:inline">Reset ke Hari Ini</span>
+                            <span class="sm:hidden">Reset</span>
                         </a>
                     @endif
                 </div>
             </form>
 
-            <div class="mt-3 text-sm text-gray-600">
+            <div class="mt-3 text-xs md:text-sm text-gray-600 flex flex-wrap items-center gap-2">
                 <span class="font-medium">Menampilkan data:</span>
                 @if($startDate == $endDate)
                     <span
-                        class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 whitespace-nowrap">
                         📅 {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }}
                     </span>
                 @else
                     <span
-                        class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                         📅 {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} -
                         {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
                     </span>
                 @endif
                 @if(request('kode'))
                     <span
-                        class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 whitespace-nowrap">
                         🔖 Kode: {{ request('kode') }}
                     </span>
                 @else
                     <span
-                        class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
                         🔖 Semua Kode
                     </span>
                 @endif
@@ -178,19 +186,21 @@
 
         @can('view oil losses')
             {{-- Tabs Navigation --}}
-            <div class="border-b border-gray-200 mb-6">
-                <nav class="-mb-px flex space-x-8">
+            <div class="border-b border-gray-200 mb-4 md:mb-6 overflow-x-auto">
+                <nav class="-mb-px flex space-x-4 md:space-x-8">
                     <button onclick="switchTab('records')" id="tab-records"
-                        class="tab-button border-b-2 border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 font-medium text-sm">
-                        📝 Data Jenis & Sampel
+                        class="tab-button border-b-2 border-blue-500 text-blue-600 whitespace-nowrap py-3 md:py-4 px-1 font-medium text-xs md:text-sm flex-shrink-0">
+                        <span class="hidden sm:inline">📝 Data Jenis & Sampel</span>
+                        <span class="sm:hidden">📝 Jenis</span>
                         <span
-                            class="ml-2 bg-blue-100 text-blue-600 py-0.5 px-2.5 rounded-full text-xs">{{ $statistics['records_count'] }}</span>
+                            class="ml-1 md:ml-2 bg-blue-100 text-blue-600 py-0.5 px-1.5 md:px-2.5 rounded-full text-xs">{{ $statistics['records_count'] }}</span>
                     </button>
                     <button onclick="switchTab('calculations')" id="tab-calculations"
-                        class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 font-medium text-sm">
-                        🧪 Data Perhitungan Lab
+                        class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-3 md:py-4 px-1 font-medium text-xs md:text-sm flex-shrink-0">
+                        <span class="hidden sm:inline">🧪 Data Perhitungan Lab</span>
+                        <span class="sm:hidden">🧪 Perhitungan</span>
                         <span
-                            class="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs">{{ $statistics['calculations_count'] }}</span>
+                            class="ml-1 md:ml-2 bg-gray-100 text-gray-600 py-0.5 px-1.5 md:px-2.5 rounded-full text-xs">{{ $statistics['calculations_count'] }}</span>
                     </button>
                 </nav>
             </div>
@@ -198,12 +208,13 @@
             {{-- Tab 1: Data Non-Angka (Lab Records) --}}
             <div id="content-records" class="tab-content">
                 @if ($oilRecords->isEmpty())
-                    <div class="text-center py-12">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="text-center py-8 md:py-12">
+                        <svg class="mx-auto h-10 w-10 md:h-12 md:w-12 text-gray-400" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <p class="mt-4 text-lg text-gray-500">Belum ada data jenis & sampel</p>
+                        <p class="mt-4 text-base md:text-lg text-gray-500">Belum ada data jenis & sampel</p>
                         @can('input oil losses')
                             <a href="{{ route('oil.create') }}"
                                 class="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
@@ -232,8 +243,8 @@
                                         Sampel Boy
                                     </th>
                                     <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                                                                Parameter Lain
-                                                                                            </th> -->
+                                                                                                        Parameter Lain
+                                                                                                    </th> -->
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Input By
                                     </th>
@@ -264,8 +275,8 @@
                                             {{ $record->sampel_boy ?? '-' }}
                                         </td>
                                         <!-- <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                                                                                                        {{ $record->parameter_lain ?? '-' }}
-                                                                                                                                    </td> -->
+                                                                                                                                                    {{ $record->parameter_lain ?? '-' }}
+                                                                                                                                                </td> -->
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $record->user->name }}
                                         </td>

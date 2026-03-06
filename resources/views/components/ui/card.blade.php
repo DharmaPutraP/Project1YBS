@@ -29,21 +29,21 @@
 @php
     $paddings = [
         'none' => '',
-        'sm'   => 'p-4',
-        'md'   => 'p-6',
-        'lg'   => 'p-8',
+        'sm'   => 'p-3 md:p-4',
+        'md'   => 'p-4 md:p-6',
+        'lg'   => 'p-6 md:p-8',
     ];
 
     $bodyPadding = $paddings[$padding] ?? $paddings['md'];
 @endphp
 
-<div {{ $attributes->merge(['class' => 'bg-white rounded-2xl shadow-sm border border-gray-100']) }}>
+<div {{ $attributes->merge(['class' => 'bg-white rounded-lg md:rounded-2xl shadow-sm border border-gray-100']) }}>
 
     @if ($title)
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 class="text-base font-semibold text-gray-800">{{ $title }}</h2>
+        <div class="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-gray-100">
+            <h2 class="text-sm md:text-base font-semibold text-gray-800 truncate">{{ $title }}</h2>
             @isset($actions)
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-shrink-0 ml-2">
                     {{ $actions }}
                 </div>
             @endisset

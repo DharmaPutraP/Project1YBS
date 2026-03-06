@@ -1,24 +1,5 @@
 <x-layouts.app title="Data Oil Losses - Oil Losses">
 
-    {{-- ── Flash Messages ───────────────────────────────────────────── --}}
-    @if (session('success'))
-        <div id="flash-success" class="mb-6">
-            <x-ui.alert type="success" title="Berhasil">{{ session('success') }}</x-ui.alert>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div id="flash-error" class="mb-6">
-            <x-ui.alert type="error" title="Gagal">{{ session('error') }}</x-ui.alert>
-        </div>
-    @endif
-
-    @if (session('info'))
-        <div id="flash-info" class="mb-6">
-            <x-ui.alert type="info" title="Info">{{ session('info') }}</x-ui.alert>
-        </div>
-    @endif
-
     {{-- ── Statistics Cards ──────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-lg shadow p-6 border-l-4 border-indigo-500">
@@ -251,8 +232,8 @@
                                         Sampel Boy
                                     </th>
                                     <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                                                Parameter Lain
-                                                                            </th> -->
+                                                                                                Parameter Lain
+                                                                                            </th> -->
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Input By
                                     </th>
@@ -283,8 +264,8 @@
                                             {{ $record->sampel_boy ?? '-' }}
                                         </td>
                                         <!-- <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                                                                                {{ $record->parameter_lain ?? '-' }}
-                                                                                                            </td> -->
+                                                                                                                                        {{ $record->parameter_lain ?? '-' }}
+                                                                                                                                    </td> -->
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $record->user->name }}
                                         </td>
@@ -292,8 +273,7 @@
                                             <div class="flex items-center gap-2">
                                                 @can('delete oil losses')
                                                     <form action="{{ route('oil.records.destroy', $record->id) }}" method="POST"
-                                                        class="inline"
-                                                        onsubmit="return confirm('Yakin ingin menghapus data ini? Data akan di-soft delete dan bisa dipulihkan.')">
+                                                        class="inline delete-form" data-item-name="Data {{ $record->kode ?? 'ini' }}">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
@@ -492,8 +472,8 @@
                                                     </a>
                                                 @endcan
                                                 @can('delete oil losses')
-                                                    <form action="{{ route('oil.destroy', $oilLoss->id) }}" method="POST" class="inline"
-                                                        onsubmit="return confirm('Yakin ingin menghapus data ini?')">
+                                                    <form action="{{ route('oil.destroy', $oilLoss->id) }}" method="POST"
+                                                        class="inline delete-form" data-item-name="Data {{ $oilLoss->kode ?? 'ini' }}">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
@@ -550,19 +530,19 @@
         });
     </script>
 
-    {{-- Auto-dismiss flash messages after 4 seconds --}}
     <script>
-        ['flash-success', 'flash-error', 'flash-info'].forEach(function (id) {
-            const el = document.getElementById(id);
-            if (el) {
-                setTimeout(function () {
-                    el.style.transition = 'opacity 0.5s ease';
-                    el.style.opacity = '0';
-                    setTimeout(function () {
-                        el.remove();
-                    }, 500);
-                }, 4000);
-            }
+        // Handle delete confirmations with SweetAlert2
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.delete-form').forEach(form => {
+                form.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    const itemName = this.dataset.itemName || 'data ini';
+                    const confirmed = await window.confirmDelete(itemName);
+                    if (confirmed) {
+                        this.submit();
+                    }
+                });
+            });
         });
     </script>
 

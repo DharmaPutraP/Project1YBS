@@ -1,18 +1,5 @@
 <x-layouts.app title="Report Bobot">
 
-    {{-- ── Flash Messages ───────────────────────────────────────────── --}}
-    @if (session('success'))
-        <div id="flash-success" class="mb-6">
-            <x-ui.alert type="success" title="Berhasil">{{ session('success') }}</x-ui.alert>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div id="flash-error" class="mb-6">
-            <x-ui.alert type="error" title="Gagal">{{ session('error') }}</x-ui.alert>
-        </div>
-    @endif
-
     {{-- ── Header Section ────────────────────────────────────────────── --}}
     <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-900">Performance</h1>
@@ -323,7 +310,7 @@
                                         </svg>
                                         Operator Clarification
                                         <!-- <span class="ml-2 text-xs text-green-700">(FEED, SOLID, HEAVY PHASE,
-                                                            EFFLUENT)</span> -->
+                                                                EFFLUENT)</span> -->
                                     </div>
                                 </td>
                             </tr>
@@ -467,21 +454,5 @@
             </x-ui.card>
         </div>
     @endif
-
-    {{-- Auto-dismiss flash messages after 4 seconds --}}
-    <script>
-        ['flash-success', 'flash-error'].forEach(function (id) {
-            const el = document.getElementById(id);
-            if (el) {
-                setTimeout(function () {
-                    el.style.transition = 'opacity 0.5s ease';
-                    el.style.opacity = '0';
-                    setTimeout(function () {
-                        el.remove();
-                    }, 500);
-                }, 4000);
-            }
-        });
-    </script>
 
 </x-layouts.app>

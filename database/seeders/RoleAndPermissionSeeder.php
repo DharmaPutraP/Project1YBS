@@ -68,7 +68,6 @@ class RoleAndPermissionSeeder extends Seeder
         // ══════════════════════════════════════════════════════════════════════
         // ── LAPORAN (REPORTS) ─────────────────────────────────────────────────
         // ══════════════════════════════════════════════════════════════════════
-        'view reports',                   // Akses menu laporan
         'export reports',                 // Download/export laporan
 
         'input oil losses',
@@ -103,7 +102,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view oil samples',
             'create oil samples',
             'edit oil samples',
-            'view reports',
+            'export reports',
             'view users',                     // Lihat daftar pengguna
             'create users',                   // Tambah pengguna baru
             'edit users',                     // Edit data pengguna
@@ -118,6 +117,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view olwb',
             'view performance',
             'view laporan oil losses',
+            'print oil certificate',
+            'export oil data',
         ],
 
         // ══════════════════════════════════════════════════════════════════════
@@ -128,7 +129,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view dashboard',
             'input oil losses',
             'view oil losses',
-            'view reports',
+            'view laporan oil losses',
         ],
 
         'Asisten Lab' => [
@@ -137,7 +138,6 @@ class RoleAndPermissionSeeder extends Seeder
             'view olwb',
             'view performance',
             'view laporan oil losses',
-            'view reports',
         ],
 
         'PCM' => [
@@ -146,7 +146,6 @@ class RoleAndPermissionSeeder extends Seeder
             'view olwb',
             'view performance',
             'view laporan oil losses',
-            'view reports',
         ],
 
         'Direksi' => [
@@ -155,7 +154,6 @@ class RoleAndPermissionSeeder extends Seeder
             'view olwb',
             'view performance',
             'view laporan oil losses',
-            'view reports',
         ],
 
         'Koor Sistem Informasi' => [
@@ -164,7 +162,6 @@ class RoleAndPermissionSeeder extends Seeder
             'view olwb',
             'view performance',
             'view laporan oil losses',
-            'view reports',
         ],
     ];
 

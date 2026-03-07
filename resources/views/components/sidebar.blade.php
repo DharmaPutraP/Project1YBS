@@ -101,7 +101,7 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
         @endcanany
 
         {{-- ── Laporan ─────────────────────────────────────── --}}
-        @can('view reports')
+        @can('view laporan oil losses')
             <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
                 Laporan
             </p>

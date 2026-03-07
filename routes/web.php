@@ -85,7 +85,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/{oilCalculation}/print', [OilController::class, 'print'])
             ->name('print')
-            ->middleware('permission:print lab certificate');
+            ->middleware('permission:print oil certificate');
 
         Route::get('/export', [OilController::class, 'export'])
             ->name('export')
@@ -98,7 +98,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])
             ->name('index')
-            ->middleware('permission:view reports', 'permission:view laporan oil losses');
+            ->middleware('permission:view laporan oil losses');
 
         Route::post('/export', [ReportController::class, 'export'])
             ->name('export')

@@ -313,7 +313,7 @@
                                         </svg>
                                         Operator Clarification
                                         <!-- <span class="ml-2 text-xs text-green-700">(FEED, SOLID, HEAVY PHASE,
-                                                                    EFFLUENT)</span> -->
+                                                                        EFFLUENT)</span> -->
                                     </div>
                                 </td>
                             </tr>

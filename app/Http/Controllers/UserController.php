@@ -30,7 +30,7 @@ class UserController extends Controller
         }
 
         $users = $query->paginate(10);
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::orderBy('name')->where('name', '!=', 'viewer')->get();
 
         return view('users.index', compact('users', 'roles', 'roleFilter', 'search'));
     }
@@ -38,7 +38,7 @@ class UserController extends Controller
     public function edit($id)
     {
         $user = User::whereNull('deleted_at')->findOrFail($id);
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::orderBy('name')->where('name', '!=', 'viewer')->get();
         $userRoleIds = $user->roles()->pluck('id')->toArray();
         return view('users.edit', compact('user', 'roles', 'userRoleIds'));
     }
@@ -74,7 +74,7 @@ class UserController extends Controller
 
             $roleNames = $user->getRoleNames()->implode(', ');
             return redirect()->route('users.index')
-                ->with('success', "User '{$user->name}' berhasil diupdate dengan role '{$roleNames}'.");
+                ->with('success', "User {$user->name} berhasil diupdate dengan role {$roleNames}.");
 
         } catch (Exception $e) {
             Log::error('Error updating user: ' . $e->getMessage());
@@ -90,10 +90,11 @@ class UserController extends Controller
         try {
             $user = User::whereNull('deleted_at')->findOrFail($id);
             $userName = $user->name;
+            $roleNames = $user->getRoleNames()->implode(', ');
             $user->delete();
 
             return redirect()->route('users.index')
-                ->with('success', "User '{$userName}' berhasil dihapus.");
+                ->with('success', "User {$userName} dengan role {$roleNames} berhasil dihapus.");
 
         } catch (Exception $e) {
             Log::error('Error deleting user: ' . $e->getMessage());

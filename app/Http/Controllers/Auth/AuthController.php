@@ -72,7 +72,7 @@ class AuthController extends Controller
 
             $roleNames = $user->getRoleNames()->implode(', ');
             return redirect()->route('users.index')
-                ->with('success', "User '{$user->name}' berhasil dibuat dengan role '{$roleNames}'.");
+                ->with('success', "User {$user->name} berhasil ditambahkan dengan role {$roleNames}.");
 
         } catch (Exception $e) {
             Log::error('Error creating user: ' . $e->getMessage());

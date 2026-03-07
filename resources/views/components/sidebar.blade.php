@@ -36,7 +36,7 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
 </style>
 
 <aside id="sidebar"
-    class="fixed lg:static top-0 left-0 z-40 w-64 h-screen bg-white border-r border-gray-200 flex flex-col shadow-lg lg:shadow-sm transition-transform -translate-x-full lg:translate-x-0">
+    class="fixed lg:sticky top-0 left-0 z-40 w-64 h-screen flex-shrink-0 bg-white border-r border-gray-200 flex flex-col shadow-lg lg:shadow-sm transition-transform -translate-x-full lg:translate-x-0">
 
     {{-- ── Brand / Logo ──────────────────────────────────────── --}}
     <div class="sidebar-header h-16 flex items-center justify-between px-4 md:px-6 border-b border-gray-200 bg-gray-50">

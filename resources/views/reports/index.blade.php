@@ -86,11 +86,11 @@
                 <thead class="bg-blue-50 sticky top-0 z-40">
                     <tr>
                         <th class="sticky top-0 left-0 z-[60] bg-blue-50 border px-4 py-3 w-[60px]">NO</th>
-                        <th class="sticky top-0 lg:left-[60px] bg-blue-50 border px-4 py-3 w-[120px]">BULAN</th>
-                        <th class="sticky top-0 lg:left-[180px] bg-blue-50 border px-4 py-3 w-[120px]">TANGGAL</th>
-                        <th class="sticky top-0 lg:left-[300px] bg-blue-50 border px-4 py-3 w-[100px]">JAM</th>
-                        <th class="sticky top-0 lg:left-[400px] bg-blue-50 border px-4 py-3 w-[120px]">KODE</th>
-                        <th class="sticky top-0 lg:left-[520px] bg-blue-50 border px-4 py-3 w-[160px]">INPUTED BY
+                        <th class="sticky top-0 lg:left-[60px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">BULAN</th>
+                        <th class="sticky top-0 lg:left-[180px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">TANGGAL</th>
+                        <th class="sticky top-0 lg:left-[300px] z-[50] bg-blue-50 border px-4 py-3 w-[100px]">JAM</th>
+                        <th class="sticky top-0 lg:left-[400px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">KODE</th>
+                        <th class="sticky top-0 lg:left-[520px] z-[50] bg-blue-50 border px-4 py-3 w-[160px]">INPUTED BY
                         </th>
 
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">NAMA PIVOT</th>
@@ -123,27 +123,27 @@
                     @forelse ($calculations as $calc)
                         <tr class="hover:bg-gray-200">
 
-                            <td class="sticky left-0 bg-white border px-4 py-2">
+                            <td class="sticky left-0 z-[20] bg-white border px-4 py-2">
                                 {{ ($calculations->currentPage() - 1) * $calculations->perPage() + $loop->iteration }}
                             </td>
 
-                            <td class="border px-4 py-2 lg:sticky lg:left-[60px] bg-white">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[60px] z-[10] bg-white">
                                 {{ \Carbon\Carbon::parse($calc->created_at)->format('F Y') }}
                             </td>
 
-                            <td class="border px-4 py-2 lg:sticky lg:left-[180px] bg-white">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[180px] z-[10] bg-white">
                                 {{ \Carbon\Carbon::parse($calc->created_at)->format('d-m-Y') }}
                             </td>
 
-                            <td class="border px-4 py-2 lg:sticky lg:left-[300px] bg-white">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[300px] z-[10] bg-white">
                                 {{ \Carbon\Carbon::parse($calc->created_at)->format('H:i:s') }}
                             </td>
 
-                            <td class="border px-4 py-2 font-semibold lg:sticky lg:left-[400px] bg-white">
+                            <td class="border px-4 py-2 font-semibold lg:sticky lg:left-[400px] z-[10] bg-white">
                                 {{ $calc->kode }}
                             </td>
 
-                            <td class="border px-4 py-2 lg:sticky lg:left-[520px] bg-white">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[520px] z-[10] bg-white">
                                 {{ $calc->user_name ?? '-' }}
                             </td>
 

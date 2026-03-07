@@ -16,26 +16,31 @@ Menyertakan sidebar navigasi dan topbar.
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="min-h-screen bg-gray-50">
+<body class="bg-gray-50">
     {{-- Offline Indicator --}}
     <x-offline-indicator />
 
     {{-- Mobile Backdrop Overlay --}}
     <div id="sidebarBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden hidden"></div>
 
-    {{-- ── Sidebar ──────────────────────────────────────────────── --}}
-    <x-sidebar />
+    {{-- ── Layout Wrapper: flex row (sidebar | konten) ────────────── --}}
+    <div class="flex min-h-screen">
 
-    {{-- ── Konten Utama ─────────────────────────────────────────── --}}
-    <div class="flex-1 flex flex-col min-h-screen">
+        {{-- ── Sidebar ──────────────────────────────────────────────── --}}
+        <x-sidebar />
 
-        {{-- Topbar --}}
-        <x-navbar :title="$title" />
+        {{-- ── Konten Utama ─────────────────────────────────────────── --}}
+        <div class="flex-1 flex flex-col min-w-0">
 
-        {{-- Page Content --}}
-        <main class="flex-1 p-4 md:p-6 overflow-x-hidden">
-            {{ $slot }}
-        </main>
+            {{-- Topbar --}}
+            <x-navbar :title="$title" />
+
+            {{-- Page Content --}}
+            <main class="flex-1 p-4 md:p-6 overflow-x-hidden">
+                {{ $slot }}
+            </main>
+
+        </div>
 
     </div>
 
@@ -43,11 +48,11 @@ Menyertakan sidebar navigasi dan topbar.
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             @if (session('success'))
-                window.showSuccess('{{ session('success') }}');
+                window.showSuccess({!! json_encode(session('success')) !!});
             @endif
 
             @if (session('error'))
-                window.showError('{{ session('error') }}');
+                window.showError({!! json_encode(session('error')) !!});
             @endif
 
             @if (session('info'))
@@ -55,7 +60,7 @@ Menyertakan sidebar navigasi dan topbar.
                     toast: true,
                     position: 'top-end',
                     icon: 'info',
-                    title: '{{ session('info') }}',
+                    title: {!! json_encode(session('info')) !!},
                     showConfirmButton: false,
                     timer: 4000,
                     timerProgressBar: true
@@ -67,7 +72,7 @@ Menyertakan sidebar navigasi dan topbar.
                     toast: true,
                     position: 'top-end',
                     icon: 'warning',
-                    title: '{{ session('warning') }}',
+                    title: {!! json_encode(session('warning')) !!},
                     showConfirmButton: false,
                     timer: 4000,
                     timerProgressBar: true

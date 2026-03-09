@@ -87,7 +87,7 @@ class OilController extends Controller
     public function create()
     {
         // Allow both 'create oil results' (PPIC) and 'input oil losses' (Sampel Boy)
-        if (!Auth::user()->can('create oil results') && !Auth::user()->can('input oil losses')) {
+        if (!Auth::user()->can('create oil results')) {
             abort(403, 'Anda tidak memiliki akses untuk input data oil losses.');
         }
 
@@ -105,7 +105,7 @@ class OilController extends Controller
     public function store(Request $request)
     {
         // Allow both 'create oil results' (PPIC) and 'input oil losses' (Sampel Boy)
-        if (!Auth::user()->can('create oil results') && !Auth::user()->can('input oil losses')) {
+        if (!Auth::user()->can('create oil results')) {
             abort(403, 'Anda tidak memiliki akses untuk input data oil losses.');
         }
 
@@ -177,7 +177,7 @@ class OilController extends Controller
     public function show(OilCalculation $oilCalculation)
     {
         // Allow both 'view oil results' (PPIC) and 'view oil losses' (Sampel Boy, others)
-        if (!Auth::user()->can('view oil results') && !Auth::user()->can('view oil losses')) {
+        if (!Auth::user()->can('view oil losses')) {
             abort(403, 'Anda tidak memiliki akses untuk melihat data oil losses.');
         }
 
@@ -192,7 +192,7 @@ class OilController extends Controller
     public function edit(OilCalculation $oilCalculation)
     {
         // Allow both 'edit oil results' (PPIC) and 'edit oil losses' (PPIC)
-        if (!Auth::user()->can('edit oil results') && !Auth::user()->can('edit oil losses')) {
+        if (!Auth::user()->can('edit oil losses')) {
             abort(403, 'Anda tidak memiliki akses untuk edit data oil losses.');
         }
 
@@ -213,7 +213,7 @@ class OilController extends Controller
     public function update(Request $request, OilCalculation $oilCalculation)
     {
         // Allow both 'edit oil results' (PPIC) and 'edit oil losses' (PPIC)
-        if (!Auth::user()->can('edit oil results') && !Auth::user()->can('edit oil losses')) {
+        if (!Auth::user()->can('edit oil losses')) {
             abort(403, 'Anda tidak memiliki akses untuk edit data oil losses.');
         }
 
@@ -318,7 +318,7 @@ class OilController extends Controller
     public function destroy(OilCalculation $oilCalculation)
     {
         // Allow both 'delete oil results' (PPIC) and 'delete oil losses' (PPIC)
-        if (!Auth::user()->can('delete oil results') && !Auth::user()->can('delete oil losses')) {
+        if (!Auth::user()->can('delete oil losses')) {
             abort(403, 'Anda tidak memiliki akses untuk hapus data oil losses.');
         }
 
@@ -339,7 +339,7 @@ class OilController extends Controller
     public function destroyRecord(OilRecord $oilRecord)
     {
         // Allow both 'delete oil results' (PPIC) and 'delete oil losses' (PPIC)
-        if (!Auth::user()->can('delete oil results') && !Auth::user()->can('delete oil losses')) {
+        if (!Auth::user()->can('delete oil losses')) {
             abort(403, 'Anda tidak memiliki akses untuk hapus data oil losses.');
         }
 
@@ -364,7 +364,7 @@ class OilController extends Controller
     public function report(Request $request)
     {
         // Allow both 'view oil samples' (PPIC) and 'view performance' (Asisten Lab, others)
-        if (!Auth::user()->can('view oil samples') && !Auth::user()->can('view performance')) {
+        if (!Auth::user()->can('view performance oil losses')) {
             abort(403, 'Anda tidak memiliki akses untuk melihat performance.');
         }
 
@@ -376,7 +376,7 @@ class OilController extends Controller
     public function olwbIndex(Request $request)
     {
         // Allow both 'view oil samples' (PPIC) and 'view olwb' (Asisten Lab, others)
-        if (!Auth::user()->can('view oil samples') && !Auth::user()->can('view olwb')) {
+        if (!Auth::user()->can('view olwb')) {
             abort(403, 'Anda tidak memiliki akses untuk melihat data OLWB.');
         }
 
@@ -433,7 +433,7 @@ class OilController extends Controller
     public function exportOlwb(Request $request)
     {
         // Allow both 'view oil samples' (PPIC) and 'view olwb' (Asisten Lab, others)
-        if (!Auth::user()->can('view oil samples') && !Auth::user()->can('view olwb')) {
+        if (!Auth::user()->can('view olwb') && !Auth::user()->can('export olwb reports')) {
             abort(403, 'Anda tidak memiliki akses untuk export data OLWB.');
         }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -10,6 +11,7 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    use LogsActivity;
     public function index(Request $request)
     {
         $query = User::with('roles')->whereNull('deleted_at');
@@ -72,6 +74,13 @@ class UserController extends Controller
             $roles = Role::whereIn('id', $validated['role_ids'])->get();
             $user->syncRoles($roles);
 
+            // Log user update
+            $this->logActivity(
+                'update',
+                "Update user '{$user->name}' dengan role {$user->getRoleNames()->implode(', ')}",
+                $user
+            );
+
             $roleNames = $user->getRoleNames()->implode(', ');
             return redirect()->route('users.index')
                 ->with('success', "User {$user->name} berhasil diupdate dengan role {$roleNames}.");
@@ -91,6 +100,13 @@ class UserController extends Controller
             $user = User::whereNull('deleted_at')->findOrFail($id);
             $userName = $user->name;
             $roleNames = $user->getRoleNames()->implode(', ');
+
+            // Log before delete
+            $this->logDelete(
+                $user,
+                "Hapus user '{$userName}' dengan role {$roleNames}"
+            );
+
             $user->delete();
 
             return redirect()->route('users.index')

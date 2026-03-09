@@ -10,6 +10,7 @@ use App\Models\DailyBobotAverage;
 use App\Services\OilService;
 use App\Exports\OlwbExport;
 use App\Exports\PerformanceExport;
+use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -18,6 +19,8 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class OilController extends Controller
 {
+    use LogsActivity;
+
     protected OilService $oilService;
 
     public function __construct(OilService $oilService)
@@ -160,6 +163,33 @@ class OilController extends Controller
             // Recalculate daily bobot average for today
             $this->recalculateDailyBobotAverage(now()->format('Y-m-d'));
 
+            // Log activity
+            if (isset($result['results'])) {
+                $loggedModel = null;
+                $kode = null;
+                $mode = [];
+
+                if (isset($result['results']['mode1'])) {
+                    $loggedModel = $result['results']['mode1'];
+                    $kode = $loggedModel->kode;
+                    $mode[] = 'non-numeric';
+                }
+
+                if (isset($result['results']['mode2'])) {
+                    $loggedModel = $result['results']['mode2'];
+                    $kode = $loggedModel->kode;
+                    $mode[] = 'numeric';
+                }
+
+                if ($loggedModel && $kode) {
+                    $this->logCreate(
+                        $loggedModel,
+                        "Input data oil losses untuk kode {$kode}",
+                        ['mode' => implode(' + ', $mode)]
+                    );
+                }
+            }
+
             return redirect()
                 ->route('oil.index')
                 ->with('success', $result['message']);
@@ -301,6 +331,13 @@ class OilController extends Controller
             // Recalculate daily bobot average for the calculation date
             $this->recalculateDailyBobotAverage($oilCalculation->created_at->format('Y-m-d'));
 
+            // Log activity
+            $this->logActivity(
+                'update',
+                "Update data oil losses kode {$oilCalculation->kode}",
+                $oilCalculation
+            );
+
             return redirect()
                 ->route('oil.index')
                 ->with('success', 'Data berhasil diupdate!');
@@ -323,6 +360,15 @@ class OilController extends Controller
         }
 
         $calculationDate = $oilCalculation->created_at->format('Y-m-d');
+        $kode = $oilCalculation->kode;
+        $oilCalculationId = $oilCalculation->id;
+
+        // Log before delete
+        $this->logDelete(
+            $oilCalculation,
+            "Hapus data oil losses kode {$kode} (ID: {$oilCalculationId})"
+        );
+
         $oilCalculation->delete();
 
         // Recalculate daily bobot average after deletion
@@ -342,6 +388,15 @@ class OilController extends Controller
         if (!Auth::user()->can('delete oil losses')) {
             abort(403, 'Anda tidak memiliki akses untuk hapus data oil losses.');
         }
+
+        $kode = $oilRecord->kode;
+        $oilRecordId = $oilRecord->id;
+
+        // Log before delete
+        $this->logDelete(
+            $oilRecord,
+            "Hapus data oil record (non-angka) kode {$kode} (ID: {$oilRecordId})"
+        );
 
         $oilRecord->delete(); // Soft delete karena model menggunakan SoftDeletes trait
 

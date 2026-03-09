@@ -5,6 +5,7 @@ use App\Http\Controllers\OilController;
 // use App\Http\Controllers\TimbanganController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ActivityLogController;
 // use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
 
@@ -128,6 +129,23 @@ Route::middleware('auth')->group(function () {
         Route::post('/{id}/reset-password', [UserController::class, 'resetPassword'])
             ->name('reset-password')
             ->middleware('permission:reset user password');
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── ACTIVITY LOGS ─────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('activity-logs')->name('activity-logs.')->group(function () {
+        Route::get('/', [ActivityLogController::class, 'index'])
+            ->name('index')
+            ->middleware('permission:view user activity log');
+
+        Route::get('/{id}', [ActivityLogController::class, 'show'])
+            ->name('show')
+            ->middleware('permission:view user activity log');
+
+        Route::post('/cleanup', [ActivityLogController::class, 'cleanup'])
+            ->name('cleanup')
+            ->middleware('permission:view user activity log');
     });
 
 });

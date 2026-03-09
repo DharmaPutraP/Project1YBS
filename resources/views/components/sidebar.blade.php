@@ -113,7 +113,7 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
         @endcan
 
         {{-- ── Admin ───────────────────────────────────────── --}}
-        @canany(['view users'])
+        @canany(['view users', 'view user activity log'])
             <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
                 Administrasi
             </p>
@@ -122,6 +122,13 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
                 <x-sidebar-item href="{{ route('users.index') }}" :active="request()->routeIs('users.*')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>'>
                     <span class="sidebar-item-text">Kelola Pengguna</span>
+                </x-sidebar-item>
+            @endcan
+
+            @can('view user activity log')
+                <x-sidebar-item href="{{ route('activity-logs.index') }}" :active="request()->routeIs('activity-logs.*')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
+                    <span class="sidebar-item-text">Activity Log</span>
                 </x-sidebar-item>
             @endcan
 

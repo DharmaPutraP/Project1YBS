@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +13,7 @@ use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
+    use LogsActivity;
     // ─── Login ───────────────────────────────────────────────────────────────
 
     public function showLogin()
@@ -28,6 +30,10 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+
+            // Log successful login
+            $this->logLogin();
+
             return redirect()->intended('/dashboard');
         }
 
@@ -70,6 +76,12 @@ class AuthController extends Controller
             $roles = Role::whereIn('id', $validated['role_ids'])->get();
             $user->syncRoles($roles);
 
+            // Log user creation
+            $this->logCreate(
+                $user,
+                "User baru '{$user->name}' berhasil dibuat dengan role {$user->getRoleNames()->implode(', ')}"
+            );
+
             $roleNames = $user->getRoleNames()->implode(', ');
             return redirect()->route('users.index')
                 ->with('success', "User {$user->name} berhasil ditambahkan dengan role {$roleNames}.");
@@ -87,6 +99,9 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        // Log before logout
+        $this->logLogout();
+
         Auth::logout();
 
         $request->session()->invalidate();

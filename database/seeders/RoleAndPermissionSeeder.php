@@ -19,17 +19,8 @@ class RoleAndPermissionSeeder extends Seeder
      * Actions: view, create, edit, delete, approve, export, print
      */
     private array $permissions = [
+        'view dashboard',
 
-        // ══════════════════════════════════════════════════════════════════════
-        // ── DASHBOARD ─────────────────────────────────────────────────────────
-        // ══════════════════════════════════════════════════════════════════════
-        'view dashboard',                 // Akses halaman dashboard
-        'view dashboard analytics',       // Lihat grafik & statistik mendalam
-        'export dashboard data',          // Export data dashboard ke Excel/PDF
-
-        // ══════════════════════════════════════════════════════════════════════
-        // ── MANAJEMEN PENGGUNA ────────────────────────────────────────────────
-        // ══════════════════════════════════════════════════════════════════════
         'view users',                     // Lihat daftar pengguna
         'create users',                   // Tambah pengguna baru
         'edit users',                     // Edit data pengguna
@@ -37,46 +28,18 @@ class RoleAndPermissionSeeder extends Seeder
         'reset user password',            // Reset password pengguna lain
         'view user activity log',         // Lihat log aktivitas pengguna
 
-        // ── Role & Permission Management ──────────────────────────────────────
-        'view roles',                     // Lihat daftar role
-        'create roles',                   // Buat role baru
-        'edit roles',                     // Edit role & permission
-        'delete roles',                   // Hapus role
-        'assign roles',                   // Assign role ke user
+        'view oil losses',                       // Lihat halaman lab
+        'create oil losses',             // Daftarkan sampel baru
+        'edit oil losses',               // Edit info sampel
+        'delete oil losses',             // Hapus sampel
 
-        // ══════════════════════════════════════════════════════════════════════
-        // ── LABORATORIUM ──────────────────────────────────────────────────────
-        // ══════════════════════════════════════════════════════════════════════
-        'view oil',                       // Lihat halaman lab
-        'view oil results',               // Lihat semua hasil lab
-        'view own oil results',           // Hanya lihat hasil lab yang diinput sendiri
-        'create oil results',             // Input hasil analisa lab baru
-        'edit oil results',               // Edit hasil oil losses yang belum diapprove
-        'edit own oil results',           // Hanya Edit hasil oil losses sendiri
-        'delete oil results',             // Hapus hasil lab
-        'approve oil results',            // Approve/finalisasi hasil oil losses
-        'reject oil results',             // Reject hasil oil losses yang tidak valid
-        'print oil certificate',          // Cetak sertifikat hasil oil losses
-        'export oil data',                // Export data oil losses ke Excel/PDF
-
-        // ── Sample Management (Sampel Lab) ────────────────────────────────────
-        'view oil samples',               // Lihat daftar sampel
-        'create oil samples',             // Daftarkan sampel baru
-        'edit oil samples',               // Edit info sampel
-        'delete oil samples',             // Hapus sampel
-
-        // ══════════════════════════════════════════════════════════════════════
-        // ── LAPORAN (REPORTS) ─────────────────────────────────────────────────
-        // ══════════════════════════════════════════════════════════════════════
-        'export reports',                 // Download/export laporan
-
-        'input oil losses',
-        'edit oil losses',
-        'delete oil losses',
-        'view oil losses',
         'view olwb',
-        'view performance',
+        'export olwb reports',
+        'view performance oil losses',
+        'export performance reports oil losses',
+
         'view laporan oil losses',
+        'export laporan oil losses',                 // Download/export laporan
     ];
 
     /**
@@ -93,32 +56,26 @@ class RoleAndPermissionSeeder extends Seeder
         // ══════════════════════════════════════════════════════════════════════
         'PPIC' => [
             'view dashboard',
-            'view dashboard analytics',
-            'view oil',
-            'view oil results',
-            'create oil results',
-            'edit oil results',
-            'delete oil results',
-            'view oil samples',
-            'create oil samples',
-            'edit oil samples',
-            'export reports',
-            'view users',                     // Lihat daftar pengguna
-            'create users',                   // Tambah pengguna baru
-            'edit users',                     // Edit data pengguna
-            'delete users',                   // Hapus pengguna
-            'reset user password',            // Reset password pengguna lain
-            'view user activity log',         // Lihat log aktivitas pengguna
 
-            'input oil losses',
+            'view users',
+            'create users',
+            'edit users',
+            'delete users',
+            'reset user password',
+            'view user activity log',
+
+            'view oil losses',
+            'create oil losses',
             'edit oil losses',
             'delete oil losses',
-            'view oil losses',
+
             'view olwb',
-            'view performance',
+            'export olwb reports',
+            'view performance oil losses',
+            'export performance reports oil losses',
+
             'view laporan oil losses',
-            'print oil certificate',
-            'export oil data',
+            'export laporan oil losses',
         ],
 
         // ══════════════════════════════════════════════════════════════════════
@@ -127,7 +84,7 @@ class RoleAndPermissionSeeder extends Seeder
         // ══════════════════════════════════════════════════════════════════════
         'Sampel Boy' => [
             'view dashboard',
-            'input oil losses',
+            'create oil losses',
             'view oil losses',
             'view laporan oil losses',
         ],
@@ -136,7 +93,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view dashboard',
             'view oil losses',
             'view olwb',
-            'view performance',
+            'view performance oil losses',
             'view laporan oil losses',
         ],
 
@@ -144,7 +101,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view dashboard',
             'view oil losses',
             'view olwb',
-            'view performance',
+            'view performance oil losses',
             'view laporan oil losses',
         ],
 
@@ -152,7 +109,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view dashboard',
             'view oil losses',
             'view olwb',
-            'view performance',
+            'view performance oil losses',
             'view laporan oil losses',
         ],
 
@@ -160,7 +117,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view dashboard',
             'view oil losses',
             'view olwb',
-            'view performance',
+            'view performance oil losses',
             'view laporan oil losses',
         ],
     ];

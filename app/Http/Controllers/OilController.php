@@ -51,7 +51,7 @@ class OilController extends Controller
         }
 
         // Check permission - if user can only view own results
-        if (!Auth::user()->can('view oil results') && Auth::user()->can('view own oil results')) {
+        if (!Auth::user()->can('view oil losses')) {
             $calculationsQuery->where('user_id', Auth::id());
             $recordsQuery->where('user_id', Auth::id());
         }

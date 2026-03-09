@@ -73,7 +73,7 @@
         {{-- Action Buttons --}}
         <div class="mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                @can('input oil losses')
+                @can('create oil losses')
                     <a href="{{ route('oil.create') }}"
                         class="inline-flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm">
                         <svg class="w-4 h-4 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,17 +84,6 @@
                 @endcan
             </div>
 
-            @can('export oil data')
-                <a href="{{ route('oil.export') }}"
-                    class="inline-flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm">
-                    <svg class="w-4 h-4 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span class="hidden sm:inline">Export Data</span>
-                    <span class="sm:hidden">Export</span>
-                </a>
-            @endcan
         </div>
 
         {{-- Date Range Filter --}}
@@ -215,7 +204,7 @@
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <p class="mt-4 text-base md:text-lg text-gray-500">Belum ada data jenis & sampel</p>
-                        @can('input oil losses')
+                        @can('create oil losses')
                             <a href="{{ route('oil.create') }}"
                                 class="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                                 Input Data Pertama
@@ -243,8 +232,8 @@
                                         Sampel Boy
                                     </th>
                                     <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                                                                        Parameter Lain
-                                                                                                    </th> -->
+                                                                                                                                Parameter Lain
+                                                                                                                            </th> -->
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Input By
                                     </th>
@@ -275,8 +264,8 @@
                                             {{ $record->sampel_boy ?? '-' }}
                                         </td>
                                         <!-- <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                                                                                                                    {{ $record->parameter_lain ?? '-' }}
-                                                                                                                                                </td> -->
+                                                                                                                                                                                        {{ $record->parameter_lain ?? '-' }}
+                                                                                                                                                                                    </td> -->
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $record->user->name }}
                                         </td>
@@ -319,7 +308,7 @@
                                 d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                         <p class="mt-4 text-lg text-gray-500">Belum ada data perhitungan lab</p>
-                        @can('input oil losses')
+                        @can('create oil losses')
                             <a href="{{ route('oil.create') }}"
                                 class="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                                 Input Data Pertama

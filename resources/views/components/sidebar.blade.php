@@ -64,7 +64,7 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
         @endcan
 
         {{-- ── Oil Losses ────────────────────────────────── --}}
-        @canany(['view oil losses', 'input oil losses', 'view olwb', 'view performance'])
+        @canany(['view oil losses', 'create oil losses', 'view olwb', 'view performance oil losses'])
             <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
                 Oil Losses
             </p>
@@ -78,7 +78,7 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             @endcan
 
             {{-- Input Data Baru --}}
-            @can('input oil losses')
+            @can('create oil losses')
                 <x-sidebar-item href="{{ route('oil.create') }}" :active="request()->routeIs('oil.create')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
                     <span class="sidebar-item-text">Input Data Baru</span>
@@ -92,7 +92,7 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
                 </x-sidebar-item>
             @endcan
 
-            @can('view performance')
+            @can('view performance oil losses')
                 <x-sidebar-item href="{{ route('oil.report') }}" :active="request()->routeIs('oil.report')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
                     <span class="sidebar-item-text">Performance</span>
@@ -108,12 +108,12 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
 
             <x-sidebar-item href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')"
                 icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
-                <span class="sidebar-item-text">Laporan</span>
+                <span class="sidebar-item-text">Laporan Oil Losses</span>
             </x-sidebar-item>
         @endcan
 
         {{-- ── Admin ───────────────────────────────────────── --}}
-        @canany(['view users', 'view roles', 'view settings'])
+        @canany(['view users'])
             <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
                 Administrasi
             </p>

@@ -34,49 +34,26 @@ echo "╚═══════════════════════�
 
 $allowedPermissions = [
     'view dashboard',
-    'view dashboard analytics',
-    'export dashboard data',
 
-    'view users',
-    'create users',
-    'edit users',
-    'delete users',
-    'reset user password',
-    'view user activity log',
+    'view users',                     // Lihat daftar pengguna
+    'create users',                   // Tambah pengguna baru
+    'edit users',                     // Edit data pengguna
+    'delete users',                   // Hapus pengguna
+    'reset user password',            // Reset password pengguna lain
+    'view user activity log',         // Lihat log aktivitas pengguna
 
-    'view roles',
-    'create roles',
-    'edit roles',
-    'delete roles',
-    'assign roles',
+    'view oil losses',                       // Lihat halaman lab
+    'create oil losses',             // Daftarkan sampel baru
+    'edit oil losses',               // Edit info sampel
+    'delete oil losses',             // Hapus sampel
 
-    'view oil',
-    'view oil results',
-    'view own oil results',
-    'create oil results',
-    'edit oil results',
-    'edit own oil results',
-    'delete oil results',
-    'approve oil results',
-    'reject oil results',
-    'print oil certificate',
-    'export oil data',
-
-    'view oil samples',
-    'create oil samples',
-    'edit oil samples',
-    'delete oil samples',
-
-    'view reports',
-    'export reports',
-
-    'input oil losses',
-    'edit oil losses',
-    'delete oil losses',
-    'view oil losses',
     'view olwb',
-    'view performance',
+    'export olwb reports',
+    'view performance oil losses',
+    'export performance reports oil losses',
+
     'view laporan oil losses',
+    'export laporan oil losses',
 ];
 
 $allowedRoles = [

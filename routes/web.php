@@ -45,23 +45,23 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/olwb/export', [OilController::class, 'exportOlwb'])
             ->name('olwb.export')
-            ->middleware('permission:view olwb');
+            ->middleware('permission:export olwb reports');
 
         Route::get('/report', [OilController::class, 'reportIndex'])
             ->name('report')
-            ->middleware('permission:view performance');
+            ->middleware('permission:export performance oil losses');
 
         Route::post('/report/export', [OilController::class, 'exportPerformance'])
             ->name('report.export')
-            ->middleware('permission:view performance');
+            ->middleware('permission:export performance oil losses');
 
         Route::get('/create', [OilController::class, 'create'])
             ->name('create')
-            ->middleware('permission:input oil losses');
+            ->middleware('permission:create oil losses');
 
         Route::post('/', [OilController::class, 'store'])
             ->name('store')
-            ->middleware('permission:input oil losses');
+            ->middleware('permission:create oil losses');
 
         Route::get('/{oilCalculation}', [OilController::class, 'show'])
             ->name('show')
@@ -82,14 +82,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/records/{oilRecord}', [OilController::class, 'destroyRecord'])
             ->name('records.destroy')
             ->middleware('permission:delete oil losses');
-
-        Route::get('/{oilCalculation}/print', [OilController::class, 'print'])
-            ->name('print')
-            ->middleware('permission:print oil certificate');
-
-        Route::get('/export', [OilController::class, 'export'])
-            ->name('export')
-            ->middleware('permission:export oil data');
     });
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -102,7 +94,7 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/export', [ReportController::class, 'export'])
             ->name('export')
-            ->middleware('permission:export reports');
+            ->middleware('permission:export laporan oil losses');
     });
 
     // ══════════════════════════════════════════════════════════════════════════

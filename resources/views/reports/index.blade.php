@@ -58,22 +58,24 @@
         </form>
 
         {{-- Export Button --}}
-        <form method="POST" action="{{ route('reports.export') }}" class="mt-4">
-            @csrf
-            <input type="hidden" name="kode" value="{{ request('kode') }}">
-            <input type="hidden" name="start_date" value="{{ $startDate }}">
-            <input type="hidden" name="end_date" value="{{ $endDate }}">
+        @canany(['export laporan oil losses'])
+            <form method="POST" action="{{ route('reports.export') }}" class="mt-4">
+                @csrf
+                <input type="hidden" name="kode" value="{{ request('kode') }}">
+                <input type="hidden" name="start_date" value="{{ $startDate }}">
+                <input type="hidden" name="end_date" value="{{ $endDate }}">
 
-            <button type="submit"
-                class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export ke Excel
-            </button>
-        </form>
+                <button type="submit"
+                    class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export ke Excel
+                </button>
+            </form>
+        @endcanany
     </div>
 
     {{-- TABLE DATA LAB --}}
@@ -87,7 +89,8 @@
                     <tr>
                         <th class="sticky top-0 left-0 z-[60] bg-blue-50 border px-4 py-3 w-[60px]">NO</th>
                         <th class="sticky top-0 lg:left-[60px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">BULAN</th>
-                        <th class="sticky top-0 lg:left-[180px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">TANGGAL</th>
+                        <th class="sticky top-0 lg:left-[180px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">TANGGAL
+                        </th>
                         <th class="sticky top-0 lg:left-[300px] z-[50] bg-blue-50 border px-4 py-3 w-[100px]">JAM</th>
                         <th class="sticky top-0 lg:left-[400px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">KODE</th>
                         <th class="sticky top-0 lg:left-[520px] z-[50] bg-blue-50 border px-4 py-3 w-[160px]">INPUTED BY

@@ -146,7 +146,8 @@ class OlwbExport implements FromCollection, WithHeadings, WithStyles, WithColumn
         foreach ($dataArray as $date => $kodeData) {
             $colNum = 2; // Start from column B (column A is date)
 
-            foreach ($this->allKodes as $kode) {
+            foreach ($this->allKodes as $kodeInfo) {
+                $kode = $kodeInfo['kode'];
                 if (isset($kodeData[$kode])) {
                     $olwb = $kodeData[$kode]['olwb'];
                     $limit = $kodeData[$kode]['limitOLWB'];

@@ -87,7 +87,7 @@ class OilController extends Controller
     public function create()
     {
         // Allow both 'create oil results' (PPIC) and 'input oil losses' (Sampel Boy)
-        if (!Auth::user()->can('create oil results')) {
+        if (!Auth::user()->can('create oil losses')) {
             abort(403, 'Anda tidak memiliki akses untuk input data oil losses.');
         }
 
@@ -105,7 +105,7 @@ class OilController extends Controller
     public function store(Request $request)
     {
         // Allow both 'create oil results' (PPIC) and 'input oil losses' (Sampel Boy)
-        if (!Auth::user()->can('create oil results')) {
+        if (!Auth::user()->can('create oil losses')) {
             abort(403, 'Anda tidak memiliki akses untuk input data oil losses.');
         }
 

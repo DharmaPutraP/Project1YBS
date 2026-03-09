@@ -49,11 +49,11 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/report', [OilController::class, 'reportIndex'])
             ->name('report')
-            ->middleware('permission:export performance oil losses');
+            ->middleware('permission:view performance oil losses');
 
         Route::post('/report/export', [OilController::class, 'exportPerformance'])
             ->name('report.export')
-            ->middleware('permission:export performance oil losses');
+            ->middleware('permission:export performance reports oil losses');
 
         Route::get('/create', [OilController::class, 'create'])
             ->name('create')

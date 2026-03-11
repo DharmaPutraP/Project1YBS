@@ -156,11 +156,39 @@ function saveOffline(formElement) {
 
     window.offlineManager.saveToQueue(data);
 
+    // Reset form so user can input new data
+    formElement.reset();
+
+    // Reset Select2 dropdowns if any
+    if (typeof $ !== 'undefined' && $.fn.select2) {
+        $(formElement).find('.select2-kode').val(null).trigger('change');
+        $(formElement).find('.select2-jenis').val('TBS').trigger('change');
+    }
+
+    // Trigger any custom reset events if needed
+    const resetEvent = new Event('formReset', { bubbles: true });
+    formElement.dispatchEvent(resetEvent);
+
+    // Restore default values for specific fields
+    const sampelBoyInput = formElement.querySelector('#sampel_boy');
+    if (sampelBoyInput && sampelBoyInput.dataset.defaultValue) {
+        sampelBoyInput.value = sampelBoyInput.dataset.defaultValue;
+    }
+
+    const pendingCount = window.offlineManager.getPendingCount();
+
     Swal.fire({
         icon: 'success',
         title: 'Disimpan Offline',
-        text: 'Data akan dikirim otomatis saat koneksi tersedia.',
-        confirmButtonColor: '#4F46E5'
+        html: `
+            <p>Data berhasil disimpan ke penyimpanan lokal.</p>
+            <p class="mt-2"><strong>Total data pending: ${pendingCount}</strong></p>
+            <p class="mt-2 text-sm text-gray-600">Anda bisa melanjutkan input data baru.</p>
+        `,
+        confirmButtonText: 'Input Lagi',
+        confirmButtonColor: '#4F46E5',
+        timer: 3000,
+        timerProgressBar: true
     });
 }
 

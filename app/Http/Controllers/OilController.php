@@ -113,22 +113,25 @@ class OilController extends Controller
         }
 
         // Custom validation: Jika 1 field di mode diisi, semua field di mode tersebut WAJIB diisi
-        $mode1Fields = ['kode', 'jenis', 'operator', 'sampel_boy'];
+        // HANYA cek field yang user input manual (kode & operator)
+        // Jenis dan Sampel Boy diabaikan karena punya default value
+        $mode1UserFields = ['kode', 'operator'];
         $mode2Fields = ['kode_mode2', 'cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'];
 
-        // Cek apakah ada field Mode 1 yang diisi
-        $mode1HasAnyValue = collect($mode1Fields)->contains(fn($field) => $request->filled($field));
+        // Cek apakah ada field Mode 1 yang user isi manual (kode atau operator)
+        $mode1HasAnyValue = collect($mode1UserFields)->contains(fn($field) => $request->filled($field));
 
         // Cek apakah ada field Mode 2 yang diisi
         $mode2HasAnyValue = collect($mode2Fields)->contains(fn($field) => $request->filled($field));
 
         // Validate fields
         $validated = $request->validate([
-            // Mode 1 fields - required jika salah satu field mode 1 diisi
+            // Mode 1 fields - kode & operator required jika salah satunya diisi
             'kode' => $mode1HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
-            'jenis' => $mode1HasAnyValue ? 'required|string' : 'nullable|string',
             'operator' => $mode1HasAnyValue ? 'required|string|max:255' : 'nullable|string|max:255',
-            'sampel_boy' => $mode1HasAnyValue ? 'required|string|max:255' : 'nullable|string|max:255',
+            // Jenis dan sampel_boy selalu nullable karena punya default value
+            'jenis' => 'nullable|string',
+            'sampel_boy' => 'nullable|string|max:255',
             'parameter_lain' => 'nullable|string|max:500',
 
             // Mode 2 fields - required jika salah satu field mode 2 diisi
@@ -140,11 +143,9 @@ class OilController extends Controller
             'oil_labu' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
         ], [
             // Mode 1 error messages
-            'kode.required' => 'Kode wajib diisi jika Anda mengisi Mode Non-Angka',
+            'kode.required' => 'Kode wajib diisi jika Anda mengisi Operator',
             'kode.exists' => 'Kode tidak valid atau tidak ditemukan di master data',
-            'jenis.required' => 'Jenis wajib diisi jika Anda mengisi Mode Non-Angka',
-            'operator.required' => 'Operator wajib diisi jika Anda mengisi Mode Non-Angka',
-            'sampel_boy.required' => 'Sampel Boy wajib diisi jika Anda mengisi Mode Non-Angka',
+            'operator.required' => 'Operator wajib diisi jika Anda mengisi Kode',
 
             // Mode 2 error messages
             'kode_mode2.required' => 'Kode wajib diisi jika Anda mengisi Mode Angka',

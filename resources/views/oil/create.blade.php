@@ -102,10 +102,16 @@
                     </h3>
                 </div>
 
+                {{-- Info Alert --}}
+                <div class="mb-4 p-3 bg-blue-100 border border-blue-200 rounded-lg text-xs text-blue-800">
+                    <strong>💡 Tips:</strong> Jika Anda mengisi <strong>Kode</strong> atau <strong>Operator</strong>, maka keduanya harus diisi.
+                    <br><strong>Jenis</strong> dan <strong>Sampel Boy</strong> sudah terisi otomatis.
+                </div>
+
                 <div class="space-y-4">
                     <div>
                         <label for="kode" class="block text-sm font-medium text-gray-700 mb-2">
-                            Kode <span class="text-gray-400 text-xs">(Ketik untuk cari)</span>
+                            Kode <span class="text-gray-400 text-xs">(wajib bersama Operator)</span>
                         </label>
                         <select name="kode" id="kode" class="w-full select2-kode
                                 @error('kode') border-red-400 bg-red-50 @enderror">
@@ -143,7 +149,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="operator" class="block text-sm font-medium text-gray-700 mb-2">
-                                Operator <span class="text-red-500">*</span>
+                                Operator <span class="text-gray-400 text-xs">(wajib jika Kode diisi)</span>
                             </label>
                             <input type="text" name="operator" id="operator" value="{{ old('operator') }}"
                                 placeholder="Nama operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
@@ -157,7 +163,9 @@
                             <label for="sampel_boy" class="block text-sm font-medium text-gray-700 mb-2">
                                 Sampel Boy <span class="text-gray-400 text-xs">(Otomatis)</span>
                             </label>
-                            <input type="text" name="sampel_boy" id="sampel_boy" value="{{ Auth::user()->name }}"
+                            <input type="text" name="sampel_boy" id="sampel_boy" 
+                                value="{{ Auth::user()->name }}"
+                                data-default-value="{{ Auth::user()->name }}"
                                 readonly
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 cursor-not-allowed
                                        @error('sampel_boy') border-red-400 bg-red-50 @enderror">
@@ -366,30 +374,36 @@
                 let errorMessages = [];
 
                 // Mode 1 validation
-                const mode1Fields = {
+                // HANYA cek field yang user bisa edit: kode dan operator
+                // Jenis dan Sampel Boy diabaikan karena punya default value
+                const mode1UserFields = {
                     'kode': 'Kode',
-                    'jenis': 'Jenis',
                     'operator': 'Operator'
                 };
 
-                const mode1Values = Object.keys(mode1Fields).map(field => {
+                const mode1Values = Object.keys(mode1UserFields).map(field => {
                     const value = $(`#${field}`).val();
                     return value && value.trim() !== '';
                 });
 
                 const mode1HasAnyValue = mode1Values.some(v => v === true);
 
+                // Jika user mengisi kode atau operator, maka keduanya harus diisi
                 if (mode1HasAnyValue) {
-                    Object.keys(mode1Fields).forEach(field => {
+                    Object.keys(mode1UserFields).forEach(field => {
                         const value = $(`#${field}`).val();
                         if (!value || value.trim() === '') {
-                            errorMessages.push(`${mode1Fields[field]} wajib diisi (Mode Non-Angka)`);
+                            errorMessages.push(`${mode1UserFields[field]} wajib diisi (Mode Non-Angka)`);
                             $(`#${field}`).addClass('border-red-400 bg-red-50');
                             hasError = true;
                         } else {
                             $(`#${field}`).removeClass('border-red-400 bg-red-50');
                         }
                     });
+                    
+                    // Jenis dan Sampel Boy selalu valid karena sudah ada default
+                    $('#jenis').removeClass('border-red-400 bg-red-50');
+                    $('#sampel_boy').removeClass('border-red-400 bg-red-50');
                 }
 
                 // Mode 2 validation
@@ -435,7 +449,7 @@
                                 </svg>
                                 <div class="flex-1">
                                     <h4 class="text-sm font-bold text-red-900 mb-2">⚠️ Data Tidak Lengkap</h4>
-                                    <p class="text-sm text-red-800 mb-2">Jika Anda mengisi salah satu field di mode tertentu, maka <strong>SEMUA field di mode tersebut harus diisi lengkap</strong>:</p>
+                                    <p class="text-sm text-red-800 mb-2">Jika Anda mengisi <strong>Kode</strong> atau <strong>Operator</strong>, maka keduanya harus diisi:</p>
                                     <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
                                         ${errorMessages.map(msg => `<li>${msg}</li>`).join('')}
                                     </ul>

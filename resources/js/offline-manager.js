@@ -19,6 +19,14 @@ class OfflineManager {
             this.isOnline = true;
             this.updateOnlineStatus();
             this.showNotification('Koneksi internet tersedia!', 'success');
+            
+            // Auto-sync if there are pending items
+            const pendingCount = this.getPendingCount();
+            if (pendingCount > 0) {
+                setTimeout(() => {
+                    this.promptAutoSync(pendingCount);
+                }, 1500);
+            }
         });
 
         window.addEventListener('offline', () => {
@@ -32,6 +40,31 @@ class OfflineManager {
             this.updateOnlineStatus();
             this.updatePendingCount();
         });
+    }
+
+    /**
+     * Prompt user for auto-sync
+     */
+    async promptAutoSync(count) {
+        const result = await Swal.fire({
+            title: 'Sinkronisasi Otomatis?',
+            html: `
+                <p>Koneksi internet tersedia.</p>
+                <p class="mt-2">Kirim <strong>${count} data pending</strong> ke server sekarang?</p>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Kirim Sekarang!',
+            cancelButtonText: 'Nanti Saja',
+            confirmButtonColor: '#4F46E5',
+            cancelButtonColor: '#6B7280',
+            timer: 10000,
+            timerProgressBar: true
+        });
+
+        if (result.isConfirmed) {
+            this.syncPending();
+        }
     }
 
     /**
@@ -104,6 +137,56 @@ class OfflineManager {
     }
 
     /**
+     * View all pending items
+     */
+    viewPendingData() {
+        const queue = this.getQueue().filter(item => item.status === 'pending');
+        
+        if (queue.length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Data Pending Kosong',
+                text: 'Tidak ada data yang menunggu sinkronisasi.',
+                confirmButtonColor: '#4F46E5'
+            });
+            return;
+        }
+
+        const itemsList = queue.map((item, index) => {
+            const date = new Date(item.timestamp);
+            const formattedDate = date.toLocaleString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            return `
+                <div class="text-left p-3 bg-gray-50 rounded mb-2">
+                    <div class="font-semibold text-sm">#${index + 1} - ${formattedDate}</div>
+                    <div class="text-xs text-gray-600 mt-1">
+                        ${item.data.method} → ${new URL(item.data.url).pathname}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        Swal.fire({
+            icon: 'info',
+            title: `Data Pending (${queue.length})`,
+            html: `
+                <div class="max-h-96 overflow-y-auto">
+                    ${itemsList}
+                </div>
+                <p class="mt-4 text-sm text-gray-600">Data akan dikirim otomatis saat koneksi tersedia.</p>
+            `,
+            width: '600px',
+            confirmButtonText: 'Tutup',
+            confirmButtonColor: '#4F46E5'
+        });
+    }
+
+    /**
      * Sync all pending items
      */
     async syncPending() {
@@ -119,23 +202,81 @@ class OfflineManager {
             return;
         }
 
+        // Show preview before syncing
+        const itemsList = queue.map((item, index) => {
+            const date = new Date(item.timestamp);
+            const formattedDate = date.toLocaleString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            return `<div class="text-sm text-left">${index + 1}. ${formattedDate}</div>`;
+        }).join('');
+
         const result = await Swal.fire({
             title: 'Sinkronisasi Data',
-            text: `Kirim ${queue.length} data pending ke server?`,
+            html: `
+                <p>Kirim ${queue.length} data pending ke server?</p>
+                <div class="mt-3 p-3 bg-gray-50 rounded max-h-48 overflow-y-auto">
+                    ${itemsList}
+                </div>
+            `,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Ya, Kirim!',
+            confirmButtonText: 'Ya, Kirim Semua!',
             cancelButtonText: 'Batal',
             confirmButtonColor: '#4F46E5',
-            cancelButtonColor: '#6B7280'
+            cancelButtonColor: '#6B7280',
+            width: '500px'
         });
 
         if (!result.isConfirmed) return;
 
+        // Show loading with progress
+        Swal.fire({
+            title: 'Mengirim Data...',
+            html: `
+                <div class="mb-4">
+                    <div class="text-lg font-bold" id="sync-progress">0 / ${queue.length}</div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                        <div id="sync-progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mt-3" id="sync-status">Memproses...</p>
+            `,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
         let successCount = 0;
         let failCount = 0;
+        const failedItems = [];
 
-        for (const item of queue) {
+        for (let i = 0; i < queue.length; i++) {
+            const item = queue[i];
+            
+            // Update progress
+            const progressEl = document.getElementById('sync-progress');
+            const progressBar = document.getElementById('sync-progress-bar');
+            const statusEl = document.getElementById('sync-status');
+            
+            if (progressEl) {
+                progressEl.textContent = `${i + 1} / ${queue.length}`;
+            }
+            if (progressBar) {
+                const percentage = ((i + 1) / queue.length) * 100;
+                progressBar.style.width = `${percentage}%`;
+            }
+            if (statusEl) {
+                statusEl.textContent = `Mengirim data #${i + 1}...`;
+            }
+
             try {
                 await this.sendToServer(item);
                 this.markAsSynced(item.id);
@@ -143,18 +284,44 @@ class OfflineManager {
             } catch (error) {
                 console.error('Sync error:', error);
                 failCount++;
+                failedItems.push({ index: i + 1, error: error.message });
             }
         }
 
         this.updatePendingCount();
 
+        // Show final result
         if (failCount === 0) {
-            this.showNotification(`${successCount} data berhasil disinkronkan!`, 'success');
+            Swal.fire({
+                icon: 'success',
+                title: 'Sinkronisasi Selesai!',
+                html: `
+                    <p class="text-lg"><strong>${successCount} data</strong> berhasil dikirim ke server.</p>
+                    <p class="text-sm text-gray-600 mt-2">Semua data offline telah tersinkronisasi.</p>
+                `,
+                confirmButtonColor: '#4F46E5',
+                confirmButtonText: 'OK'
+            });
         } else {
-            this.showNotification(
-                `${successCount} berhasil, ${failCount} gagal`,
-                'warning'
-            );
+            const failedList = failedItems.map(item => 
+                `<div class="text-sm text-left">• Data #${item.index}: ${item.error}</div>`
+            ).join('');
+            
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sinkronisasi Sebagian',
+                html: `
+                    <p><strong>${successCount} berhasil</strong>, <strong>${failCount} gagal</strong></p>
+                    <div class="mt-3 p-3 bg-red-50 rounded max-h-48 overflow-y-auto text-left">
+                        <div class="font-semibold text-sm mb-2">Data yang gagal:</div>
+                        ${failedList}
+                    </div>
+                    <p class="text-sm text-gray-600 mt-3">Coba sinkronisasi lagi nanti.</p>
+                `,
+                confirmButtonColor: '#F59E0B',
+                confirmButtonText: 'OK',
+                width: '500px'
+            });
         }
     }
 

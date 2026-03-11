@@ -64,36 +64,6 @@
                 <p class="text-xs text-gray-400 mt-0.5">Total Permission</p>
             </div>
         </div>
-
-        {{-- Role dengan Semua Permission --}}
-        @php
-            $fullAccessCount = $roles->filter(fn($r) => $r->permissions->count() === $permissions->count())->count();
-        @endphp
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-            <div class="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            </div>
-            <div>
-                <p class="text-2xl font-bold text-gray-900">{{ $fullAccessCount }}</p>
-                <p class="text-xs text-gray-400 mt-0.5">Akses Penuh</p>
-            </div>
-        </div>
-
-        {{-- Total Module --}}
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-            <div class="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-                </svg>
-            </div>
-            <div>
-                <p class="text-2xl font-bold text-gray-900">{{ $groupedPermissions->count() }}</p>
-                <p class="text-xs text-gray-400 mt-0.5">Modul</p>
-            </div>
-        </div>
     </div>
 
     {{-- ─────────────────────────────────────────────────────────────────────── --}}

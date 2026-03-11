@@ -63,6 +63,6 @@ class PermissionController extends Controller
 
         $role->syncPermissions($validated['permissions'] ?? []);
 
-        return back()->with('success', "Permission untuk role <strong>{$role->name}</strong> berhasil diperbarui.");
+        return redirect()->route('permissions.index')->with('success', "Permission untuk role <strong>{$role->name}</strong> berhasil diperbarui.");
     }
 }

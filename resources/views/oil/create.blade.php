@@ -124,13 +124,12 @@
                     {{-- Jenis (Searchable Dropdown) --}}
                     <div>
                         <label for="jenis" class="block text-sm font-medium text-gray-700 mb-2">
-                            Jenis <span class="text-gray-400 text-xs">(Ketik untuk cari)</span>
+                            Jenis <span class="text-gray-400 text-xs">(Default: TBS)</span>
                         </label>
                         <select name="jenis" id="jenis" class="w-full select2-jenis
                                 @error('jenis') border-red-400 bg-red-50 @enderror">
-                            <option value="">-- Pilih atau ketik untuk cari --</option>
                             @foreach($jenisOptions as $jenisValue => $jenisLabel)
-                                <option value="{{ $jenisValue }}" {{ old('jenis') == $jenisValue ? 'selected' : '' }}>
+                                <option value="{{ $jenisValue }}" {{ (old('jenis', 'TBS') == $jenisValue) ? 'selected' : '' }}>
                                     {{ $jenisLabel }}
                                 </option>
                             @endforeach
@@ -156,10 +155,11 @@
 
                         <div>
                             <label for="sampel_boy" class="block text-sm font-medium text-gray-700 mb-2">
-                                Sampel Boy <span class="text-red-500">*</span>
+                                Sampel Boy <span class="text-gray-400 text-xs">(Otomatis)</span>
                             </label>
-                            <input type="text" name="sampel_boy" id="sampel_boy" value="{{ old('sampel_boy') }}"
-                                placeholder="Nama sampel boy" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
+                            <input type="text" name="sampel_boy" id="sampel_boy" value="{{ Auth::user()->name }}"
+                                readonly
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 cursor-not-allowed
                                        @error('sampel_boy') border-red-400 bg-red-50 @enderror">
                             @error('sampel_boy')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -337,8 +337,8 @@
 
             // Initialize Select2 for Jenis dropdown
             $('.select2-jenis').select2({
-                placeholder: '-- Pilih atau ketik untuk cari --',
-                allowClear: true,
+                placeholder: 'TBS (Default)',
+                allowClear: false,
                 width: '100%',
                 theme: 'default',
                 language: {
@@ -383,8 +383,7 @@
                 const mode1Fields = {
                     'kode': 'Kode',
                     'jenis': 'Jenis',
-                    'operator': 'Operator',
-                    'sampel_boy': 'Sampel Boy'
+                    'operator': 'Operator'
                 };
 
                 const mode1Values = Object.keys(mode1Fields).map(field => {

@@ -1,0 +1,228 @@
+﻿<x-layouts.app title="Permission Control">
+
+    {{-- ─────────────────────────────────────────────────────────────────────── --}}
+    {{-- Header --}}
+    {{-- ─────────────────────────────────────────────────────────────────────── --}}
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Permission Control</h1>
+            <p class="mt-1 text-sm text-gray-500">Kelola hak akses untuk setiap role dalam sistem.</p>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            <span><span class="font-semibold text-gray-600">{{ $roles->count() }}</span> role &middot; <span class="font-semibold text-gray-600">{{ $permissions->count() }}</span> permission</span>
+        </div>
+    </div>
+
+    {{-- Flash --}}
+    @if(session('success'))
+        <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="mb-5 flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 shadow-sm">
+            <div class="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <span>{!! session('success') !!}</span>
+        </div>
+    @endif
+
+    {{-- ─────────────────────────────────────────────────────────────────────── --}}
+    {{-- Summary Cards --}}
+    {{-- ─────────────────────────────────────────────────────────────────────── --}}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {{-- Total Roles --}}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+            <div class="w-11 h-11 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ $roles->count() }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">Total Role</p>
+            </div>
+        </div>
+
+        {{-- Total Permissions --}}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+            <div class="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ $permissions->count() }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">Total Permission</p>
+            </div>
+        </div>
+
+        {{-- Role dengan Semua Permission --}}
+        @php
+            $fullAccessCount = $roles->filter(fn($r) => $r->permissions->count() === $permissions->count())->count();
+        @endphp
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+            <div class="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ $fullAccessCount }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">Akses Penuh</p>
+            </div>
+        </div>
+
+        {{-- Total Module --}}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+            <div class="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ $groupedPermissions->count() }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">Modul</p>
+            </div>
+        </div>
+    </div>
+
+    {{-- ─────────────────────────────────────────────────────────────────────── --}}
+    {{-- Role Table + Slide-over --}}
+    {{-- ─────────────────────────────────────────────────────────────────────── --}}
+    <div>
+
+        {{-- Role Table --}}
+        <x-ui.card padding="none">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-blue-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+                            <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Total Permission</th>
+                            <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Coverage</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Preview</th>
+                            <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-100">
+                        @forelse($roles as $role)
+                            @php
+                                $rolePerms = $role->permissions->pluck('name')->toArray();
+                                $count     = count($rolePerms);
+                                $total     = $permissions->count();
+                                $pct       = $total > 0 ? round($count / $total * 100) : 0;
+                                $isFull    = $count === $total;
+                            @endphp
+                            <tr class="hover:bg-gray-50/60 transition group">
+
+                                {{-- Role --}}
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+                                            {{ $isFull ? 'bg-green-100' : 'bg-indigo-100' }}">
+                                            <svg class="w-5 h-5 {{ $isFull ? 'text-green-600' : 'text-indigo-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-semibold text-gray-900">{{ $role->name }}</p>
+                                            @if($isFull)
+                                                <span class="inline-flex items-center gap-1 text-[10px] font-medium text-green-600">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                    Akses Penuh
+                                                </span>
+                                            @else
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+
+                                {{-- Count --}}
+                                <td class="px-6 py-4 text-center">
+                                    <div class="inline-flex flex-col items-center gap-1">
+                                        <span class="text-lg font-bold {{ $isFull ? 'text-green-600' : 'text-indigo-600' }}">{{ $count }}</span>
+                                        <span class="text-[10px] text-gray-400">dari {{ $total }}</span>
+                                    </div>
+                                </td>
+
+                                {{-- Progress Bar --}}
+                                <td class="px-6 py-4 hidden sm:table-cell">
+                                    <div class="flex items-center gap-2 min-w-[120px]">
+                                        <div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                                            <div class="h-2 rounded-full transition-all {{ $isFull ? 'bg-green-500' : 'bg-indigo-500' }}"
+                                                style="width: {{ $pct }}%"></div>
+                                        </div>
+                                        <span class="text-xs font-semibold {{ $isFull ? 'text-green-600' : 'text-gray-500' }} w-9 text-right">
+                                            {{ $pct }}%
+                                        </span>
+                                    </div>
+                                </td>
+
+                                {{-- Permission Preview --}}
+                                <td class="px-6 py-4 hidden lg:table-cell">
+                                    <div class="flex flex-wrap gap-1.5 max-w-xs">
+                                        @forelse(array_slice($rolePerms, 0, 3) as $perm)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium
+                                                bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-200">
+                                                {{ $perm }}
+                                            </span>
+                                        @empty
+                                            <span class="text-xs text-gray-400 italic">Belum ada permission</span>
+                                        @endforelse
+                                        @if(count($rolePerms) > 3)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium
+                                                bg-gray-100 text-gray-500 ring-1 ring-inset ring-gray-200">
+                                                +{{ count($rolePerms) - 3 }} lainnya
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
+
+                                {{-- Aksi --}}
+                                <td class="px-6 py-4 text-center">
+                                    <a href="{{ route('permissions.edit', $role) }}"
+                                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                                               bg-indigo-50 hover:bg-indigo-100 text-indigo-600
+                                               border border-indigo-200 hover:border-indigo-300 transition"
+                                        title="Edit Permission">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
+                                                   m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                    </a>
+                                </td>
+
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-16 text-center">
+                                    <svg class="mx-auto w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                    </svg>
+                                    <p class="text-sm text-gray-400">Belum ada role terdaftar</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </x-ui.card>
+
+
+    </div>
+
+</x-layouts.app>
+

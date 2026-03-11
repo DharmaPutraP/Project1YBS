@@ -6,6 +6,7 @@ use App\Http\Controllers\OilController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\PermissionController;
 // use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
 
@@ -146,6 +147,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/cleanup', [ActivityLogController::class, 'cleanup'])
             ->name('cleanup')
             ->middleware('permission:view user activity log');
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── PERMISSION CONTROL ────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('permissions')->name('permissions.')->middleware('role:Super Admin')->group(function () {
+        Route::get('/', [PermissionController::class, 'index'])
+            ->name('index');
+
+        Route::get('/{role}/edit', [PermissionController::class, 'edit'])
+            ->name('edit');
+
+        Route::put('/{role}', [PermissionController::class, 'update'])
+            ->name('update');
     });
 
 });

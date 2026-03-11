@@ -10,9 +10,6 @@ use App\Http\Controllers\PermissionController;
 // use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
 
 // ─── Guest routes ─────────────────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
@@ -25,6 +22,10 @@ Route::middleware('guest')->group(function () {
 
 // ─── Authenticated routes ──────────────────────────────────────────────────────
 Route::middleware('auth')->group(function () {
+
+    Route::get('/', function () {
+        return view('dashboard');
+    });
 
     // ── Dashboard ──────────────────────────────────────────────────────────────
     Route::get('/dashboard', function () {

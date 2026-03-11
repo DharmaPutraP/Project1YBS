@@ -214,7 +214,7 @@ class OilService
 
         // Validasi pembagi tidak boleh nol
         if ($beratBasah == 0) {
-            throw new Exception('Berat Basah tidak boleh 0.');
+            throw new Exception('Berat Sampel Basah tidak boleh 0.');
         }
 
         // Hitung intermediate values

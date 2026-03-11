@@ -207,11 +207,11 @@
                         @enderror
                     </div>
 
-                    {{-- Row 1: Cawan Kosong, Berat Basah, Cawan Sample Kering --}}
+                    {{-- Row 1: Cawan Kosong, Berat Sampel Basah, Cawan Sample Kering --}}
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label for="cawan_kosong" class="block text-sm font-medium text-gray-700 mb-2">
-                                Cawan Kosong <span class="text-gray-400 text-xs">(gram)</span>
+                                Cawan Kosong
                             </label>
                             <input type="number" step="0.000001" name="cawan_kosong" id="cawan_kosong"
                                 value="{{ old('cawan_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
@@ -223,7 +223,7 @@
 
                         <div>
                             <label for="berat_basah" class="block text-sm font-medium text-gray-700 mb-2">
-                                Berat Basah <span class="text-gray-400 text-xs">(gram)</span>
+                                Berat Sampel Basah
                             </label>
                             <input type="number" step="0.000001" name="berat_basah" id="berat_basah"
                                 value="{{ old('berat_basah') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
@@ -235,7 +235,7 @@
 
                         <div>
                             <label for="cawan_sample_kering" class="block text-sm font-medium text-gray-700 mb-2">
-                                Cawan + Sample Kering <span class="text-gray-400 text-xs">(gram)</span>
+                                Cawan + Sample Kering
                             </label>
                             <input type="number" step="0.000001" name="cawan_sample_kering" id="cawan_sample_kering"
                                 value="{{ old('cawan_sample_kering') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
@@ -250,7 +250,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="labu_kosong" class="block text-sm font-medium text-gray-700 mb-2">
-                                Labu Kosong <span class="text-gray-400 text-xs">(gram)</span>
+                                Labu Kosong
                             </label>
                             <input type="number" step="0.000001" name="labu_kosong" id="labu_kosong"
                                 value="{{ old('labu_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
@@ -262,7 +262,7 @@
 
                         <div>
                             <label for="oil_labu" class="block text-sm font-medium text-gray-700 mb-2">
-                                Oil + Labu <span class="text-gray-400 text-xs">(gram)</span>
+                                Oil + Labu
                             </label>
                             <input type="number" step="0.000001" name="oil_labu" id="oil_labu" value="{{ old('oil_labu') }}"
                                 placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500

@@ -211,7 +211,7 @@
 
                         <div>
                             <label for="berat_basah" class="block text-sm font-medium text-gray-700 mb-2">
-                                Berat Basah <span class="text-gray-400 text-xs">(gram)</span>
+                                Berat Sampel Basah <span class="text-gray-400 text-xs">(gram)</span>
                             </label>
                             <input type="number" step="0.000001" name="berat_basah" id="berat_basah"
                                 value="{{ old('berat_basah', $oilLoss->berat_basah) }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500

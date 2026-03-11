@@ -30,7 +30,7 @@ return new class extends Migration {
             $table->decimal('oil_labu', 12, 6)->nullable()->comment('Berat oil + labu (gr)');
 
             // ── Kalkulasi Otomatis ───────────────────────────────────────────
-            $table->decimal('total_cawan_basah', 12, 6)->nullable()->comment('Cawan kosong + berat basah');
+            $table->decimal('total_cawan_basah', 12, 6)->nullable()->comment('Cawan kosong + berat sampel basah');
             $table->decimal('sampel_setelah_oven', 12, 6)->nullable()->comment('Sample kering - cawan kosong');
             $table->decimal('minyak', 12, 6)->nullable()->comment('Oil labu - labu kosong');
 

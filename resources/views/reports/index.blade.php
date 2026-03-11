@@ -102,7 +102,7 @@
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">JENIS OLAH</th>
 
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">CAWAN KOSONG</th>
-                        <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">BERAT BASAH</th>
+                        <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">BERAT SAMPEL BASAH</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">CAWAN + BASAH</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">CAWAN + KERING</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">SETELAH OVEN</th>

@@ -51,7 +51,7 @@ export async function confirmSave(formElement) {
 /**
  * Confirm before updating data
  */
-export async function confirmUpdate() {
+export async function confirmUpdate(formElement) {
     const result = await Swal.fire({
         title: 'Update Data?',
         text: 'Data akan diperbarui dengan informasi yang baru.',
@@ -64,22 +64,31 @@ export async function confirmUpdate() {
         reverseButtons: true
     });
 
-    if (result.isConfirmed && !navigator.onLine) {
-        const offlineResult = await Swal.fire({
-            title: 'Mode Offline',
-            text: 'Perubahan akan disimpan sementara. Lanjutkan?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Update Offline',
-            cancelButtonText: 'Batal',
-            confirmButtonColor: '#F59E0B',
-            cancelButtonColor: '#6B7280'
-        });
+    if (result.isConfirmed) {
+        // Check if online
+        if (!navigator.onLine) {
+            const offlineResult = await Swal.fire({
+                title: 'Mode Offline',
+                text: 'Perubahan akan disimpan sementara dan dikirim saat online. Lanjutkan?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Update Offline',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#F59E0B',
+                cancelButtonColor: '#6B7280'
+            });
 
-        return offlineResult.isConfirmed;
+            if (offlineResult.isConfirmed) {
+                saveOffline(formElement);
+                return false; // Prevent normal form submission
+            }
+            return false;
+        }
+
+        return true; // Allow form submission
     }
 
-    return result.isConfirmed;
+    return false;
 }
 
 /**

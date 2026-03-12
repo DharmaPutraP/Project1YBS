@@ -326,7 +326,7 @@
         // Confirmation handler for update form submission
         async function handleFormSubmit(event, form) {
             event.preventDefault();
-            const confirmed = await window.confirmUpdate();
+            const confirmed = await window.confirmUpdate(form); // Pass form element untuk offline save
             if (confirmed) {
                 form.submit();
             }

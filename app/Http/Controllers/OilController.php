@@ -37,14 +37,32 @@ class OilController extends Controller
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
+        // Office filter dengan default value
+        // Default: user's office (jika ada), atau 'YBS' (jika user->office = NULL)
+        $officeFilter = $request->input('office', Auth::user()->office ?? 'YBS');
+
         // Query for Mode 2: Lab Calculations (numeric data)
-        $calculationsQuery = OilCalculation::with(['user'])
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        // Multi-tenancy: filter by selected office or user's office
+        $calculationsQuery = OilCalculation::with(['user']);
+
+        // Apply office filter jika bukan 'all'
+        if ($officeFilter !== 'all') {
+            $calculationsQuery->where('office', $officeFilter);
+        }
+
+        $calculationsQuery->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->orderBy('created_at', 'desc');
 
         // Query for Mode 1: Lab Records (non-numeric data)
-        $recordsQuery = OilRecord::with(['user'])
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        // Multi-tenancy: filter by selected office or user's office
+        $recordsQuery = OilRecord::with(['user']);
+
+        // Apply office filter jika bukan 'all'
+        if ($officeFilter !== 'all') {
+            $recordsQuery->where('office', $officeFilter);
+        }
+
+        $recordsQuery->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->orderBy('created_at', 'desc');
 
         // Filter by kode if provided (optional)
@@ -63,9 +81,19 @@ class OilController extends Controller
         $totalCalculations = (clone $calculationsQuery)->count();
         $totalRecords = (clone $recordsQuery)->count();
 
+        // Statistics query
+        $todayCalculations = OilCalculation::whereDate('created_at', today());
+        $todayRecords = OilRecord::whereDate('created_at', today());
+
+        // Apply office filter to today's statistics
+        if ($officeFilter !== 'all') {
+            $todayCalculations->where('office', $officeFilter);
+            $todayRecords->where('office', $officeFilter);
+        }
+
         $statistics = [
             'total_records' => $totalCalculations + $totalRecords,
-            'records_today' => OilCalculation::whereDate('created_at', today())->count() + OilRecord::whereDate('created_at', today())->count(),
+            'records_today' => $todayCalculations->count() + $todayRecords->count(),
             'calculations_count' => $totalCalculations,
             'records_count' => $totalRecords,
         ];
@@ -75,13 +103,13 @@ class OilController extends Controller
         $oilRecords = $recordsQuery->paginate(15, ['*'], 'records');
 
         // Preserve query parameters in pagination links
-        $oilLosses->appends($request->only(['start_date', 'end_date', 'kode']));
-        $oilRecords->appends($request->only(['start_date', 'end_date', 'kode']));
+        $oilLosses->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
+        $oilRecords->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         // Get all kode options for filter dropdown
         $kodeOptions = OilMasterData::getKodeDropdown();
 
-        return view('oil.index', compact('oilLosses', 'oilRecords', 'statistics', 'kodeOptions', 'startDate', 'endDate'));
+        return view('oil.index', compact('oilLosses', 'oilRecords', 'statistics', 'kodeOptions', 'startDate', 'endDate', 'officeFilter'));
     }
 
     /**
@@ -110,6 +138,13 @@ class OilController extends Controller
         // Allow both 'create oil results' (PPIC) and 'input oil losses' (Sampel Boy)
         if (!Auth::user()->can('create oil losses')) {
             abort(403, 'Anda tidak memiliki akses untuk input data oil losses.');
+        }
+
+        // Validate: User MUST have office assigned to input data
+        if (!Auth::user()->office) {
+            return back()
+                ->withInput()
+                ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
         // Custom validation: Jika 1 field di mode diisi, semua field di mode tersebut WAJIB diisi
@@ -159,7 +194,8 @@ class OilController extends Controller
 
         try {
             // Tanggal dan jam otomatis dari created_at (tidak perlu set manual)
-            $result = $this->oilService->store($validated, Auth::id());
+            // Pass user's office for multi-tenancy
+            $result = $this->oilService->store($validated, Auth::id(), Auth::user()->office);
 
             // Recalculate daily bobot average for today
             $this->recalculateDailyBobotAverage(now()->format('Y-m-d'));
@@ -440,6 +476,9 @@ class OilController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
+        // Office filter dengan default value
+        $officeFilter = $request->input('office', Auth::user()->office ?? 'YBS');
+
         // Get all kode with pivot from master data (ordered)
         $allKodesData = OilMasterData::where('is_active', true)
             ->orderBy('kode')
@@ -452,12 +491,17 @@ class OilController extends Controller
             });
 
         // Get oil calculations data within date range
-        $calculations = OilCalculation::whereBetween('created_at', [
+        $calculationsQuery = OilCalculation::whereBetween('created_at', [
             $startDate . ' 00:00:00',
             $endDate . ' 23:59:59'
-        ])
-            ->orderBy('created_at', 'asc')
-            ->get();
+        ]);
+
+        // Apply office filter jika bukan 'all'
+        if ($officeFilter !== 'all') {
+            $calculationsQuery->where('office', $officeFilter);
+        }
+
+        $calculations = $calculationsQuery->orderBy('created_at', 'asc')->get();
 
         // Group data by date and kode
         $dataByDate = [];
@@ -480,7 +524,7 @@ class OilController extends Controller
         // Sort dates
         ksort($dataByDate);
 
-        return view('oil.olwb', compact('allKodesData', 'dataByDate', 'startDate', 'endDate'));
+        return view('oil.olwb', compact('allKodesData', 'dataByDate', 'startDate', 'endDate', 'officeFilter'));
     }
 
     /**
@@ -496,6 +540,9 @@ class OilController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
+        // Office filter dengan default value
+        $officeFilter = $request->input('office', Auth::user()->office ?? 'YBS');
+
         // Get all kode with pivot from master data (ordered)
         $allKodesData = OilMasterData::where('is_active', true)
             ->orderBy('kode')
@@ -508,12 +555,17 @@ class OilController extends Controller
             });
 
         // Get oil calculations data within date range
-        $calculations = OilCalculation::whereBetween('created_at', [
+        $calculationsQuery = OilCalculation::whereBetween('created_at', [
             $startDate . ' 00:00:00',
             $endDate . ' 23:59:59'
-        ])
-            ->orderBy('created_at', 'asc')
-            ->get();
+        ]);
+
+        // Apply office filter jika bukan 'all'
+        if ($officeFilter !== 'all') {
+            $calculationsQuery->where('office', $officeFilter);
+        }
+
+        $calculations = $calculationsQuery->orderBy('created_at', 'asc')->get();
 
         // Group data by date and kode
         $dataByDate = [];
@@ -551,6 +603,9 @@ class OilController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
+        // Office filter dengan default value
+        $officeFilter = $request->input('office', Auth::user()->office ?? 'YBS');
+
         // Get all bobot configs
         $bobotConfigs = BobotConfig::all()->keyBy('jenis');
 
@@ -574,17 +629,36 @@ class OilController extends Controller
             ->values();
 
         // Get all dates in range that have calculations
-        $dates = OilCalculation::selectRaw('DATE(created_at) as date')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->groupBy('date')
+        $datesQuery = OilCalculation::selectRaw('DATE(created_at) as date')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+
+        // Apply office filter jika bukan 'all'
+        if ($officeFilter !== 'all') {
+            $datesQuery->where('office', $officeFilter);
+        }
+
+        $dates = $datesQuery->groupBy('date')
             ->orderBy('date', 'desc')
             ->pluck('date');
+
+        // OPTIMIZATION: Load ALL calculations in ONE query instead of query per date
+        $allCalculationsQuery = OilCalculation::selectRaw('*, DATE(created_at) as calc_date')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+
+        if ($officeFilter !== 'all') {
+            $allCalculationsQuery->where('office', $officeFilter);
+        }
+
+        // Group calculations by date in memory (no repeated queries)
+        $calculationsByDate = $allCalculationsQuery->get()
+            ->groupBy('calc_date')
+            ->map(fn($calcs) => $calcs->keyBy('kode'));
 
         $reportData = [];
 
         foreach ($dates as $date) {
-            // Get all calculations for this date
-            $calculations = OilCalculation::whereDate('created_at', $date)->get()->keyBy('kode');
+            // Get calculations from cached data (no query)
+            $calculations = $calculationsByDate->get($date, collect());
 
             $dateData = [
                 'date' => $date,
@@ -660,14 +734,20 @@ class OilController extends Controller
             $reportData[] = $dateData;
         }
 
-        // Get operator data for the same date range
-        $operatorRecords = OilRecord::select('oil_records.*', 'oil_master_data.jenis')
-            ->join('oil_master_data', 'oil_records.kode', '=', 'oil_master_data.kode')
+        // Get operator data for the same date range with optimized join
+        // Use LEFT JOIN and select only needed columns for better performance
+        $operatorRecordsQuery = OilRecord::select('oil_records.id', 'oil_records.kode', 'oil_records.operator', 'oil_records.created_at', 'oil_master_data.jenis')
+            ->leftJoin('oil_master_data', 'oil_records.kode', '=', 'oil_master_data.kode')
             ->whereBetween('oil_records.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->whereNotNull('oil_records.operator')
-            ->where('oil_records.operator', '!=', '')
-            ->orderBy('oil_records.created_at', 'desc')
-            ->get();
+            ->where('oil_records.operator', '!=', '');
+
+        // Apply office filter jika bukan 'all'
+        if ($officeFilter !== 'all') {
+            $operatorRecordsQuery->where('oil_records.office', $officeFilter);
+        }
+
+        $operatorRecords = $operatorRecordsQuery->orderBy('oil_records.created_at', 'desc')->get();
 
         // Group operators by Press and Clarification
         $operatorPress = $operatorRecords->filter(function ($record) {
@@ -701,6 +781,7 @@ class OilController extends Controller
             'allKodesData',
             'startDate',
             'endDate',
+            'officeFilter',
             'operatorPress',
             'operatorClarification',
             'operatorActivities',
@@ -716,6 +797,9 @@ class OilController extends Controller
     {
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
+
+        // Office filter dengan default value
+        $officeFilter = $request->input('office', Auth::user()->office ?? 'YBS');
 
         // Get all bobot configs
         $bobotConfigs = BobotConfig::all()->keyBy('jenis');
@@ -738,16 +822,36 @@ class OilController extends Controller
             ->values();
 
         // Get all dates in range that have calculations
-        $dates = OilCalculation::selectRaw('DATE(created_at) as date')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->groupBy('date')
+        $datesQuery = OilCalculation::selectRaw('DATE(created_at) as date')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+
+        // Apply office filter jika bukan 'all'
+        if ($officeFilter !== 'all') {
+            $datesQuery->where('office', $officeFilter);
+        }
+
+        $dates = $datesQuery->groupBy('date')
             ->orderBy('date', 'desc')
             ->pluck('date');
+
+        // OPTIMIZATION: Load ALL calculations in ONE query instead of query per date
+        $allCalculationsForExport = OilCalculation::selectRaw('*, DATE(created_at) as calc_date')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+
+        if ($officeFilter !== 'all') {
+            $allCalculationsForExport->where('office', $officeFilter);
+        }
+
+        // Group calculations by date in memory (no repeated queries)
+        $calculationsByDateForExport = $allCalculationsForExport->get()
+            ->groupBy('calc_date')
+            ->map(fn($calcs) => $calcs->keyBy('kode'));
 
         $reportData = [];
 
         foreach ($dates as $date) {
-            $calculations = OilCalculation::whereDate('created_at', $date)->get()->keyBy('kode');
+            // Get calculations from cached data (no query)
+            $calculations = $calculationsByDateForExport->get($date, collect());
 
             $dateData = [
                 'date' => $date,
@@ -912,8 +1016,10 @@ class OilController extends Controller
         // Get all bobot configs
         $bobotConfigs = BobotConfig::all()->keyBy('jenis');
 
-        // Get all calculations for this date
-        $calculations = OilCalculation::whereDate('created_at', $date)->get();
+        // Get all calculations for this date with master data eager loaded to prevent N+1
+        $calculations = OilCalculation::whereDate('created_at', $date)
+            ->with(['masterData:id,kode,jenis'])
+            ->get();
 
         if ($calculations->isEmpty()) {
             // No data for this date, delete the average record if exists
@@ -921,14 +1027,20 @@ class OilController extends Controller
             return;
         }
 
+        // Pre-load all master data in one query to avoid N+1
+        $kodes = $calculations->pluck('kode')->unique();
+        $masterDataCache = OilMasterData::whereIn('kode', $kodes)
+            ->get()
+            ->keyBy('kode');
+
         $bobotScores = [];
 
         foreach ($calculations as $calc) {
             if ($calc->olwb === null)
                 continue;
 
-            // Get master data to retrieve jenis
-            $masterData = OilMasterData::where('kode', $calc->kode)->first();
+            // Get master data from cache (no query)
+            $masterData = $masterDataCache->get($calc->kode);
             if (!$masterData)
                 continue;
 

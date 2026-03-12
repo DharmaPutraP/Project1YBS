@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleAndPermissionSeeder::class,
             OilMasterDataSeeder::class,
+            BobotConfigSeeder::class,
         ]);
     }
 }

@@ -11,6 +11,11 @@
                 <p class="text-sm text-gray-500 mt-2">
                     Anda terhubung sebagai <x-ui.badge
                         color="indigo">{{ Auth::user()->getRoleNames()->first() ?? 'User' }}</x-ui.badge>
+                    @if(Auth::user()->office)
+                        di Office <x-ui.badge color="green">{{ Auth::user()->office }}</x-ui.badge>
+                    @else
+                        <span class="text-xs italic">(Lihat semua office)</span>
+                    @endif
                 </p>
             </div>
         </div>

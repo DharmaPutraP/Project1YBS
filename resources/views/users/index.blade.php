@@ -79,6 +79,9 @@
                                 Username
                             </th>
                             <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Office/PT
+                            </th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Role
                             </th>
                             <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -94,6 +97,13 @@
                                 </td>
                                 <td class="px-4 sm:px-6 py-4 text-sm text-gray-900">
                                     {{ $user->username }}
+                                </td>
+                                <td class="px-4 sm:px-6 py-4 text-sm">
+                                    @if($user->office)
+                                        <x-ui.badge color="green">{{ $user->office }}</x-ui.badge>
+                                    @else
+                                        <span class="text-xs text-gray-500 italic">ALL Offices</span>
+                                    @endif
                                 </td>
                                 <td class="px-4 sm:px-6 py-4 text-sm">
                                     @forelse ($user->getRoleNames() as $role)
@@ -143,6 +153,14 @@
                             <div>
                                 <h3 class="font-semibold text-gray-900">{{ $user->name }}</h3>
                                 <p class="text-sm text-gray-600">{{ $user->username }}</p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Office: 
+                                    @if($user->office)
+                                        <span class="font-semibold text-green-600">{{ $user->office }}</span>
+                                    @else
+                                        <span class="italic">ALL Offices</span>
+                                    @endif
+                                </p>
                             </div>
                             <div class="flex gap-2">
                                 @can('edit users')
@@ -227,6 +245,25 @@
                     {{-- Konfirmasi Password --}}
                     <x-form.input label="Konfirmasi Password" name="password_confirmation" type="password"
                         placeholder="Ulangi password" required />
+
+                    {{-- Office/PT --}}
+                    <div>
+                        <label for="office" class="block text-sm font-medium text-gray-700 mb-2">
+                            Office/PT
+                            <span class="text-gray-500 text-xs font-normal">(Opsional)</span>
+                        </label>
+                        <select name="office" id="office" 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">
+                            <option value="">-- ALL Offices (Lihat semua) --</option>
+                            <option value="YBS" @selected(old('office') === 'YBS')>YBS</option>
+                            <option value="SUN" @selected(old('office') === 'SUN')>SUN</option>
+                            <option value="SJN" @selected(old('office') === 'SJN')>SJN</option>
+                        </select>
+                        <p class="mt-1.5 text-xs text-gray-500">
+                            <strong>Sampel Boy & Operator:</strong> Harus pilih office untuk input data. 
+                            <strong>PPIC, Asisten Lab, Direksi:</strong> Bisa kosongkan untuk lihat semua office.
+                        </p>
+                    </div>
 
                     {{-- Role (Multi-select dengan max 2) --}}
                     <div>

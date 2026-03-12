@@ -112,7 +112,7 @@ Route::middleware('auth')->group(function () {
             ->name('create')
             ->middleware('permission:create users');
 
-        Route::post('/', [AuthController::class, 'register'])
+        Route::post('/', [UserController::class, 'store'])
             ->name('store')
             ->middleware('permission:create users');
 

@@ -30,6 +30,29 @@
                     <x-form.input label="Username" name="username" placeholder="Masukkan username" 
                         :value="old('username', $user->username)" required />
 
+                    {{-- Office (Optional) --}}
+                    <div>
+                        <label for="office" class="block text-sm font-medium text-gray-700 mb-2">
+                            Office/PT 
+                            <span class="text-gray-500 text-xs font-normal">(Opsional - Kosongkan untuk lihat ALL offices)</span>
+                        </label>
+                        <select name="office" id="office" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                   @error('office') border-red-400 bg-red-50 @enderror">
+                            <option value="">-- Tidak ada (Lihat ALL offices) --</option>
+                            <option value="YBS" {{ old('office', $user->office) == 'YBS' ? 'selected' : '' }}>YBS</option>
+                            <option value="SUN" {{ old('office', $user->office) == 'SUN' ? 'selected' : '' }}>SUN</option>
+                            <option value="SJN" {{ old('office', $user->office) == 'SJN' ? 'selected' : '' }}>SJN</option>
+                        </select>
+                        @error('office')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500">
+                            💡 <strong>Sampel Boy & Operator:</strong> Harus pilih office untuk input data.<br>
+                            💡 <strong>PPIC, Asisten Lab, Direksi:</strong> Bisa kosongkan untuk lihat semua office.
+                        </p>
+                    </div>
+
                     {{-- Role (Multi-select dengan max 2) --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">

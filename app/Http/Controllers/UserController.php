@@ -37,6 +37,51 @@ class UserController extends Controller
         return view('users.index', compact('users', 'roles', 'roleFilter', 'search'));
     }
 
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:users,username'],
+            'office' => ['nullable', 'in:YBS,SUN,SJN'],  // Optional office
+            'password' => ['required', 'confirmed', Password::defaults()],
+            'role_ids' => ['required', 'array', 'min:1', 'max:2'],
+            'role_ids.*' => ['integer', 'exists:roles,id'],
+        ]);
+
+        try {
+            // Create user
+            $user = User::create([
+                'name' => $validated['name'],
+                'username' => $validated['username'],
+                'office' => $validated['office'] ?? null,  // NULL if not selected
+                'password' => Hash::make($validated['password']),
+            ]);
+
+            // Assign multiple roles
+            $roles = Role::whereIn('id', $validated['role_ids'])->get();
+            $user->assignRole($roles);
+
+            // Log user creation
+            $this->logActivity(
+                'create',
+                "Membuat user baru '{$user->name}' dengan role {$user->getRoleNames()->implode(', ')}",
+                $user
+            );
+
+            $roleNames = $user->getRoleNames()->implode(', ');
+            $officeInfo = $user->office ? " (Office: {$user->office})" : " (Lihat ALL offices)";
+            return redirect()->route('users.index')
+                ->with('success', "User {$user->name} berhasil dibuat dengan role {$roleNames}{$officeInfo}.");
+
+        } catch (\Exception $e) {
+            \Log::error('Error creating user: ' . $e->getMessage());
+
+            return redirect()->route('users.index')
+                ->with('error', 'Gagal membuat user: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
     public function edit($id)
     {
         $user = User::whereNull('deleted_at')->findOrFail($id);
@@ -52,6 +97,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'alpha_dash', "unique:users,username,{$id}"],
+            'office' => ['nullable', 'in:YBS,SUN,SJN'],  // Optional office
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'role_ids' => ['required', 'array', 'min:1', 'max:2'],
             'role_ids.*' => ['integer', 'exists:roles,id'],
@@ -61,6 +107,7 @@ class UserController extends Controller
             $user->update([
                 'name' => $validated['name'],
                 'username' => $validated['username'],
+                'office' => $validated['office'] ?? null,  // NULL if not selected
             ]);
 
             // Update password only jika diisi
@@ -82,11 +129,12 @@ class UserController extends Controller
             );
 
             $roleNames = $user->getRoleNames()->implode(', ');
+            $officeInfo = $user->office ? " (Office: {$user->office})" : " (Lihat ALL offices)";
             return redirect()->route('users.index')
-                ->with('success', "User {$user->name} berhasil diupdate dengan role {$roleNames}.");
+                ->with('success', "User {$user->name} berhasil diupdate dengan role {$roleNames}{$officeInfo}.");
 
-        } catch (Exception $e) {
-            Log::error('Error updating user: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            \Log::error('Error updating user: ' . $e->getMessage());
 
             return redirect()->route('users.index')
                 ->with('error', 'Gagal mengupdate user: ' . $e->getMessage())
@@ -112,8 +160,8 @@ class UserController extends Controller
             return redirect()->route('users.index')
                 ->with('success', "User {$userName} dengan role {$roleNames} berhasil dihapus.");
 
-        } catch (Exception $e) {
-            Log::error('Error deleting user: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            \Log::error('Error deleting user: ' . $e->getMessage());
 
             return redirect()->route('users.index')
                 ->with('error', 'Gagal menghapus user: ' . $e->getMessage());

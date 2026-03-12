@@ -1,12 +1,21 @@
-<x-layouts.app title="Data Oil Losses - Oil Losses">
+<?php if (isset($component)) { $__componentOriginal5863877a5171c196453bfa0bd807e410 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5863877a5171c196453bfa0bd807e410 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.layouts.app','data' => ['title' => 'Data Oil Losses - Oil Losses']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('layouts.app'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Data Oil Losses - Oil Losses']); ?>
 
-    {{-- ── Statistics Cards ──────────────────────────────────────────── --}}
+    
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
         <div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-indigo-500">
             <div class="flex items-center justify-between">
                 <div class="flex-1 min-w-0">
                     <p class="text-xs md:text-sm text-gray-500 font-medium truncate">Total Records</p>
-                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ $statistics['total_records'] }}</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1"><?php echo e($statistics['total_records']); ?></p>
                 </div>
                 <div class="p-2 md:p-3 bg-indigo-100 rounded-full flex-shrink-0">
                     <svg class="w-6 h-6 md:w-8 md:h-8 text-indigo-600" fill="none" stroke="currentColor"
@@ -22,7 +31,7 @@
             <div class="flex items-center justify-between">
                 <div class="flex-1 min-w-0">
                     <p class="text-xs md:text-sm text-gray-500 font-medium truncate">Records Today</p>
-                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ $statistics['records_today'] }}</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1"><?php echo e($statistics['records_today']); ?></p>
                 </div>
                 <div class="p-2 md:p-3 bg-green-100 rounded-full flex-shrink-0">
                     <svg class="w-6 h-6 md:w-8 md:h-8 text-green-600" fill="none" stroke="currentColor"
@@ -38,7 +47,7 @@
             <div class="flex items-center justify-between">
                 <div class="flex-1 min-w-0">
                     <p class="text-xs md:text-sm text-gray-500 font-medium truncate">Data Non-Angka</p>
-                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ $statistics['records_count'] }}</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1"><?php echo e($statistics['records_count']); ?></p>
                 </div>
                 <div class="p-2 md:p-3 bg-blue-100 rounded-full flex-shrink-0">
                     <svg class="w-6 h-6 md:w-8 md:h-8 text-blue-600" fill="none" stroke="currentColor"
@@ -54,7 +63,8 @@
             <div class="flex items-center justify-between">
                 <div class="flex-1 min-w-0">
                     <p class="text-xs md:text-sm text-gray-500 font-medium truncate">Data Perhitungan</p>
-                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ $statistics['calculations_count'] }}
+                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1"><?php echo e($statistics['calculations_count']); ?>
+
                     </p>
                 </div>
                 <div class="p-2 md:p-3 bg-purple-100 rounded-full flex-shrink-0">
@@ -68,27 +78,36 @@
         </div>
     </div>
 
-    {{-- ── Main Card with Tabs ───────────────────────────────────────── --}}
-    <x-ui.card title="Data Oil Losses">
-        {{-- Action Buttons --}}
+    
+    <?php if (isset($component)) { $__componentOriginaldae4cd48acb67888a4631e1ba48f2f93 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.card','data' => ['title' => 'Data Oil Losses']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('ui.card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Data Oil Losses']); ?>
+        
         <div class="mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                @can('create oil losses')
-                    <a href="{{ route('oil.create') }}"
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('create oil losses')): ?>
+                    <a href="<?php echo e(route('oil.create')); ?>"
                         class="inline-flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm">
                         <svg class="w-4 h-4 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
                         Input Data Oil Losses
                     </a>
-                @endcan
+                <?php endif; ?>
             </div>
 
         </div>
 
-        {{-- Date Range Filter --}}
+        
         <div class="mb-4 md:mb-6 bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-200">
-            <form method="GET" action="{{ route('oil.index') }}"
+            <form method="GET" action="<?php echo e(route('oil.index')); ?>"
                 class="flex flex-col sm:flex-row gap-3 md:gap-4 items-end">
                 <div class="flex-1 w-full">
                     <label for="kode" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">
@@ -97,11 +116,12 @@
                     <select name="kode" id="kode"
                         class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                         <option value="">-- Semua Kode --</option>
-                        @foreach($kodeOptions as $kodeValue => $kodeLabel)
-                            <option value="{{ $kodeValue }}" {{ request('kode') == $kodeValue ? 'selected' : '' }}>
-                                {{ $kodeLabel }}
+                        <?php $__currentLoopData = $kodeOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $kodeValue => $kodeLabel): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($kodeValue); ?>" <?php echo e(request('kode') == $kodeValue ? 'selected' : ''); ?>>
+                                <?php echo e($kodeLabel); ?>
+
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
@@ -111,10 +131,10 @@
                     </label>
                     <select name="office" id="office"
                         class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        <option value="all" {{ $officeFilter == 'all' ? 'selected' : '' }}>-- Semua Office --</option>
-                        <option value="YBS" {{ $officeFilter == 'YBS' ? 'selected' : '' }}>YBS</option>
-                        <option value="SUN" {{ $officeFilter == 'SUN' ? 'selected' : '' }}>SUN</option>
-                        <option value="SJN" {{ $officeFilter == 'SJN' ? 'selected' : '' }}>SJN</option>
+                        <option value="all" <?php echo e($officeFilter == 'all' ? 'selected' : ''); ?>>-- Semua Office --</option>
+                        <option value="YBS" <?php echo e($officeFilter == 'YBS' ? 'selected' : ''); ?>>YBS</option>
+                        <option value="SUN" <?php echo e($officeFilter == 'SUN' ? 'selected' : ''); ?>>SUN</option>
+                        <option value="SJN" <?php echo e($officeFilter == 'SJN' ? 'selected' : ''); ?>>SJN</option>
                     </select>
                 </div>
 
@@ -122,7 +142,7 @@
                     <label for="start_date" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                         Tanggal Mulai <span class="text-xs text-gray-500">(Default: Hari ini)</span>
                     </label>
-                    <input type="date" id="start_date" name="start_date" value="{{ $startDate }}"
+                    <input type="date" id="start_date" name="start_date" value="<?php echo e($startDate); ?>"
                         class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
 
@@ -130,7 +150,7 @@
                     <label for="end_date" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                         Tanggal Akhir <span class="text-xs text-gray-500">(Default: Hari ini)</span>
                     </label>
-                    <input type="date" id="end_date" name="end_date" value="{{ $endDate }}"
+                    <input type="date" id="end_date" name="end_date" value="<?php echo e($endDate); ?>"
                         class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
 
@@ -144,8 +164,8 @@
                         Filter
                     </button>
 
-                    @if(request('start_date') && request('start_date') != now()->format('Y-m-d') || request('end_date') && request('end_date') != now()->format('Y-m-d') || request('kode') || request('office'))
-                        <a href="{{ route('oil.index') }}"
+                    <?php if(request('start_date') && request('start_date') != now()->format('Y-m-d') || request('end_date') && request('end_date') != now()->format('Y-m-d') || request('kode') || request('office')): ?>
+                        <a href="<?php echo e(route('oil.index')); ?>"
                             class="inline-flex items-center justify-center px-4 md:px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium text-sm whitespace-nowrap">
                             <svg class="w-4 h-4 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -154,40 +174,43 @@
                             <span class="hidden sm:inline">Reset ke Hari Ini</span>
                             <span class="sm:hidden">Reset</span>
                         </a>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </form>
 
             <div class="mt-3 text-xs md:text-sm text-gray-600 flex flex-wrap items-center gap-2">
                 <span class="font-medium">Menampilkan data:</span>
-                @if($startDate == $endDate)
+                <?php if($startDate == $endDate): ?>
                     <span
                         class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 whitespace-nowrap">
-                        📅 {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }}
+                        📅 <?php echo e(\Carbon\Carbon::parse($startDate)->format('d M Y')); ?>
+
                     </span>
-                @else
+                <?php else: ?>
                     <span
                         class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                        📅 {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} -
-                        {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+                        📅 <?php echo e(\Carbon\Carbon::parse($startDate)->format('d M Y')); ?> -
+                        <?php echo e(\Carbon\Carbon::parse($endDate)->format('d M Y')); ?>
+
                     </span>
-                @endif
-                @if(request('kode'))
+                <?php endif; ?>
+                <?php if(request('kode')): ?>
                     <span
                         class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 whitespace-nowrap">
-                        🔖 Kode: {{ request('kode') }}
+                        🔖 Kode: <?php echo e(request('kode')); ?>
+
                     </span>
-                @else
+                <?php else: ?>
                     <span
                         class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
                         🔖 Semua Kode
                     </span>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
 
-        @can('view oil losses')
-            {{-- Tabs Navigation --}}
+        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('view oil losses')): ?>
+            
             <div class="border-b border-gray-200 mb-4 md:mb-6 overflow-x-auto">
                 <nav class="-mb-px flex space-x-4 md:space-x-8">
                     <button onclick="switchTab('records')" id="tab-records"
@@ -195,21 +218,21 @@
                         <span class="hidden sm:inline">📝 Data Jenis & Sampel</span>
                         <span class="sm:hidden">📝 Jenis</span>
                         <span
-                            class="ml-1 md:ml-2 bg-blue-100 text-blue-600 py-0.5 px-1.5 md:px-2.5 rounded-full text-xs">{{ $statistics['records_count'] }}</span>
+                            class="ml-1 md:ml-2 bg-blue-100 text-blue-600 py-0.5 px-1.5 md:px-2.5 rounded-full text-xs"><?php echo e($statistics['records_count']); ?></span>
                     </button>
                     <button onclick="switchTab('calculations')" id="tab-calculations"
                         class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-3 md:py-4 px-1 font-medium text-xs md:text-sm flex-shrink-0">
                         <span class="hidden sm:inline">🧪 Data Perhitungan Lab</span>
                         <span class="sm:hidden">🧪 Perhitungan</span>
                         <span
-                            class="ml-1 md:ml-2 bg-gray-100 text-gray-600 py-0.5 px-1.5 md:px-2.5 rounded-full text-xs">{{ $statistics['calculations_count'] }}</span>
+                            class="ml-1 md:ml-2 bg-gray-100 text-gray-600 py-0.5 px-1.5 md:px-2.5 rounded-full text-xs"><?php echo e($statistics['calculations_count']); ?></span>
                     </button>
                 </nav>
             </div>
 
-            {{-- Tab 1: Data Non-Angka (Lab Records) --}}
+            
             <div id="content-records" class="tab-content">
-                @if ($oilRecords->isEmpty())
+                <?php if($oilRecords->isEmpty()): ?>
                     <div class="text-center py-8 md:py-12">
                         <svg class="mx-auto h-10 w-10 md:h-12 md:w-12 text-gray-400" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
@@ -217,14 +240,14 @@
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <p class="mt-4 text-base md:text-lg text-gray-500">Belum ada data jenis & sampel</p>
-                        @can('create oil losses')
-                            <a href="{{ route('oil.create') }}"
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('create oil losses')): ?>
+                            <a href="<?php echo e(route('oil.create')); ?>"
                                 class="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                                 Input Data Pertama
                             </a>
-                        @endcan
+                        <?php endif; ?>
                     </div>
-                @else
+                <?php else: ?>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-blue-50">
@@ -256,39 +279,46 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($oilRecords as $record)
+                                <?php $__currentLoopData = $oilRecords; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $record): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr class="hover:bg-blue-50">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $record->created_at->format('d/m/Y H:i') }}
+                                            <?php echo e($record->created_at->format('d/m/Y H:i')); ?>
+
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-900">
-                                            {{ $record->kode ?? '-' }}
+                                            <?php echo e($record->kode ?? '-'); ?>
+
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             <span
-                                                class="px-2 py-1 rounded-full text-xs font-medium {{ $record->jenis == 'TBS' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800' }}">
-                                                {{ $record->jenis ?? '-' }}
+                                                class="px-2 py-1 rounded-full text-xs font-medium <?php echo e($record->jenis == 'TBS' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'); ?>">
+                                                <?php echo e($record->jenis ?? '-'); ?>
+
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $record->operator ?? '-' }}
+                                            <?php echo e($record->operator ?? '-'); ?>
+
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $record->sampel_boy ?? '-' }}
+                                            <?php echo e($record->sampel_boy ?? '-'); ?>
+
                                         </td>
                                         <!-- <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                                                                                                                                                                    {{ $record->parameter_lain ?? '-' }}
+                                                                                                                                                                                                    <?php echo e($record->parameter_lain ?? '-'); ?>
+
                                                                                                                                                                                                 </td> -->
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $record->user->name }}
+                                            <?php echo e($record->user->name); ?>
+
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex items-center gap-2">
-                                                @can('delete oil losses')
-                                                    <form action="{{ route('oil.records.destroy', $record->id) }}" method="POST"
-                                                        class="inline delete-form" data-item-name="Data {{ $record->kode ?? 'ini' }}">
-                                                        @csrf
-                                                        @method('DELETE')
+                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete oil losses')): ?>
+                                                    <form action="<?php echo e(route('oil.records.destroy', $record->id)); ?>" method="POST"
+                                                        class="inline delete-form" data-item-name="Data <?php echo e($record->kode ?? 'ini'); ?>">
+                                                        <?php echo csrf_field(); ?>
+                                                        <?php echo method_field('DELETE'); ?>
                                                         <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
                                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -296,39 +326,40 @@
                                                             </svg>
                                                         </button>
                                                     </form>
-                                                @endcan
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tbody>
                         </table>
                     </div>
 
-                    {{-- Pagination --}}
+                    
                     <div class="mt-6">
-                        {{ $oilRecords->links() }}
+                        <?php echo e($oilRecords->links()); ?>
+
                     </div>
-                @endif
+                <?php endif; ?>
             </div>
 
-            {{-- Tab 2: Data Perhitungan Lab (Lab Calculations) --}}
+            
             <div id="content-calculations" class="tab-content hidden">
-                @if ($oilLosses->isEmpty())
+                <?php if($oilLosses->isEmpty()): ?>
                     <div class="text-center py-12">
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                         <p class="mt-4 text-lg text-gray-500">Belum ada data perhitungan lab</p>
-                        @can('create oil losses')
-                            <a href="{{ route('oil.create') }}"
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('create oil losses')): ?>
+                            <a href="<?php echo e(route('oil.create')); ?>"
                                 class="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                                 Input Data Pertama
                             </a>
-                        @endcan
+                        <?php endif; ?>
                     </div>
-                @else
+                <?php else: ?>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-purple-50">
@@ -363,132 +394,143 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($oilLosses as $oilLoss)
+                                <?php $__currentLoopData = $oilLosses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $oilLoss): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr class="hover:bg-purple-50">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $oilLoss->created_at->format('d/m/Y H:i') }}
+                                            <?php echo e($oilLoss->created_at->format('d/m/Y H:i')); ?>
+
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-purple-900">
-                                            {{ $oilLoss->kode }}
+                                            <?php echo e($oilLoss->kode); ?>
+
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ number_format($oilLoss->moist ?? 0, 4) }}
+                                            <?php echo e(number_format($oilLoss->moist ?? 0, 4)); ?>
+
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ number_format($oilLoss->dmwm ?? 0, 4) }}
+                                            <?php echo e(number_format($oilLoss->dmwm ?? 0, 4)); ?>
+
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <!-- {{ number_format($oilLoss->olwb ?? 0, 4) }} -->
-                                            @php
+                                            <!-- <?php echo e(number_format($oilLoss->olwb ?? 0, 4)); ?> -->
+                                            <?php
                                                 $olwb_calc = $oilLoss->olwb ?? 0;
                                                 $limitolwb = $oilLoss->limitOLWB ?? 0;
                                                 $oilLoss->kode == 'COT IN' ? $isGood = $olwb_calc > $limitolwb && $limitolwb > 0 : $isGood = $olwb_calc <= $limitolwb && $limitolwb > 0;
-                                            @endphp
-                                            <span @class([
+                                            ?>
+                                            <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                                 'font-semibold',
                                                 'text-green-600' => $isGood,
                                                 'text-red-600' => !$isGood && $limitolwb > 0,
-                                            ])>
-                                                @if($olwb_calc < 0)
-                                                    ({{ number_format(abs($olwb_calc), 2) }})
-                                                @else
-                                                    {{ number_format($olwb_calc, 2) }}
-                                                @endif
+                                            ]); ?>">
+                                                <?php if($olwb_calc < 0): ?>
+                                                    (<?php echo e(number_format(abs($olwb_calc), 2)); ?>)
+                                                <?php else: ?>
+                                                    <?php echo e(number_format($olwb_calc, 2)); ?>
+
+                                                <?php endif; ?>
                                             </span>
                                             <span class="text-xs text-gray-500 block">Limit:
-                                                @if($limitolwb > 0)
-                                                    @if($limitolwb < 0)
-                                                        ({{ number_format(abs($limitolwb), 2) }})
-                                                    @else
-                                                        {{ number_format($limitolwb, 2) }}
-                                                    @endif
-                                                @else
+                                                <?php if($limitolwb > 0): ?>
+                                                    <?php if($limitolwb < 0): ?>
+                                                        (<?php echo e(number_format(abs($limitolwb), 2)); ?>)
+                                                    <?php else: ?>
+                                                        <?php echo e(number_format($limitolwb, 2)); ?>
+
+                                                    <?php endif; ?>
+                                                <?php else: ?>
                                                     -
-                                                @endif
+                                                <?php endif; ?>
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <!-- {{ number_format($oilLoss->oldb ?? 0, 4) }} -->
-                                            @php
+                                            <!-- <?php echo e(number_format($oilLoss->oldb ?? 0, 4)); ?> -->
+                                            <?php
                                                 $oldb_calc = $oilLoss->oldb ?? 0;
                                                 $limitoldb = $oilLoss->limitOLDB ?? 0;
                                                 $isGood = $oldb_calc <= $limitoldb && $limitoldb > 0;
-                                            @endphp
-                                            <span @class([
+                                            ?>
+                                            <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                                 'font-semibold',
                                                 'text-green-600' => $isGood,
                                                 'text-red-600' => !$isGood && $limitoldb > 0,
-                                            ])>
-                                                @if($oldb_calc < 0)
-                                                    ({{ number_format(abs($oldb_calc), 2) }})
-                                                @else
-                                                    {{ number_format($oldb_calc, 2) }}
-                                                @endif
+                                            ]); ?>">
+                                                <?php if($oldb_calc < 0): ?>
+                                                    (<?php echo e(number_format(abs($oldb_calc), 2)); ?>)
+                                                <?php else: ?>
+                                                    <?php echo e(number_format($oldb_calc, 2)); ?>
+
+                                                <?php endif; ?>
                                             </span>
                                             <span class="text-xs text-gray-500 block">
                                                 Limit:
-                                                @if($limitoldb > 0)
-                                                    @if($limitoldb < 0)
-                                                        ({{ number_format(abs($limitoldb), 2) }})
-                                                    @else
-                                                        {{ number_format($limitoldb, 2) }}
-                                                    @endif
-                                                @else
+                                                <?php if($limitoldb > 0): ?>
+                                                    <?php if($limitoldb < 0): ?>
+                                                        (<?php echo e(number_format(abs($limitoldb), 2)); ?>)
+                                                    <?php else: ?>
+                                                        <?php echo e(number_format($limitoldb, 2)); ?>
+
+                                                    <?php endif; ?>
+                                                <?php else: ?>
                                                     -
-                                                @endif
+                                                <?php endif; ?>
                                             </span>
 
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                            @php
+                                            <?php
                                                 $losses = $oilLoss->oil_losses ?? 0;
                                                 $limitOL = $oilLoss->limitOL ?? 0;
                                                 $isGood = $losses <= $limitOL && $limitOL > 0;
-                                            @endphp
-                                            <span @class([
+                                            ?>
+                                            <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                                 'font-semibold',
                                                 'text-green-600' => $isGood,
                                                 'text-red-600' => !$isGood && $limitOL > 0,
-                                            ])>
-                                                @if($losses < 0)
-                                                    ({{ number_format(abs($losses), 2) }})
-                                                @else
-                                                    {{ number_format($losses, 2) }}
-                                                @endif
+                                            ]); ?>">
+                                                <?php if($losses < 0): ?>
+                                                    (<?php echo e(number_format(abs($losses), 2)); ?>)
+                                                <?php else: ?>
+                                                    <?php echo e(number_format($losses, 2)); ?>
+
+                                                <?php endif; ?>
                                             </span>
 
                                             <span class="text-xs text-gray-500 block">Limit:
-                                                @if($limitOL > 0)
-                                                    @if($limitOL < 0)
-                                                        ({{ number_format(abs($limitOL), 2) }})
-                                                    @else
-                                                        {{ number_format($limitOL, 2) }}
-                                                    @endif
-                                                @else
+                                                <?php if($limitOL > 0): ?>
+                                                    <?php if($limitOL < 0): ?>
+                                                        (<?php echo e(number_format(abs($limitOL), 2)); ?>)
+                                                    <?php else: ?>
+                                                        <?php echo e(number_format($limitOL, 2)); ?>
+
+                                                    <?php endif; ?>
+                                                <?php else: ?>
                                                     -
-                                                @endif
+                                                <?php endif; ?>
                                             </span>
 
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $oilLoss->user->name }}
+                                            <?php echo e($oilLoss->user->name); ?>
+
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex items-center gap-2">
-                                                @can('edit oil losses')
-                                                    <a href="{{ route('oil.edit', $oilLoss->id) }}"
+                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit oil losses')): ?>
+                                                    <a href="<?php echo e(route('oil.edit', $oilLoss->id)); ?>"
                                                         class="text-blue-600 hover:text-blue-900" title="Edit">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
                                                     </a>
-                                                @endcan
-                                                @can('delete oil losses')
-                                                    <form action="{{ route('oil.destroy', $oilLoss->id) }}" method="POST"
-                                                        class="inline delete-form" data-item-name="Data {{ $oilLoss->kode ?? 'ini' }}">
-                                                        @csrf
-                                                        @method('DELETE')
+                                                <?php endif; ?>
+                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete oil losses')): ?>
+                                                    <form action="<?php echo e(route('oil.destroy', $oilLoss->id)); ?>" method="POST"
+                                                        class="inline delete-form" data-item-name="Data <?php echo e($oilLoss->kode ?? 'ini'); ?>">
+                                                        <?php echo csrf_field(); ?>
+                                                        <?php echo method_field('DELETE'); ?>
                                                         <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
                                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -496,25 +538,35 @@
                                                             </svg>
                                                         </button>
                                                     </form>
-                                                @endcan
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tbody>
                         </table>
                     </div>
 
-                    {{-- Pagination --}}
+                    
                     <div class="mt-6">
-                        {{ $oilLosses->links() }}
-                    </div>
-                @endif
-            </div>
-        @endcan
-    </x-ui.card>
+                        <?php echo e($oilLosses->links()); ?>
 
-    {{-- Tab Switching JavaScript --}}
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93)): ?>
+<?php $attributes = $__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93; ?>
+<?php unset($__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginaldae4cd48acb67888a4631e1ba48f2f93)): ?>
+<?php $component = $__componentOriginaldae4cd48acb67888a4631e1ba48f2f93; ?>
+<?php unset($__componentOriginaldae4cd48acb67888a4631e1ba48f2f93); ?>
+<?php endif; ?>
+
+    
     <script>
         function switchTab(tabName) {
             // Hide all tab contents
@@ -559,4 +611,13 @@
         });
     </script>
 
-</x-layouts.app>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5863877a5171c196453bfa0bd807e410)): ?>
+<?php $attributes = $__attributesOriginal5863877a5171c196453bfa0bd807e410; ?>
+<?php unset($__attributesOriginal5863877a5171c196453bfa0bd807e410); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5863877a5171c196453bfa0bd807e410)): ?>
+<?php $component = $__componentOriginal5863877a5171c196453bfa0bd807e410; ?>
+<?php unset($__componentOriginal5863877a5171c196453bfa0bd807e410); ?>
+<?php endif; ?><?php /**PATH D:\Project1YBS\resources\views/oil/index.blade.php ENDPATH**/ ?>

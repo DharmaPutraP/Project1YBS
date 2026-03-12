@@ -8,6 +8,7 @@ use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Models\Role;
 
@@ -86,7 +87,7 @@ class AuthController extends Controller
             return redirect()->route('users.index')
                 ->with('success', "User {$user->name} berhasil ditambahkan dengan role {$roleNames}.");
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             Log::error('Error creating user: ' . $e->getMessage());
 
             return redirect()->route('users.index')

@@ -15,6 +15,7 @@ class OilCalculation extends Model
 
     protected $fillable = [
         'user_id',
+        'office',       // Office/PT (YBS, SUN, SJN)
         'oil_master_id',
         'kode',
         'cawan_kosong',

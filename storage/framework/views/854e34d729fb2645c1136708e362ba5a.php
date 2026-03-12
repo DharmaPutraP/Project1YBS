@@ -1,6 +1,15 @@
-<x-layouts.app title="Report Bobot">
+<?php if (isset($component)) { $__componentOriginal5863877a5171c196453bfa0bd807e410 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5863877a5171c196453bfa0bd807e410 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.layouts.app','data' => ['title' => 'Report Bobot']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('layouts.app'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Report Bobot']); ?>
 
-    {{-- ── Header Section ────────────────────────────────────────────── --}}
+    
     <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-900">Performance</h1>
         <p class="mt-2 text-sm text-gray-600">
@@ -8,17 +17,26 @@
         </p>
     </div>
 
-    {{-- ── Main Card ─────────────────────────────────────────────────── --}}
-    <x-ui.card>
-        {{-- Date Range Filter --}}
+    
+    <?php if (isset($component)) { $__componentOriginaldae4cd48acb67888a4631e1ba48f2f93 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.card','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('ui.card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+        
         <div class="mb-6 bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
-            <form method="GET" action="{{ route('oil.report') }}"
+            <form method="GET" action="<?php echo e(route('oil.report')); ?>"
                 class="flex flex-col sm:flex-row gap-2 sm:gap-4 items-end">
                 <div class="flex-1 w-full">
                     <label for="start_date" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                         Tanggal Mulai
                     </label>
-                    <input type="date" id="start_date" name="start_date" value="{{ $startDate }}"
+                    <input type="date" id="start_date" name="start_date" value="<?php echo e($startDate); ?>"
                         class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
                 </div>
 
@@ -26,7 +44,7 @@
                     <label for="end_date" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                         Tanggal Akhir
                     </label>
-                    <input type="date" id="end_date" name="end_date" value="{{ $endDate }}"
+                    <input type="date" id="end_date" name="end_date" value="<?php echo e($endDate); ?>"
                         class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
                 </div>
 
@@ -36,10 +54,10 @@
                     </label>
                     <select id="office" name="office"
                         class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
-                        <option value="all" {{ $officeFilter === 'all' ? 'selected' : '' }}>Semua Office</option>
-                        <option value="YBS" {{ $officeFilter === 'YBS' ? 'selected' : '' }}>YBS</option>
-                        <option value="SUN" {{ $officeFilter === 'SUN' ? 'selected' : '' }}>SUN</option>
-                        <option value="SJN" {{ $officeFilter === 'SJN' ? 'selected' : '' }}>SJN</option>
+                        <option value="all" <?php echo e($officeFilter === 'all' ? 'selected' : ''); ?>>Semua Office</option>
+                        <option value="YBS" <?php echo e($officeFilter === 'YBS' ? 'selected' : ''); ?>>YBS</option>
+                        <option value="SUN" <?php echo e($officeFilter === 'SUN' ? 'selected' : ''); ?>>SUN</option>
+                        <option value="SJN" <?php echo e($officeFilter === 'SJN' ? 'selected' : ''); ?>>SJN</option>
                     </select>
                 </div>
 
@@ -54,8 +72,8 @@
                         Filter
                     </button>
 
-                    @if(request('start_date') || request('end_date') || request('office'))
-                        <a href="{{ route('oil.report') }}"
+                    <?php if(request('start_date') || request('end_date') || request('office')): ?>
+                        <a href="<?php echo e(route('oil.report')); ?>"
                             class="inline-flex items-center justify-center px-4 sm:px-6 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium text-sm">
                             <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
@@ -64,7 +82,7 @@
                             </svg>
                             Reset
                         </a>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </form>
 
@@ -72,28 +90,30 @@
                 <span class="font-medium">Periode:</span>
                 <span
                     class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                    {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} -
-                    {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+                    <?php echo e(\Carbon\Carbon::parse($startDate)->format('d M Y')); ?> -
+                    <?php echo e(\Carbon\Carbon::parse($endDate)->format('d M Y')); ?>
+
                 </span>
                 <span class="font-medium ml-4">Office:</span>
                 <span
                     class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    @if($officeFilter === 'all')
+                    <?php if($officeFilter === 'all'): ?>
                         Semua Office
-                    @else
-                        {{ $officeFilter }}
-                    @endif
+                    <?php else: ?>
+                        <?php echo e($officeFilter); ?>
+
+                    <?php endif; ?>
                 </span>
             </div>
 
-            {{-- Export Button --}}
-            @canany(['export performance reports oil losses'])
+            
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->any(['export performance reports oil losses'])): ?>
                 <div class="mt-3">
-                    <form action="{{ route('oil.report.export') }}" method="POST" class="inline">
-                        @csrf
-                        <input type="hidden" name="start_date" value="{{ $startDate }}">
-                        <input type="hidden" name="end_date" value="{{ $endDate }}">
-                        <input type="hidden" name="office" value="{{ $officeFilter }}">
+                    <form action="<?php echo e(route('oil.report.export')); ?>" method="POST" class="inline">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="start_date" value="<?php echo e($startDate); ?>">
+                        <input type="hidden" name="end_date" value="<?php echo e($endDate); ?>">
+                        <input type="hidden" name="office" value="<?php echo e($officeFilter); ?>">
                         <button type="submit"
                             class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                             <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -105,11 +125,11 @@
                         </button>
                     </form>
                 </div>
-            @endcanany
+            <?php endif; ?>
         </div>
 
-        {{-- Bobot Report Table --}}
-        @if(empty($reportData))
+        
+        <?php if(empty($reportData)): ?>
             <div class="text-center py-12">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -118,7 +138,7 @@
                 <p class="mt-4 text-lg text-gray-500">Tidak ada data pada periode ini</p>
                 <p class="mt-2 text-sm text-gray-400">Silakan pilih rentang tanggal lain atau input data baru</p>
             </div>
-        @else
+        <?php else: ?>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
                     <thead class="bg-indigo-50">
@@ -127,12 +147,13 @@
                                 class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 sticky left-0 bg-indigo-50 z-10 min-w-[120px]">
                                 Tanggal
                             </th>
-                            @foreach($allKodesData as $kodeInfo)
+                            <?php $__currentLoopData = $allKodesData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $kodeInfo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <th
                                     class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[120px]">
-                                    {{ $kodeInfo['pivot'] }}
+                                    <?php echo e($kodeInfo['pivot']); ?>
+
                                 </th>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             <th
                                 class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[120px] bg-blue-50">
                                 AVG PRESS
@@ -144,48 +165,50 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($reportData as $dateData)
-                            {{-- Row 1: OLWB Values --}}
+                        <?php $__currentLoopData = $reportData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dateData): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            
                             <tr class="hover:bg-gray-50">
                                 <td
                                     class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 border-r border-gray-300 sticky left-0 bg-white z-10">
-                                    {{ \Carbon\Carbon::parse($dateData['date'])->format('d/m/Y') }}
+                                    <?php echo e(\Carbon\Carbon::parse($dateData['date'])->format('d/m/Y')); ?>
+
                                 </td>
-                                @foreach($allKodesData as $kodeInfo)
-                                    @php $kode = $kodeInfo['kode']; @endphp
+                                <?php $__currentLoopData = $allKodesData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $kodeInfo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php $kode = $kodeInfo['kode']; ?>
                                     <td class="px-3 py-3 text-center text-sm border-r border-gray-300">
-                                        @if(isset($dateData['kodes'][$kode]) && $dateData['kodes'][$kode]['olwb'] !== null)
-                                            @php
+                                        <?php if(isset($dateData['kodes'][$kode]) && $dateData['kodes'][$kode]['olwb'] !== null): ?>
+                                            <?php
                                                 $olwb = $dateData['kodes'][$kode]['olwb'];
-                                            @endphp
+                                            ?>
                                             <span class="font-semibold text-gray-900">
-                                                @if($olwb < 0)
-                                                    ({{ number_format(abs($olwb), 2) }})
-                                                @else
-                                                    {{ number_format($olwb, 2) }}
-                                                @endif
+                                                <?php if($olwb < 0): ?>
+                                                    (<?php echo e(number_format(abs($olwb), 2)); ?>)
+                                                <?php else: ?>
+                                                    <?php echo e(number_format($olwb, 2)); ?>
+
+                                                <?php endif; ?>
                                             </span>
-                                        @else
+                                        <?php else: ?>
                                             <span class="text-gray-400">-</span>
-                                        @endif
+                                        <?php endif; ?>
                                     </td>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 <td colspan="3" class="px-4 py-3 text-center border-r border-gray-300 bg-gray-50">
-                                    {{-- Empty cells for AVG columns in OLWB row --}}
+                                    
                                 </td>
                             </tr>
 
-                            {{-- Row 2: Bobot Scores --}}
+                            
                             <tr>
                                 <td
                                     class="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-700 border-r border-gray-300 sticky left-0 bg-indigo-50 z-10">
                                     Bobot
                                 </td>
-                                @foreach($allKodesData as $kodeInfo)
-                                    @php $kode = $kodeInfo['kode']; @endphp
+                                <?php $__currentLoopData = $allKodesData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $kodeInfo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php $kode = $kodeInfo['kode']; ?>
                                     <td class="px-3 py-3 text-center text-sm border-r border-gray-300">
-                                        @if(isset($dateData['kodes'][$kode]) && $dateData['kodes'][$kode]['bobot'] !== null)
-                                            @php
+                                        <?php if(isset($dateData['kodes'][$kode]) && $dateData['kodes'][$kode]['bobot'] !== null): ?>
+                                            <?php
                                                 $bobot = $dateData['kodes'][$kode]['bobot'];
                                                 $bgColor = 'bg-red-100';
                                                 $textColor = 'text-red-800';
@@ -197,24 +220,24 @@
                                                     $bgColor = 'bg-yellow-100';
                                                     $textColor = 'text-yellow-800';
                                                 }
-                                            @endphp
-                                            <span @class([
+                                            ?>
+                                            <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                                 'inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold',
                                                 $bgColor,
                                                 $textColor
-                                            ])>
-                                                {{ $bobot }}%
+                                            ]); ?>">
+                                                <?php echo e($bobot); ?>%
                                             </span>
-                                        @else
+                                        <?php else: ?>
                                             <span class="text-gray-400">-</span>
-                                        @endif
+                                        <?php endif; ?>
                                     </td>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-                                {{-- AVG PRESS --}}
+                                
                                 <td class="px-4 py-3 text-center border-r border-gray-300 bg-blue-50">
-                                    @if($dateData['average_press'] !== null)
-                                        @php
+                                    <?php if($dateData['average_press'] !== null): ?>
+                                        <?php
                                             $avgPress = $dateData['average_press'];
                                             $bgColor = 'bg-red-100';
                                             $textColor = 'text-red-800';
@@ -226,23 +249,23 @@
                                                 $bgColor = 'bg-yellow-100';
                                                 $textColor = 'text-yellow-800';
                                             }
-                                        @endphp
-                                        <span @class([
+                                        ?>
+                                        <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                             'inline-flex items-center px-3 py-1 rounded-full text-base font-bold',
                                             $bgColor,
                                             $textColor
-                                        ])>
-                                            {{ number_format($avgPress, 2) }}%
+                                        ]); ?>">
+                                            <?php echo e(number_format($avgPress, 2)); ?>%
                                         </span>
-                                    @else
+                                    <?php else: ?>
                                         <span class="text-gray-400">-</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
 
-                                {{-- AVG CLARIFICATION --}}
+                                
                                 <td class="px-4 py-3 text-center border-r border-gray-300 bg-green-50">
-                                    @if($dateData['average_clarification'] !== null)
-                                        @php
+                                    <?php if($dateData['average_clarification'] !== null): ?>
+                                        <?php
                                             $avgClarif = $dateData['average_clarification'];
                                             $bgColor = 'bg-red-100';
                                             $textColor = 'text-red-800';
@@ -254,30 +277,30 @@
                                                 $bgColor = 'bg-yellow-100';
                                                 $textColor = 'text-yellow-800';
                                             }
-                                        @endphp
-                                        <span @class([
+                                        ?>
+                                        <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                             'inline-flex items-center px-3 py-1 rounded-full text-base font-bold',
                                             $bgColor,
                                             $textColor
-                                        ])>
-                                            {{ number_format($avgClarif, 2) }}%
+                                        ]); ?>">
+                                            <?php echo e(number_format($avgClarif, 2)); ?>%
                                         </span>
-                                    @else
+                                    <?php else: ?>
                                         <span class="text-gray-400">-</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
                             </tr>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </tbody>
                 </table>
             </div>
 
-            {{-- Summary and Legend --}}
+            
             <div class="mt-6 flex items-center justify-between">
                 <div class="text-sm text-gray-600">
-                    <span class="font-medium">Total Hari:</span> {{ count($reportData) }} hari
+                    <span class="font-medium">Total Hari:</span> <?php echo e(count($reportData)); ?> hari
                     <span class="mx-2">|</span>
-                    <span class="font-medium">Total Kode:</span> {{ count($allKodesData) }} kode
+                    <span class="font-medium">Total Kode:</span> <?php echo e(count($allKodesData)); ?> kode
                 </div>
 
                 <div class="flex items-center gap-4 text-sm">
@@ -296,40 +319,59 @@
                     </div>
                 </div>
             </div>
-        @endif
-    </x-ui.card>
+        <?php endif; ?>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93)): ?>
+<?php $attributes = $__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93; ?>
+<?php unset($__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginaldae4cd48acb67888a4631e1ba48f2f93)): ?>
+<?php $component = $__componentOriginaldae4cd48acb67888a4631e1ba48f2f93; ?>
+<?php unset($__componentOriginaldae4cd48acb67888a4631e1ba48f2f93); ?>
+<?php endif; ?>
 
-    {{-- ── Operator Performance Table ───────────────────────────────────── --}}
-    @if(isset($operatorPress) && isset($operatorClarification) && isset($reportDates))
+    
+    <?php if(isset($operatorPress) && isset($operatorClarification) && isset($reportDates)): ?>
         <div class="mt-8">
             <h2 class="text-xl font-bold text-gray-900 mb-4">Daftar Operator & Performance</h2>
             <p class="text-sm text-gray-600 mb-6">
                 Daftar operator dan performance harian berdasarkan kategori (Clarification dan Press).
             </p>
 
-            <x-ui.card>
+            <?php if (isset($component)) { $__componentOriginaldae4cd48acb67888a4631e1ba48f2f93 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.card','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('ui.card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
                 <div class="relative overflow-x-auto border rounded-lg">
                     <table class="min-w-full text-sm text-gray-700 divide-y divide-gray-200">
-                        {{-- Header --}}
+                        
                         <thead class="bg-gray-100 sticky top-0 z-10">
                             <tr>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[250px]">
                                     OPERATOR
                                 </th>
-                                @foreach($reportDates as $date)
+                                <?php $__currentLoopData = $reportDates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $date): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <th
                                         class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[120px]">
-                                        {{ \Carbon\Carbon::parse($date)->format('d M') }}
+                                        <?php echo e(\Carbon\Carbon::parse($date)->format('d M')); ?>
+
                                     </th>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tr>
                         </thead>
 
                         <tbody class="bg-white divide-y divide-gray-200">
-                            {{-- Operator Clarification Section --}}
+                            
                             <tr class="bg-green-50">
-                                <td colspan="{{ count($reportDates) + 1 }}"
+                                <td colspan="<?php echo e(count($reportDates) + 1); ?>"
                                     class="px-6 py-3 font-bold text-green-900 uppercase text-sm border-b-2 border-green-200">
                                     <div class="flex items-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,7 +385,7 @@
                                 </td>
                             </tr>
 
-                            @forelse($operatorClarification as $operator)
+                            <?php $__empty_1 = true; $__currentLoopData = $operatorClarification; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $operator): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                 <tr class="hover:bg-green-50 transition">
                                     <td class="px-6 py-3 border-r border-gray-300 bg-green-50/30">
                                         <div class="flex items-center space-x-3">
@@ -356,19 +398,19 @@
                                                 </svg>
                                             </div>
                                             <div>
-                                                <p class="font-semibold text-gray-900">{{ $operator }}</p>
-                                                @if(isset($operatorActivities[$operator]))
+                                                <p class="font-semibold text-gray-900"><?php echo e($operator); ?></p>
+                                                <?php if(isset($operatorActivities[$operator])): ?>
                                                     <p class="text-xs text-gray-500">
-                                                        {{ $operatorActivities[$operator]['total_input'] }} input
+                                                        <?php echo e($operatorActivities[$operator]['total_input']); ?> input
                                                     </p>
-                                                @endif
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </td>
-                                    @foreach($reportDates as $date)
+                                    <?php $__currentLoopData = $reportDates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $date): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <td class="px-4 py-3 text-center border-r border-gray-300">
-                                            @if(isset($dailyPerformance[$date]) && $dailyPerformance[$date]['average_clarification'] !== null)
-                                                @php
+                                            <?php if(isset($dailyPerformance[$date]) && $dailyPerformance[$date]['average_clarification'] !== null): ?>
+                                                <?php
                                                     $avgClarif = $dailyPerformance[$date]['average_clarification'];
                                                     $bgColor = 'bg-red-100';
                                                     $textColor = 'text-red-800';
@@ -380,31 +422,31 @@
                                                         $bgColor = 'bg-yellow-100';
                                                         $textColor = 'text-yellow-800';
                                                     }
-                                                @endphp
-                                                <span @class([
+                                                ?>
+                                                <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                                     'inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold',
                                                     $bgColor,
                                                     $textColor
-                                                ])>
-                                                    {{ number_format($avgClarif, 1) }}%
+                                                ]); ?>">
+                                                    <?php echo e(number_format($avgClarif, 1)); ?>%
                                                 </span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-gray-400">-</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tr>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <tr>
-                                    <td colspan="{{ count($reportDates) + 1 }}" class="px-6 py-8 text-center text-gray-500">
+                                    <td colspan="<?php echo e(count($reportDates) + 1); ?>" class="px-6 py-8 text-center text-gray-500">
                                         Tidak ada operator Clarification pada periode ini
                                     </td>
                                 </tr>
-                            @endforelse
+                            <?php endif; ?>
 
-                            {{-- Operator Press Section --}}
+                            
                             <tr class="bg-blue-50">
-                                <td colspan="{{ count($reportDates) + 1 }}"
+                                <td colspan="<?php echo e(count($reportDates) + 1); ?>"
                                     class="px-6 py-3 font-bold text-blue-900 uppercase text-sm border-b-2 border-blue-200 border-t-4 border-t-gray-300">
                                     <div class="flex items-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,7 +459,7 @@
                                 </td>
                             </tr>
 
-                            @forelse($operatorPress as $operator)
+                            <?php $__empty_1 = true; $__currentLoopData = $operatorPress; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $operator): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                 <tr class="hover:bg-blue-50 transition">
                                     <td class="px-6 py-3 border-r border-gray-300 bg-blue-50/30">
                                         <div class="flex items-center space-x-3">
@@ -430,19 +472,19 @@
                                                 </svg>
                                             </div>
                                             <div>
-                                                <p class="font-semibold text-gray-900">{{ $operator }}</p>
-                                                @if(isset($operatorActivities[$operator]))
+                                                <p class="font-semibold text-gray-900"><?php echo e($operator); ?></p>
+                                                <?php if(isset($operatorActivities[$operator])): ?>
                                                     <p class="text-xs text-gray-500">
-                                                        {{ $operatorActivities[$operator]['total_input'] }} input
+                                                        <?php echo e($operatorActivities[$operator]['total_input']); ?> input
                                                     </p>
-                                                @endif
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </td>
-                                    @foreach($reportDates as $date)
+                                    <?php $__currentLoopData = $reportDates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $date): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <td class="px-4 py-3 text-center border-r border-gray-300">
-                                            @if(isset($dailyPerformance[$date]) && $dailyPerformance[$date]['average_press'] !== null)
-                                                @php
+                                            <?php if(isset($dailyPerformance[$date]) && $dailyPerformance[$date]['average_press'] !== null): ?>
+                                                <?php
                                                     $avgPress = $dailyPerformance[$date]['average_press'];
                                                     $bgColor = 'bg-red-100';
                                                     $textColor = 'text-red-800';
@@ -454,33 +496,51 @@
                                                         $bgColor = 'bg-yellow-100';
                                                         $textColor = 'text-yellow-800';
                                                     }
-                                                @endphp
-                                                <span @class([
+                                                ?>
+                                                <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                                     'inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold',
                                                     $bgColor,
                                                     $textColor
-                                                ])>
-                                                    {{ number_format($avgPress, 1) }}%
+                                                ]); ?>">
+                                                    <?php echo e(number_format($avgPress, 1)); ?>%
                                                 </span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-gray-400">-</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tr>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <tr>
-                                    <td colspan="{{ count($reportDates) + 1 }}" class="px-6 py-8 text-center text-gray-500">
+                                    <td colspan="<?php echo e(count($reportDates) + 1); ?>" class="px-6 py-8 text-center text-gray-500">
                                         Tidak ada operator Press pada periode ini
                                     </td>
                                 </tr>
-                            @endforelse
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
 
-            </x-ui.card>
+             <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93)): ?>
+<?php $attributes = $__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93; ?>
+<?php unset($__attributesOriginaldae4cd48acb67888a4631e1ba48f2f93); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginaldae4cd48acb67888a4631e1ba48f2f93)): ?>
+<?php $component = $__componentOriginaldae4cd48acb67888a4631e1ba48f2f93; ?>
+<?php unset($__componentOriginaldae4cd48acb67888a4631e1ba48f2f93); ?>
+<?php endif; ?>
         </div>
-    @endif
+    <?php endif; ?>
 
-</x-layouts.app>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5863877a5171c196453bfa0bd807e410)): ?>
+<?php $attributes = $__attributesOriginal5863877a5171c196453bfa0bd807e410; ?>
+<?php unset($__attributesOriginal5863877a5171c196453bfa0bd807e410); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5863877a5171c196453bfa0bd807e410)): ?>
+<?php $component = $__componentOriginal5863877a5171c196453bfa0bd807e410; ?>
+<?php unset($__componentOriginal5863877a5171c196453bfa0bd807e410); ?>
+<?php endif; ?><?php /**PATH D:\Project1YBS\resources\views/oil/report.blade.php ENDPATH**/ ?>

@@ -122,6 +122,7 @@
                                 </option>
                             @endforeach
                         </select>
+                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Pivot. Pivot hanya untuk informasi.</p>
                         @error('kode')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -149,11 +150,26 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="operator" class="block text-sm font-medium text-gray-700 mb-2">
-                                Operator <span class="text-gray-400 text-xs">(wajib jika Kode diisi)</span>
+                                Operator <span class="text-gray-400 text-xs">(wajib bersama Kode)</span>
                             </label>
-                            <input type="text" name="operator" id="operator" value="{{ old('operator') }}"
-                                placeholder="Nama operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
-                                       @error('operator') border-red-400 bg-red-50 @enderror">
+                            @if(!empty($operatorOptions))
+                                <select name="operator" id="operator" class="w-full select2-operator
+                                    @error('operator') border-red-400 bg-red-50 @enderror">
+                                    <option value="">-- Pilih Operator --</option>
+                                    @foreach($operatorOptions as $operatorName)
+                                        <option value="{{ $operatorName }}" {{ old('operator') == $operatorName ? 'selected' : '' }}>
+                                            {{ $operatorName }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">Daftar operator mengikuti office {{ Auth::user()->office ?? '-' }}.</p>
+                            @else
+                                <input type="text" name="operator" id="operator"
+                                    value="{{ old('operator') }}" placeholder="Nama operator"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
+                                           @error('operator') border-red-400 bg-red-50 @enderror">
+                                <p class="mt-1 text-xs text-gray-500">Dropdown operator belum tersedia untuk office {{ Auth::user()->office ?? '-' }}.</p>
+                            @endif
                             @error('operator')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
@@ -210,6 +226,7 @@
                                 </option>
                             @endforeach
                         </select>
+                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Pivot. Pivot hanya untuk informasi.</p>
                         @error('kode_mode2')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -333,6 +350,22 @@
             $('.select2-jenis').select2({
                 placeholder: 'TBS (Default)',
                 allowClear: false,
+                width: '100%',
+                theme: 'default',
+                language: {
+                    noResults: function () {
+                        return "Tidak ditemukan";
+                    },
+                    searching: function () {
+                        return "Mencari...";
+                    }
+                }
+            });
+
+            // Initialize Select2 for Operator dropdown
+            $('.select2-operator').select2({
+                placeholder: '-- Pilih Operator --',
+                allowClear: true,
                 width: '100%',
                 theme: 'default',
                 language: {

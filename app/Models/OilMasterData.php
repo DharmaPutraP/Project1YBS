@@ -49,7 +49,28 @@ class OilMasterData extends Model
     {
         return static::active()
             ->orderBy('kode')
-            ->pluck('kode', 'kode');
+            ->get(['kode', 'pivot'])
+            ->mapWithKeys(function ($item) {
+                $label = $item->pivot
+                    ? "{$item->kode} - {$item->pivot}"
+                    : $item->kode;
+
+                return [$item->kode => $label];
+            });
+    }
+
+    /**
+     * Get display label for a single kode.
+     */
+    public static function getKodeDisplay(string $kode, ?string $pivot = null): string
+    {
+        $resolvedPivot = $pivot;
+
+        if (!$resolvedPivot) {
+            $resolvedPivot = static::where('kode', $kode)->value('pivot');
+        }
+
+        return $resolvedPivot ? "{$kode} - {$resolvedPivot}" : $kode;
     }
 
     /**

@@ -14,7 +14,9 @@ use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class OilController extends Controller
@@ -125,8 +127,9 @@ class OilController extends Controller
         // Get dropdown options from master data
         $kodeOptions = OilMasterData::getKodeDropdown();
         $jenisOptions = OilMasterData::getJenisDropdown();
+        $operatorOptions = $this->getOperatorOptionsByOffice(Auth::user()->office);
 
-        return view('oil.create', compact('kodeOptions', 'jenisOptions'));
+        return view('oil.create', compact('kodeOptions', 'jenisOptions', 'operatorOptions'));
     }
 
     /**
@@ -142,6 +145,9 @@ class OilController extends Controller
 
         // Validate: User MUST have office assigned to input data
         if (!Auth::user()->office) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Anda harus memiliki Office yang ditentukan untuk dapat input data.'], 422);
+            }
             return back()
                 ->withInput()
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
@@ -227,11 +233,29 @@ class OilController extends Controller
                 }
             }
 
+            $proofData = $this->buildSuccessProofData(
+                $result['results']['mode1'] ?? null,
+                $result['results']['mode2'] ?? null,
+                $result['message']
+            );
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $result['message'],
+                    'proof' => $proofData,
+                ]);
+            }
+
             return redirect()
                 ->route('oil.index')
-                ->with('success', $result['message']);
+                ->with('success', $result['message'])
+                ->with('success_proof', $proofData);
 
         } catch (Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
             return back()
                 ->withInput()
                 ->with('error', $e->getMessage());
@@ -265,11 +289,13 @@ class OilController extends Controller
 
         $kodeOptions = OilMasterData::getKodeDropdown();
         $jenisOptions = OilMasterData::getJenisDropdown();
+        $operatorOptions = $this->getOperatorOptionsByOffice($oilCalculation->office);
 
         return view('oil.edit', [
             'oilLoss' => $oilCalculation,
             'kodeOptions' => $kodeOptions,
             'jenisOptions' => $jenisOptions,
+            'operatorOptions' => $operatorOptions,
         ]);
     }
 
@@ -288,7 +314,7 @@ class OilController extends Controller
             // Mode 1: Non-numeric fields (optional)
             'kode' => 'nullable|string|exists:oil_master_data,kode',
             'jenis' => 'nullable|string',
-            'operator' => 'nullable|string|max:255',
+            'operator' => $this->getOperatorValidationRules($oilCalculation->office),
             'sampel_boy' => 'nullable|string|max:255',
             // Mode 2: Numeric fields
             'cawan_kosong' => 'required|numeric|min:0',
@@ -375,11 +401,29 @@ class OilController extends Controller
                 $oilCalculation
             );
 
+            $proofData = $this->buildSuccessProofData(
+                $relatedRecord ?? null,
+                $oilCalculation,
+                'Data berhasil diupdate!'
+            );
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data berhasil diupdate!',
+                    'proof' => $proofData,
+                ]);
+            }
+
             return redirect()
                 ->route('oil.index')
-                ->with('success', 'Data berhasil diupdate!');
+                ->with('success', 'Data berhasil diupdate!')
+                ->with('success_proof', $proofData);
 
         } catch (Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
             return back()
                 ->withInput()
                 ->with('error', $e->getMessage());
@@ -440,6 +484,95 @@ class OilController extends Controller
         return redirect()
             ->route('oil.index')
             ->with('success', 'Data non-angka berhasil dihapus!');
+    }
+
+    /**
+     * Show the form for editing a non-numeric lab record.
+     */
+    public function editRecord(OilRecord $oilRecord)
+    {
+        if (!Auth::user()->can('edit oil losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk edit data.');
+        }
+
+        // Get dropdown options
+        $kodeOptions = OilMasterData::getKodeDropdown();
+        $jenisOptions = OilMasterData::getJenisDropdown();
+        $operatorOptions = $this->getOperatorOptionsByOffice($oilRecord->office);
+
+        return view('oil.edit-record', compact('oilRecord', 'kodeOptions', 'jenisOptions', 'operatorOptions'));
+    }
+
+    /**
+     * Update a non-numeric lab record.
+     */
+    public function updateRecord(Request $request, OilRecord $oilRecord)
+    {
+        if (!Auth::user()->can('edit oil losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk edit data.');
+        }
+
+        $validated = $request->validate([
+            'kode' => 'required|string|exists:oil_master_data,kode',
+            'jenis' => 'required|string',
+            'operator' => $this->getOperatorValidationRules($oilRecord->office, true),
+            'sampel_boy' => 'nullable|string|max:255',
+        ], [
+            'kode.required' => 'Kode wajib diisi',
+            'kode.exists' => 'Kode tidak valid atau tidak ditemukan di master data',
+            'jenis.required' => 'Jenis wajib diisi',
+            'operator.required' => 'Operator wajib diisi',
+            'operator.in' => 'Operator tidak sesuai dengan daftar office.',
+        ]);
+
+        try {
+            // Update the record
+            $oilRecord->update([
+                'kode' => $validated['kode'],
+                'jenis' => $validated['jenis'],
+                'operator' => $validated['operator'],
+                'sampel_boy' => $validated['sampel_boy'] ?? $oilRecord->sampel_boy,
+                // Don't update user_id - keep original creator
+            ]);
+
+            // Recalculate daily bobot average for the calculation date
+            $this->recalculateDailyBobotAverage($oilRecord->created_at->format('Y-m-d'));
+
+            // Log activity
+            $this->logActivity(
+                'update',
+                "Update data jenis sampel kode {$oilRecord->kode}",
+                $oilRecord
+            );
+
+            $proofData = $this->buildSuccessProofData(
+                $oilRecord,
+                null,
+                'Data jenis sampel berhasil diupdate!'
+            );
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data jenis sampel berhasil diupdate!',
+                    'proof' => $proofData,
+                ]);
+            }
+
+            return redirect()
+                ->route('oil.index')
+                ->with('success', 'Data jenis sampel berhasil diupdate!')
+                ->with('success_proof', $proofData);
+
+        } catch (Exception $e) {
+            Log::error('Update OilRecord Error: ' . $e->getMessage());
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal update data: ' . $e->getMessage()], 500);
+            }
+            return back()
+                ->withInput()
+                ->with('error', 'Gagal update data: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -1067,6 +1200,109 @@ class OilController extends Controller
             // No valid bobot scores, delete the average record if exists
             DailyBobotAverage::where('date', $date)->delete();
         }
+    }
+
+    /**
+     * Build flash payload for proof modal after create/update.
+     */
+    private function buildSuccessProofData(?OilRecord $mode1Record, ?OilCalculation $mode2Calculation, string $message): array
+    {
+        $kodes = collect([
+            $mode1Record?->kode,
+            $mode2Calculation?->kode,
+        ])->filter()->unique()->values();
+
+        $masterDataByKode = OilMasterData::whereIn('kode', $kodes)
+            ->get(['kode', 'pivot'])
+            ->keyBy('kode');
+
+        return [
+            'message' => $message,
+            'generated_at' => now()->format('d/m/Y H:i:s'),
+            'active_tab' => $mode2Calculation && !$mode1Record ? 'calculations' : 'records',
+            'mode1' => $mode1Record ? $this->formatMode1ProofData($mode1Record, $masterDataByKode) : null,
+            'mode2' => $mode2Calculation ? $this->formatMode2ProofData($mode2Calculation, $masterDataByKode) : null,
+        ];
+    }
+
+    /**
+     * Format non-numeric record data for success proof modal.
+     */
+    private function formatMode1ProofData(OilRecord $record, $masterDataByKode): array
+    {
+        $masterData = $masterDataByKode->get($record->kode);
+
+        return [
+            'tanggal_input' => $record->created_at->format('d/m/Y H:i:s'),
+            'kode_label' => OilMasterData::getKodeDisplay($record->kode, $record->pivot ?: $masterData?->pivot),
+            'jenis' => $record->jenis,
+            'operator' => $record->operator,
+            'sampel_boy' => $record->sampel_boy,
+            'input_by' => $record->user?->name,
+            'office' => $record->office,
+        ];
+    }
+
+    /**
+     * Format numeric calculation data for success proof modal.
+     */
+    private function formatMode2ProofData(OilCalculation $calculation, $masterDataByKode): array
+    {
+        $masterData = $masterDataByKode->get($calculation->kode);
+
+        return [
+            'tanggal_input' => $calculation->created_at->format('d/m/Y H:i:s'),
+            'kode_label' => OilMasterData::getKodeDisplay($calculation->kode, $masterData?->pivot),
+            'kode' => $calculation->kode,
+            'cawan_kosong' => $calculation->cawan_kosong,
+            'berat_basah' => $calculation->berat_basah,
+            'cawan_sample_kering' => $calculation->cawan_sample_kering,
+            'labu_kosong' => $calculation->labu_kosong,
+            'oil_labu' => $calculation->oil_labu,
+            'moist' => $calculation->moist,
+            'dmwm' => $calculation->dmwm,
+            'olwb' => $calculation->olwb,
+            'oldb' => $calculation->oldb,
+            'oil_losses' => $calculation->oil_losses,
+            'limitOLWB' => $calculation->limitOLWB,
+            'limitOLDB' => $calculation->limitOLDB,
+            'limitOL' => $calculation->limitOL,
+            'input_by' => $calculation->user?->name,
+            'office' => $calculation->office,
+        ];
+    }
+
+    /**
+     * Get operator options by office.
+     */
+    private function getOperatorOptionsByOffice(?string $office): array
+    {
+        return match ($office) {
+            'SUN' => [
+                'Ramanda',
+                'Agus Prawitno Sitohang',
+                'Rizky Setiawan',
+                'Andri Kaswari',
+                'Dedi Prastiawan',
+                'Ahmad Prawira Putra Pohan',
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * Build validation rules for operator by office.
+     */
+    private function getOperatorValidationRules(?string $office, bool $required = false): array
+    {
+        $rules = [$required ? 'required' : 'nullable', 'string', 'max:255'];
+        $operatorOptions = $this->getOperatorOptionsByOffice($office);
+
+        if (!empty($operatorOptions)) {
+            $rules[] = Rule::in($operatorOptions);
+        }
+
+        return $rules;
     }
 }
 

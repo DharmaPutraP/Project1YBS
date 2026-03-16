@@ -1,5 +1,53 @@
 <x-layouts.app title="Data Oil Losses - Oil Losses">
 
+    @php
+        $successProof = session('success_proof');
+        $defaultTab = $successProof['active_tab'] ?? 'records';
+    @endphp
+
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #success-proof-print,
+            #success-proof-print * {
+                visibility: visible;
+            }
+
+            #success-proof-print {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
+
+        .success-proof-export-root {
+            position: fixed;
+            left: -10000px;
+            top: 0;
+            width: 1480px;
+            padding: 32px;
+            background: #f8fafc;
+            z-index: -1;
+        }
+
+        .success-proof-export-root table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .success-proof-export-root th,
+        .success-proof-export-root td {
+            white-space: normal;
+            word-break: break-word;
+            vertical-align: top;
+        }
+    </style>
+
     {{-- ── Statistics Cards ──────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
         <div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-indigo-500">
@@ -245,8 +293,8 @@
                                         Sampel Boy
                                     </th>
                                     <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                                                                                                        Parameter Lain
-                                                                                                                                    </th> -->
+                                                                                                                                                Parameter Lain
+                                                                                                                                            </th> -->
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Input By
                                     </th>
@@ -277,13 +325,23 @@
                                             {{ $record->sampel_boy ?? '-' }}
                                         </td>
                                         <!-- <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                                                                                                                                                                    {{ $record->parameter_lain ?? '-' }}
-                                                                                                                                                                                                </td> -->
+                                                                                                                                                                                                                {{ $record->parameter_lain ?? '-' }}
+                                                                                                                                                                                                            </td> -->
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $record->user->name }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex items-center gap-2">
+                                                @can('edit oil losses')
+                                                    <a href="{{ route('oil.records.edit', $record->id) }}"
+                                                        class="text-indigo-600 hover:text-indigo-900" title="Edit">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </a>
+                                                @endcan
+
                                                 @can('delete oil losses')
                                                     <form action="{{ route('oil.records.destroy', $record->id) }}" method="POST"
                                                         class="inline delete-form" data-item-name="Data {{ $record->kode ?? 'ini' }}">
@@ -514,6 +572,415 @@
         @endcan
     </x-ui.card>
 
+    @if($successProof)
+        <div class="success-proof-export-root" aria-hidden="true">
+            <div id="success-proof-export" class="rounded-[28px] bg-white p-8 shadow-2xl">
+                <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
+                    <div class="flex items-start justify-between gap-6">
+                        <div>
+                            <h1 class="text-3xl font-bold text-slate-900">Bukti Input Data Oil Losses</h1>
+                            <p class="mt-3 text-lg font-semibold text-emerald-900">{{ $successProof['message'] }}</p>
+                            <p class="mt-2 text-base text-emerald-800">Waktu bukti dibuat: {{ $successProof['generated_at'] }}</p>
+                        </div>
+                        <div class="min-w-[260px] rounded-xl bg-white/80 p-4 text-base text-emerald-900">
+                            <div><span class="font-semibold">User login:</span> {{ auth()->user()->name }}</div>
+                            <div class="mt-1"><span class="font-semibold">Office login:</span> {{ auth()->user()->office ?? '-' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                @if(!empty($successProof['mode1']))
+                    <section class="mb-6 rounded-2xl border border-blue-200 bg-blue-50/60 p-6">
+                        <div class="mb-4 flex items-center justify-between">
+                            <h2 class="text-3xl font-bold text-slate-900">Data Jenis &amp; Sampel</h2>
+                            <span class="rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">Mode Non-Angka</span>
+                        </div>
+
+                        <div class="overflow-hidden rounded-2xl border border-blue-200 bg-white">
+                            <table class="divide-y divide-blue-200">
+                                <thead class="bg-blue-100 text-slate-700">
+                                    <tr>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal Input</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Kode</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Jenis</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Operator</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Sampel Boy</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Input By</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-blue-100 text-base text-slate-700">
+                                    <tr>
+                                        <td class="px-5 py-4">{{ $successProof['mode1']['tanggal_input'] }}</td>
+                                        <td class="px-5 py-4 font-semibold text-blue-900">{{ $successProof['mode1']['kode_label'] }}</td>
+                                        <td class="px-5 py-4">{{ $successProof['mode1']['jenis'] ?? '-' }}</td>
+                                        <td class="px-5 py-4">{{ $successProof['mode1']['operator'] ?? '-' }}</td>
+                                        <td class="px-5 py-4">{{ $successProof['mode1']['sampel_boy'] ?? '-' }}</td>
+                                        <td class="px-5 py-4">{{ $successProof['mode1']['input_by'] ?? '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                @endif
+
+                @if(!empty($successProof['mode2']))
+                    @php
+                        $proofMode2Export = $successProof['mode2'];
+                        $proofOlwbExport = (float) ($proofMode2Export['olwb'] ?? 0);
+                        $proofOldbExport = (float) ($proofMode2Export['oldb'] ?? 0);
+                        $proofLossesExport = (float) ($proofMode2Export['oil_losses'] ?? 0);
+                        $proofLimitOlwbExport = (float) ($proofMode2Export['limitOLWB'] ?? 0);
+                        $proofLimitOldbExport = (float) ($proofMode2Export['limitOLDB'] ?? 0);
+                        $proofLimitOlExport = (float) ($proofMode2Export['limitOL'] ?? 0);
+                        $isOlwbGoodExport = ($proofMode2Export['kode'] ?? '') === 'COT IN'
+                            ? ($proofOlwbExport > $proofLimitOlwbExport && $proofLimitOlwbExport > 0)
+                            : ($proofOlwbExport <= $proofLimitOlwbExport && $proofLimitOlwbExport > 0);
+                        $isOldbGoodExport = $proofOldbExport <= $proofLimitOldbExport && $proofLimitOldbExport > 0;
+                        $isLossesGoodExport = $proofLossesExport <= $proofLimitOlExport && $proofLimitOlExport > 0;
+                    @endphp
+                    <section class="rounded-2xl border border-purple-200 bg-purple-50/60 p-6">
+                        <div class="mb-4 flex items-center justify-between">
+                            <h2 class="text-3xl font-bold text-slate-900">Data Perhitungan Lab</h2>
+                            <span class="rounded-full bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-700">Mode Angka</span>
+                        </div>
+
+                        <div class="mb-5 overflow-hidden rounded-2xl border border-purple-200 bg-white">
+                            <table class="divide-y divide-purple-200">
+                                <thead class="bg-purple-100 text-slate-700">
+                                    <tr>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Kode</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Cawan Kosong</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Berat Basah</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Cawan + Sample Kering</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Labu Kosong</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Oil + Labu</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-purple-100 text-base text-slate-700">
+                                    <tr>
+                                        <td class="px-5 py-4 font-semibold text-purple-900">{{ $proofMode2Export['kode_label'] }}</td>
+                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['cawan_kosong'], 6) }}</td>
+                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['berat_basah'], 6) }}</td>
+                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['cawan_sample_kering'], 6) }}</td>
+                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['labu_kosong'], 6) }}</td>
+                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['oil_labu'], 6) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="overflow-hidden rounded-2xl border border-purple-200 bg-white">
+                            <table class="divide-y divide-purple-200">
+                                <thead class="bg-purple-100 text-slate-700">
+                                    <tr>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal Input</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Kode</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Moist (%)</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">DMWM (%)</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">OLWB</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">OLDB</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Oil Losses (%)</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Input By</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-purple-100 text-base text-slate-700">
+                                    <tr>
+                                        <td class="px-5 py-4">{{ $proofMode2Export['tanggal_input'] }}</td>
+                                        <td class="px-5 py-4 font-semibold text-purple-900">{{ $proofMode2Export['kode_label'] }}</td>
+                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['moist'], 4) }}</td>
+                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['dmwm'], 4) }}</td>
+                                        <td class="px-5 py-4">
+                                            <div @class(['font-semibold', 'text-green-600' => $isOlwbGoodExport, 'text-red-600' => !$isOlwbGoodExport && $proofLimitOlwbExport > 0])>
+                                                @if($proofOlwbExport < 0)
+                                                    ({{ number_format(abs($proofOlwbExport), 2) }})
+                                                @else
+                                                    {{ number_format($proofOlwbExport, 2) }}
+                                                @endif
+                                            </div>
+                                            <div class="mt-1 text-sm text-gray-500">Limit:
+                                                @if($proofLimitOlwbExport > 0)
+                                                    @if($proofLimitOlwbExport < 0)
+                                                        ({{ number_format(abs($proofLimitOlwbExport), 2) }})
+                                                    @else
+                                                        {{ number_format($proofLimitOlwbExport, 2) }}
+                                                    @endif
+                                                @else
+                                                    -
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div @class(['font-semibold', 'text-green-600' => $isOldbGoodExport, 'text-red-600' => !$isOldbGoodExport && $proofLimitOldbExport > 0])>
+                                                @if($proofOldbExport < 0)
+                                                    ({{ number_format(abs($proofOldbExport), 2) }})
+                                                @else
+                                                    {{ number_format($proofOldbExport, 2) }}
+                                                @endif
+                                            </div>
+                                            <div class="mt-1 text-sm text-gray-500">Limit:
+                                                @if($proofLimitOldbExport > 0)
+                                                    @if($proofLimitOldbExport < 0)
+                                                        ({{ number_format(abs($proofLimitOldbExport), 2) }})
+                                                    @else
+                                                        {{ number_format($proofLimitOldbExport, 2) }}
+                                                    @endif
+                                                @else
+                                                    -
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div @class(['font-semibold', 'text-green-600' => $isLossesGoodExport, 'text-red-600' => !$isLossesGoodExport && $proofLimitOlExport > 0])>
+                                                @if($proofLossesExport < 0)
+                                                    ({{ number_format(abs($proofLossesExport), 2) }})
+                                                @else
+                                                    {{ number_format($proofLossesExport, 2) }}
+                                                @endif
+                                            </div>
+                                            <div class="mt-1 text-sm text-gray-500">Limit:
+                                                @if($proofLimitOlExport > 0)
+                                                    @if($proofLimitOlExport < 0)
+                                                        ({{ number_format(abs($proofLimitOlExport), 2) }})
+                                                    @else
+                                                        {{ number_format($proofLimitOlExport, 2) }}
+                                                    @endif
+                                                @else
+                                                    -
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="px-5 py-4">{{ $proofMode2Export['input_by'] ?? '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                @endif
+            </div>
+        </div>
+
+        <div id="successProofModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+            <div class="w-full max-w-6xl rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-start justify-between border-b border-slate-200 px-6 py-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Bukti Input Data Oil Losses</h2>
+                        <p class="mt-1 text-sm text-slate-600">Silakan screenshot bagian ini sebagai bukti bahwa data sudah tersimpan.</p>
+                    </div>
+                    <button type="button" onclick="closeSuccessProofModal()" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="success-proof-print" class="max-h-[80vh] overflow-y-auto px-6 py-5">
+                    <div class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-emerald-900">{{ $successProof['message'] }}</p>
+                                <p class="mt-1 text-sm text-emerald-800">Waktu bukti dibuat: {{ $successProof['generated_at'] }}</p>
+                                <p class="mt-1 text-xs text-emerald-700">Tips mobile: gunakan tombol Unduh Gambar untuk bukti 1 file JPG tanpa perlu screenshot panjang.</p>
+                            </div>
+                            <div class="text-sm text-emerald-800">
+                                <div>User login: {{ auth()->user()->name }}</div>
+                                <div>Office login: {{ auth()->user()->office ?? '-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if(!empty($successProof['mode1']))
+                        <section class="mb-6 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+                            <div class="mb-3 flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-slate-900">Data Jenis &amp; Sampel</h3>
+                                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">Mode Non-Angka</span>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-blue-200 overflow-hidden rounded-lg bg-white">
+                                    <thead class="bg-blue-100 text-slate-700">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Tanggal Input</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Jenis</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Operator</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Sampel Boy</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Input By</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-blue-100 text-sm text-slate-700">
+                                        <tr>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode1']['tanggal_input'] }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap font-semibold text-blue-900">{{ $successProof['mode1']['kode_label'] }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode1']['jenis'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode1']['operator'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode1']['sampel_boy'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode1']['input_by'] ?? '-' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    @endif
+
+                    @if(!empty($successProof['mode2']))
+                        <section class="rounded-xl border border-purple-200 bg-purple-50/60 p-4">
+                            <div class="mb-3 flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-slate-900">Data Perhitungan Lab</h3>
+                                <span class="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">Mode Angka</span>
+                            </div>
+
+                            <div class="mb-4 overflow-x-auto rounded-lg border border-purple-200 bg-white">
+                                <table class="min-w-full divide-y divide-purple-200">
+                                    <thead class="bg-purple-100 text-slate-700">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Cawan Kosong</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Berat Basah</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Cawan + Sample Kering</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Labu Kosong</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Oil + Labu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-purple-100 text-sm text-slate-700">
+                                        <tr>
+                                            <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">{{ $successProof['mode2']['kode_label'] }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['cawan_kosong'], 6) }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['berat_basah'], 6) }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['cawan_sample_kering'], 6) }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['labu_kosong'], 6) }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['oil_labu'], 6) }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-purple-200 overflow-hidden rounded-lg bg-white">
+                                    <thead class="bg-purple-100 text-slate-700">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Tanggal Input</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Moist (%)</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">DMWM (%)</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">OLWB</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">OLDB</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Oil Losses (%)</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Input By</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-purple-100 text-sm text-slate-700">
+                                        @php
+                                            $proofMode2 = $successProof['mode2'];
+                                            $proofOlwb = (float) ($proofMode2['olwb'] ?? 0);
+                                            $proofOldb = (float) ($proofMode2['oldb'] ?? 0);
+                                            $proofLosses = (float) ($proofMode2['oil_losses'] ?? 0);
+                                            $proofLimitOlwb = (float) ($proofMode2['limitOLWB'] ?? 0);
+                                            $proofLimitOldb = (float) ($proofMode2['limitOLDB'] ?? 0);
+                                            $proofLimitOl = (float) ($proofMode2['limitOL'] ?? 0);
+                                            $isOlwbGood = ($proofMode2['kode'] ?? '') === 'COT IN'
+                                                ? ($proofOlwb > $proofLimitOlwb && $proofLimitOlwb > 0)
+                                                : ($proofOlwb <= $proofLimitOlwb && $proofLimitOlwb > 0);
+                                            $isOldbGood = $proofOldb <= $proofLimitOldb && $proofLimitOldb > 0;
+                                            $isLossesGood = $proofLosses <= $proofLimitOl && $proofLimitOl > 0;
+                                        @endphp
+                                        <tr>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode2']['tanggal_input'] }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">{{ $successProof['mode2']['kode_label'] }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['moist'], 4) }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['dmwm'], 4) }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <span @class([
+                                                    'font-semibold',
+                                                    'text-green-600' => $isOlwbGood,
+                                                    'text-red-600' => !$isOlwbGood && $proofLimitOlwb > 0,
+                                                ])>
+                                                    @if($proofOlwb < 0)
+                                                        ({{ number_format(abs($proofOlwb), 2) }})
+                                                    @else
+                                                        {{ number_format($proofOlwb, 2) }}
+                                                    @endif
+                                                </span>
+                                                <span class="text-xs text-gray-500 block">Limit:
+                                                    @if($proofLimitOlwb > 0)
+                                                        @if($proofLimitOlwb < 0)
+                                                            ({{ number_format(abs($proofLimitOlwb), 2) }})
+                                                        @else
+                                                            {{ number_format($proofLimitOlwb, 2) }}
+                                                        @endif
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <span @class([
+                                                    'font-semibold',
+                                                    'text-green-600' => $isOldbGood,
+                                                    'text-red-600' => !$isOldbGood && $proofLimitOldb > 0,
+                                                ])>
+                                                    @if($proofOldb < 0)
+                                                        ({{ number_format(abs($proofOldb), 2) }})
+                                                    @else
+                                                        {{ number_format($proofOldb, 2) }}
+                                                    @endif
+                                                </span>
+                                                <span class="text-xs text-gray-500 block">Limit:
+                                                    @if($proofLimitOldb > 0)
+                                                        @if($proofLimitOldb < 0)
+                                                            ({{ number_format(abs($proofLimitOldb), 2) }})
+                                                        @else
+                                                            {{ number_format($proofLimitOldb, 2) }}
+                                                        @endif
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <span @class([
+                                                    'font-semibold',
+                                                    'text-green-600' => $isLossesGood,
+                                                    'text-red-600' => !$isLossesGood && $proofLimitOl > 0,
+                                                ])>
+                                                    @if($proofLosses < 0)
+                                                        ({{ number_format(abs($proofLosses), 2) }})
+                                                    @else
+                                                        {{ number_format($proofLosses, 2) }}
+                                                    @endif
+                                                </span>
+                                                <span class="text-xs text-gray-500 block">Limit:
+                                                    @if($proofLimitOl > 0)
+                                                        @if($proofLimitOl < 0)
+                                                            ({{ number_format(abs($proofLimitOl), 2) }})
+                                                        @else
+                                                            {{ number_format($proofLimitOl, 2) }}
+                                                        @endif
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode2']['input_by'] ?? '-' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    @endif
+                </div>
+
+                <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+                    <button type="button" onclick="downloadSuccessProofImage()" class="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
+                        Unduh Gambar (JPG)
+                    </button>
+                    <button type="button" onclick="closeSuccessProofModal()" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Tab Switching JavaScript --}}
     <script>
         function switchTab(tabName) {
@@ -539,11 +1006,47 @@
 
         // Default: Show records tab on load
         document.addEventListener('DOMContentLoaded', function () {
-            switchTab('records');
+            switchTab(@json($defaultTab));
         });
     </script>
 
     <script>
+        async function downloadSuccessProofImage() {
+            const target = document.getElementById('success-proof-export');
+            if (!target || !window.htmlToImage || typeof window.htmlToImage.toJpeg !== 'function') {
+                alert('Fitur unduh gambar belum siap. Coba refresh halaman.');
+                return;
+            }
+
+            try {
+                const dataUrl = await window.htmlToImage.toJpeg(target, {
+                    backgroundColor: '#ffffff',
+                    quality: 0.82,
+                    pixelRatio: Math.min(2, window.devicePixelRatio || 1),
+                    cacheBust: true,
+                    skipAutoScale: false,
+                });
+
+                const link = document.createElement('a');
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+                link.href = dataUrl;
+                link.download = `bukti-input-oil-${timestamp}.jpg`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            } catch (error) {
+                console.error('downloadSuccessProofImage', error);
+                alert('Gagal mengunduh gambar. Silakan coba lagi.');
+            }
+        }
+
+        function closeSuccessProofModal() {
+            const modal = document.getElementById('successProofModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
         // Handle delete confirmations with SweetAlert2
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.delete-form').forEach(form => {
@@ -556,7 +1059,20 @@
                     }
                 });
             });
+
+            const successProofModal = document.getElementById('successProofModal');
+            if (successProofModal) {
+                successProofModal.addEventListener('click', function (e) {
+                    if (e.target === this) {
+                        closeSuccessProofModal();
+                    }
+                });
+            }
         });
     </script>
+
+    @if($successProof)
+        <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+    @endif
 
 </x-layouts.app>

@@ -127,6 +127,8 @@
                                 </option>
                             @endforeach
                         </select>
+                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Pivot. Pivot hanya untuk
+                            informasi.</p>
                         @error('kode')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -157,10 +159,26 @@
                             <label for="operator" class="block text-sm font-medium text-gray-700 mb-2">
                                 Operator
                             </label>
-                            <input type="text" name="operator" id="operator"
-                                value="{{ old('operator', $relatedRecord?->operator) }}" placeholder="Nama operator"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
-                                       @error('operator') border-red-400 bg-red-50 @enderror">
+                            @if(!empty($operatorOptions))
+                                <select name="operator" id="operator" class="w-full select2-operator
+                                        @error('operator') border-red-400 bg-red-50 @enderror">
+                                    <option value="">-- Pilih Operator --</option>
+                                    @foreach($operatorOptions as $operatorName)
+                                        <option value="{{ $operatorName }}" {{ old('operator', $relatedRecord?->operator) == $operatorName ? 'selected' : '' }}>
+                                            {{ $operatorName }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">Daftar operator mengikuti office
+                                    {{ $oilLoss->office ?? '-' }}.</p>
+                            @else
+                                <input type="text" name="operator" id="operator"
+                                    value="{{ old('operator', $relatedRecord?->operator) }}" placeholder="Nama operator"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
+                                               @error('operator') border-red-400 bg-red-50 @enderror">
+                                <p class="mt-1 text-xs text-gray-500">Dropdown operator belum tersedia untuk office
+                                    {{ $oilLoss->office ?? '-' }}.</p>
+                            @endif
                             @error('operator')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
@@ -307,6 +325,21 @@
             // Initialize Select2 for Jenis dropdown
             $('.select2-jenis').select2({
                 placeholder: '-- Pilih atau ketik untuk cari --',
+                allowClear: true,
+                width: '100%',
+                theme: 'default',
+                language: {
+                    noResults: function () {
+                        return "Tidak ditemukan";
+                    },
+                    searching: function () {
+                        return "Mencari...";
+                    }
+                }
+            });
+
+            $('.select2-operator').select2({
+                placeholder: '-- Pilih Operator --',
                 allowClear: true,
                 width: '100%',
                 theme: 'default',

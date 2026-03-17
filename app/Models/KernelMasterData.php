@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class KernelMasterData extends Model
+{
+    protected $table = 'kernel_master_data';
+
+    protected $fillable = [
+        'kode',
+        'nama_sample',
+        'limit_operator',
+        'limit_value',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'limit_value' => 'decimal:3',
+        'is_active'   => 'boolean',
+    ];
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Returns ['KODE' => 'Nama Sample', ...] for dropdowns.
+     */
+    public static function getKodeDropdown(): array
+    {
+        return static::where('is_active', true)
+            ->orderBy('kode')
+            ->pluck('nama_sample', 'kode')
+            ->toArray();
+    }
+
+    /**
+     * Formatted limit string, e.g. "≤ 1.45" or "> 98.00".
+     */
+    public function getLimitLabelAttribute(): string
+    {
+        $symbol = $this->limit_operator === 'le' ? '≤' : '>';
+        return $symbol . ' ' . number_format((float) $this->limit_value, 2);
+    }
+
+    /**
+     * Check if a given percentage value exceeds (fails) the limit.
+     * @param float $valuePercent  Value as percentage, e.g. 1.5 means 1.5 %
+     */
+    public function isExceeded(float $valuePercent): bool
+    {
+        if ($this->limit_operator === 'le') {
+            // Must be ≤ limit; exceeds if value > limit
+            return $valuePercent > (float) $this->limit_value;
+        }
+        // 'gt': must be > limit; fails if value ≤ limit
+        return $valuePercent <= (float) $this->limit_value;
+    }
+}

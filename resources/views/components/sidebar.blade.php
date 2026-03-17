@@ -100,17 +100,141 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             @endcan
         @endcanany
 
+        {{-- ── Kernel Losses ───────────────────────────────── --}}
+        @canany(['view kernel losses', 'create kernel losses', 'view rekap kernel losses', 'view performance kernel losses'])
+            <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
+                Kernel Losses
+            </p>
+
+            {{-- Data Kernel Losses --}}
+            @can('view kernel losses')
+                <x-sidebar-item href="{{ route('kernel.index') }}" :active="request()->routeIs('kernel.index')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'>
+                    <span class="sidebar-item-text">Data Kernel Losses</span>
+                </x-sidebar-item>
+            @endcan
+
+            {{-- Input Data Kernel Baru --}}
+            @can('create kernel losses')
+                <x-sidebar-item href="{{ route('kernel.create') }}" :active="request()->routeIs('kernel.create')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
+                    <span class="sidebar-item-text">Input Data Kernel Baru</span>
+                </x-sidebar-item>
+            @endcan
+
+            @can('view kernel losses')
+                <x-sidebar-item href="{{ route('kernel.dirt-moist.index') }}" :active="request()->routeIs('kernel.dirt-moist.index')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2z"/></svg>'>
+                    <span class="sidebar-item-text">Data Dirt &amp; Moist</span>
+                </x-sidebar-item>
+            @endcan
+
+            @can('create kernel losses')
+                <x-sidebar-item href="{{ route('kernel.dirt-moist.create') }}" :active="request()->routeIs('kernel.dirt-moist.create')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
+                    <span class="sidebar-item-text">Input Data Dirt &amp; Moist</span>
+                </x-sidebar-item>
+            @endcan
+
+            @can('view kernel losses')
+                <x-sidebar-item href="{{ route('kernel.qwt.index') }}" :active="request()->routeIs('kernel.qwt.index')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M12 11v6m-3-3h6"/></svg>'>
+                    <span class="sidebar-item-text">Data QWT Fibre Press</span>
+                </x-sidebar-item>
+            @endcan
+
+            @can('create kernel losses')
+                <x-sidebar-item href="{{ route('kernel.qwt.create') }}" :active="request()->routeIs('kernel.qwt.create')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
+                    <span class="sidebar-item-text">Input Data QWT Fibre Press</span>
+                </x-sidebar-item>
+            @endcan
+
+            @can('view kernel losses')
+                <x-sidebar-item href="{{ route('kernel.ripple-mill.index') }}" :active="request()->routeIs('kernel.ripple-mill.index')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/></svg>'>
+                    <span class="sidebar-item-text">Data Ripple Mill</span>
+                </x-sidebar-item>
+            @endcan
+
+            @can('create kernel losses')
+                <x-sidebar-item href="{{ route('kernel.ripple-mill.create') }}" :active="request()->routeIs('kernel.ripple-mill.create')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
+                    <span class="sidebar-item-text">Input Ripple Mill</span>
+                </x-sidebar-item>
+            @endcan
+
+            @can('view kernel losses')
+                <x-sidebar-item href="{{ route('kernel.destoner.index') }}" :active="request()->routeIs('kernel.destoner.index')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/></svg>'>
+                    <span class="sidebar-item-text">Data Destoner</span>
+                </x-sidebar-item>
+            @endcan
+
+            @can('create kernel losses')
+                <x-sidebar-item href="{{ route('kernel.destoner.create') }}" :active="request()->routeIs('kernel.destoner.create')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
+                    <span class="sidebar-item-text">Input Destoner</span>
+                </x-sidebar-item>
+            @endcan
+
+            {{-- Rekap Data --}}
+            @can('view rekap kernel losses')
+                <x-sidebar-item href="{{ route('kernel.rekap') }}" :active="request()->routeIs('kernel.rekap')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18"/></svg>'>
+                    <span class="sidebar-item-text">Rekap Data</span>
+                </x-sidebar-item>
+            @endcan
+
+            {{-- Performance --}}
+            @can('view performance kernel losses')
+                <x-sidebar-item href="{{ route('kernel.performance') }}" :active="request()->routeIs('kernel.performance')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
+                    <span class="sidebar-item-text">Performance</span>
+                </x-sidebar-item>
+            @endcan
+        @endcanany
+
         {{-- ── Laporan ─────────────────────────────────────── --}}
-        @can('view laporan oil losses')
+        @canany(['view laporan oil losses', 'view laporan kernel losses'])
             <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
                 Laporan
             </p>
 
-            <x-sidebar-item href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')"
-                icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
-                <span class="sidebar-item-text">Laporan Oil Losses</span>
-            </x-sidebar-item>
-        @endcan
+            @can('view laporan oil losses')
+                <x-sidebar-item href="{{ route('reports.index') }}" :active="request()->routeIs('reports.index')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
+                    <span class="sidebar-item-text">Laporan Oil Losses</span>
+                </x-sidebar-item>
+            @endcan
+
+            @can('view laporan kernel losses')
+                <x-sidebar-item href="{{ route('reports.kernel') }}" :active="request()->routeIs('reports.kernel')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
+                    <span class="sidebar-item-text">Laporan Kernel Losses</span>
+                </x-sidebar-item>
+
+                <x-sidebar-item href="{{ route('reports.kernel.dirt-moist') }}" :active="request()->routeIs('reports.kernel.dirt-moist')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
+                    <span class="sidebar-item-text">Laporan Dirt &amp; Moist</span>
+                </x-sidebar-item>
+
+                <x-sidebar-item href="{{ route('reports.kernel.qwt') }}" :active="request()->routeIs('reports.kernel.qwt')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
+                    <span class="sidebar-item-text">Laporan QWT Fibre Press</span>
+                </x-sidebar-item>
+
+                <x-sidebar-item href="{{ route('reports.kernel.ripple-mill') }}" :active="request()->routeIs('reports.kernel.ripple-mill')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
+                    <span class="sidebar-item-text">Laporan Ripple Mill</span>
+                </x-sidebar-item>
+
+                <x-sidebar-item href="{{ route('reports.kernel.destoner') }}" :active="request()->routeIs('reports.kernel.destoner')"
+                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
+                    <span class="sidebar-item-text">Laporan Destoner</span>
+                </x-sidebar-item>
+            @endcan
+        @endcanany
 
         {{-- ── Admin ───────────────────────────────────────── --}}
         @canany(['view users', 'view user activity log'])

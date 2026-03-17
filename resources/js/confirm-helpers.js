@@ -8,10 +8,16 @@ import Swal from 'sweetalert2';
 /**
  * Confirm before saving new data
  */
-export async function confirmSave(formElement) {
+export async function confirmSave(formElement = null, options = {}) {
+    const {
+        title = 'Simpan Data?',
+        text = 'Pastikan data yang Anda masukkan sudah benar.',
+        html = null,
+    } = options;
+
     const result = await Swal.fire({
-        title: 'Simpan Data?',
-        text: 'Pastikan data yang Anda masukkan sudah benar.',
+        title,
+        ...(html ? { html } : { text }),
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Ya, Simpan!',
@@ -88,7 +94,7 @@ export async function confirmUpdate() {
 export async function confirmDelete(itemName = '') {
     const result = await Swal.fire({
         title: 'Hapus Data?',
-        html: itemName 
+        html: itemName
             ? `Data <strong>${itemName}</strong> akan dihapus permanen!`
             : 'Data akan dihapus permanen!',
         icon: 'warning',

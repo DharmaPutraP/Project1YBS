@@ -17,108 +17,126 @@ class RoleAndPermissionSeeder extends Seeder
      * 
      * Pola Penamaan Permission: <action> <module>
      * Actions: view, create, edit, delete, approve, export, print
+     * 
+     * Strategy: Module-based permissions untuk scalability
+     * - Oil Losses permissions (implemented)
+     * - Future: Kernel Losses permissions (when needed)
+     * - Future: Dispatch Losses permissions (when needed)
      */
     private array $permissions = [
+        // ═══════════════════════════════════════════════════════════════
+        // GENERAL / DASHBOARD
+        // ═══════════════════════════════════════════════════════════════
         'view dashboard',
 
-        'view users',                     // Lihat daftar pengguna
-        'create users',                   // Tambah pengguna baru
-        'edit users',                     // Edit data pengguna
-        'delete users',                   // Hapus pengguna
-        'reset user password',            // Reset password pengguna lain
-        'view user activity log',         // Lihat log aktivitas pengguna
+        // ═══════════════════════════════════════════════════════════════
+        // USER MANAGEMENT MODULE
+        // ═══════════════════════════════════════════════════════════════
+        'view users',
+        'create users',
+        'edit users',
+        'delete users',
+        'reset user password',
+        'view user activity log',
 
-        'view oil losses',                       // Lihat halaman lab
-        'create oil losses',             // Daftarkan sampel baru
-        'edit oil losses',               // Edit info sampel
-        'delete oil losses',             // Hapus sampel
+        // ═══════════════════════════════════════════════════════════════
+        // OIL LOSSES MODULE
+        // ═══════════════════════════════════════════════════════════════
+        'view oil losses',                          // View oil losses data entry page
+        'create oil losses',                        // Create new oil losses record
+        'edit oil losses',                          // Edit existing oil losses record
+        'delete oil losses',                        // Delete oil losses record
 
-        'view olwb',
-        'export olwb reports',
-        'view performance oil losses',
-        'export performance reports oil losses',
+        'view olwb',                                // View OLWB (Oil Losses Work Book)
+        'export olwb reports',                      // Export OLWB to Excel
 
-        'view laporan oil losses',
-        'export laporan oil losses',                 // Download/export laporan
+        'view performance oil losses',              // View performance/bobot report
+        'export performance reports oil losses',    // Export performance report
+
+        'view laporan oil losses',                  // View comprehensive report
+        'export laporan oil losses',                // Export comprehensive report
     ];
-
-    /**
-     * Pemetaan role → permission.
-     *
-     * Catatan: Super Admin tidak perlu entry di sini karena ia mendapat
-     * SEMUA permission lewat Permission::all() di bawah.
-     */
     private array $rolePermissions = [
 
         // ══════════════════════════════════════════════════════════════════════
-        // ── PPIC (Lab Supervisor) ───────────────────────────────────────
-        // Mengawasi dan approve hasil oil losses, manage staff oil losses
+        // ── PPIC (Production Planning & Inventory Control) ────────────────────
+        // Supervisor untuk SEMUA module losses
+        // Full access: view, create, edit, delete, export
+        // office = NULL (bisa lihat semua office: YBS, SUN, SJN)
         // ══════════════════════════════════════════════════════════════════════
         'PPIC' => [
             'view dashboard',
 
+            // User Management
             'view users',
-            'create users',
-            'edit users',
-            'delete users',
-            'reset user password',
             'view user activity log',
 
+            // Oil Losses Module - FULL ACCESS
             'view oil losses',
             'create oil losses',
             'edit oil losses',
             'delete oil losses',
-
             'view olwb',
             'export olwb reports',
             'view performance oil losses',
             'export performance reports oil losses',
-
             'view laporan oil losses',
             'export laporan oil losses',
+
         ],
 
-        // ══════════════════════════════════════════════════════════════════════
-        // ── sampel boy (Lab Staff) ──────────────────────────────────────────────
-        // Input hasil lab, hanya bisa edit hasil sendiri
-        // ══════════════════════════════════════════════════════════════════════
-        'Sampel Boy' => [
+        'Sampel Boy Oil Losses' => [
             'view dashboard',
-            'create oil losses',
+
+            // Oil Losses Module - Data Entry Only
             'view oil losses',
+            'create oil losses',
             'view laporan oil losses',
+
         ],
 
         'Asisten Lab' => [
             'view dashboard',
+
+            // Oil Losses Module - View Only
             'view oil losses',
             'view olwb',
             'view performance oil losses',
             'view laporan oil losses',
+
         ],
 
         'PCM' => [
             'view dashboard',
+
+            // Oil Losses Module - View Only
             'view oil losses',
             'view olwb',
             'view performance oil losses',
             'view laporan oil losses',
+
         ],
 
         'Direksi' => [
             'view dashboard',
+
+            // Oil Losses Module - View Only
             'view oil losses',
             'view olwb',
             'view performance oil losses',
             'view laporan oil losses',
+
         ],
 
         'Koor Sistem Informasi' => [
             'view dashboard',
+
+            // Oil Losses Module - View Only
             'view oil losses',
             'view olwb',
             'view performance oil losses',
             'view laporan oil losses',
+
         ],
     ];
 
@@ -147,6 +165,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['username' => 'admin'],
             [
                 'name' => 'Super Administrator',
+                'office' => null,  // NULL = can see ALL offices
                 'email' => 'admin@ybs.local',
                 'password' => Hash::make('admin123'), // Ganti password ini sebelum production!
             ]

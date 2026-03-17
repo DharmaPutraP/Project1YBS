@@ -54,7 +54,12 @@ Contoh:
         </form> -->
         <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-gray-800 truncate">{{ Auth::user()->name }}</p>
-            <p class="text-xs text-gray-400 truncate">{{ Auth::user()->getRoleNames()->first() ?? '—' }}</p>
+            <p class="text-xs text-gray-400 truncate">
+                {{ Auth::user()->getRoleNames()->first() ?? '—' }}
+                @if(Auth::user()->office)
+                    • <span class="text-green-600 font-semibold">{{ Auth::user()->office }}</span>
+                @endif
+            </p>
         </div>
     </div>
 

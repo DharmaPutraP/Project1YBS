@@ -30,6 +30,19 @@
                         class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
                 </div>
 
+                <div class="flex-1 w-full">
+                    <label for="office" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                        Office
+                    </label>
+                    <select id="office" name="office"
+                        class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
+                        <option value="all" {{ $officeFilter === 'all' ? 'selected' : '' }}>Semua Office</option>
+                        <option value="YBS" {{ $officeFilter === 'YBS' ? 'selected' : '' }}>YBS</option>
+                        <option value="SUN" {{ $officeFilter === 'SUN' ? 'selected' : '' }}>SUN</option>
+                        <option value="SJN" {{ $officeFilter === 'SJN' ? 'selected' : '' }}>SJN</option>
+                    </select>
+                </div>
+
                 <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button type="submit"
                         class="inline-flex items-center justify-center px-4 sm:px-6 py-1.5 sm:py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm">
@@ -41,7 +54,7 @@
                         Filter
                     </button>
 
-                    @if(request('start_date') || request('end_date'))
+                    @if(request('start_date') || request('end_date') || request('office'))
                         <a href="{{ route('oil.report') }}"
                             class="inline-flex items-center justify-center px-4 sm:px-6 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium text-sm">
                             <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor"
@@ -62,6 +75,15 @@
                     {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} -
                     {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
                 </span>
+                <span class="font-medium ml-4">Office:</span>
+                <span
+                    class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    @if($officeFilter === 'all')
+                        Semua Office
+                    @else
+                        {{ $officeFilter }}
+                    @endif
+                </span>
             </div>
 
             {{-- Export Button --}}
@@ -71,6 +93,7 @@
                         @csrf
                         <input type="hidden" name="start_date" value="{{ $startDate }}">
                         <input type="hidden" name="end_date" value="{{ $endDate }}">
+                        <input type="hidden" name="office" value="{{ $officeFilter }}">
                         <button type="submit"
                             class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                             <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -315,7 +338,7 @@
                                         </svg>
                                         Operator Clarification
                                         <!-- <span class="ml-2 text-xs text-green-700">(FEED, SOLID, HEAVY PHASE,
-                                                                                EFFLUENT)</span> -->
+                                                                                        EFFLUENT)</span> -->
                                     </div>
                                 </td>
                             </tr>

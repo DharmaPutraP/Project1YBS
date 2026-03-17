@@ -83,6 +83,14 @@ Route::middleware('auth')->group(function () {
             ->name('destroy')
             ->middleware('permission:delete oil losses');
 
+        Route::get('/records/{oilRecord}/edit', [OilController::class, 'editRecord'])
+            ->name('records.edit')
+            ->middleware('permission:edit oil losses');
+
+        Route::put('/records/{oilRecord}', [OilController::class, 'updateRecord'])
+            ->name('records.update')
+            ->middleware('permission:edit oil losses');
+
         Route::delete('/records/{oilRecord}', [OilController::class, 'destroyRecord'])
             ->name('records.destroy')
             ->middleware('permission:delete oil losses');
@@ -242,7 +250,7 @@ Route::middleware('auth')->group(function () {
             ->name('create')
             ->middleware('permission:create users');
 
-        Route::post('/', [AuthController::class, 'register'])
+        Route::post('/', [UserController::class, 'store'])
             ->name('store')
             ->middleware('permission:create users');
 

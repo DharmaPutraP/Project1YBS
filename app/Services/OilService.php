@@ -15,15 +15,16 @@ class OilService
      * Validasi dan simpan data lab dengan dual-mode input
      * 
      * Mode 1: Non-numeric data (kode, jenis, operator, dll) - bisa multiple per day
-     * Mode 2: Numeric data (kode_mode2, cawan_kosong, berat_basah, dll) - hanya 1 per kode per day
+     * Mode 2: Numeric data (kode_mode2, cawan_kosong, berat_basah, dll) - hanya 1 per kode per day per office
      * User BISA mengisi kedua mode sekaligus dalam satu submission
      * 
      * @param array $data
      * @param int $userId
+     * @param string $userOffice Office dari user yang login (YBS, SUN, SJN)
      * @return array
      * @throws Exception
      */
-    public function store(array $data, int $userId): array
+    public function store(array $data, int $userId, string $userOffice): array
     {
         $isMode1 = !empty($data['kode']); // Mode 1: Non-numeric
         $isMode2 = !empty($data['kode_mode2']) && (!empty($data['cawan_kosong']) || !empty($data['berat_basah'])); // Mode 2: Numeric
@@ -39,14 +40,14 @@ class OilService
 
             // Mode 1: Simpan non-numeric data (jika diisi)
             if ($isMode1) {
-                $result1 = $this->storeNonNumericData($data, $userId);
+                $result1 = $this->storeNonNumericData($data, $userId, $userOffice);
                 $results['mode1'] = $result1['record'];
                 $messages[] = $result1['message'];
             }
 
             // Mode 2: Simpan numeric data (jika diisi)
             if ($isMode2) {
-                $result2 = $this->storeNumericData($data, $userId);
+                $result2 = $this->storeNumericData($data, $userId, $userOffice);
                 $results['mode2'] = $result2['calculation'];
                 $messages[] = $result2['message'];
             }
@@ -94,9 +95,10 @@ class OilService
      * 
      * @param array $data
      * @param int $userId
+     * @param string $userOffice
      * @return array
      */
-    private function storeNonNumericData(array $data, int $userId): array
+    private function storeNonNumericData(array $data, int $userId, string $userOffice): array
     {
         // VLOOKUP equivalent: ambil data dari master berdasarkan kode
         $masterData = OilMasterData::where('kode', $data['kode'])
@@ -110,6 +112,7 @@ class OilService
         // Simpan ke lab_records (tidak ada unique constraint, bisa multiple per day)
         $record = OilRecord::create([
             'user_id' => $userId,
+            'office' => $userOffice,  // Multi-tenancy: office dari user
             'lab_master_id' => $masterData->id,
             'kode' => $masterData->kode,
             'column_name' => $masterData->column_name,
@@ -128,19 +131,20 @@ class OilService
     }
 
     /**
-     * Simpan data numeric (Mode 2: hanya 1 per kode per hari)
+     * Simpan data numeric (Mode 2: hanya 1 per kode per hari per office)
      * 
      * FASE 1: Validasi kode_mode2 harus diisi
-     * FASE 2: Cek apakah kombinasi (tanggal created_at + kode) sudah ada -> TOLAK jika sudah ada
+     * FASE 2: Cek apakah kombinasi (office + tanggal + kode) sudah ada -> TOLAK jika sudah ada
      * FASE 3: Ambil master data dari kode
      * FASE 4: Hitung semua nilai (moist, dmwm, olwb, oldb, oil_losses)
      * FASE 5: Simpan ke lab_calculations
      * 
      * @param array $data
      * @param int $userId
+     * @param string $userOffice
      * @return array
      */
-    private function storeNumericData(array $data, int $userId): array
+    private function storeNumericData(array $data, int $userId, string $userOffice): array
     {
         // FASE 1: Validasi - kode_mode2 harus diisi untuk mode 2
         if (empty($data['kode_mode2'])) {
@@ -149,13 +153,15 @@ class OilService
 
         $kode = $data['kode_mode2'];
 
-        // FASE 2: Cek apakah kombinasi (tanggal hari ini + kode) sudah ada
+        // FASE 2: Cek apakah kombinasi (office + tanggal hari ini + kode) sudah ada
+        // Multi-tenancy: YBS bisa input kode A, SUN bisa input kode A yang berbeda
         $existing = OilCalculation::whereDate('created_at', today())
+            ->where('office', $userOffice)
             ->where('kode', $kode)
             ->first();
 
         if ($existing) {
-            throw new Exception("Kode '{$kode}' untuk hari ini sudah ada. Setiap kode hanya boleh diinput sekali per hari.");
+            throw new Exception("Kode '{$kode}' untuk office {$userOffice} hari ini sudah ada. Setiap kode hanya boleh diinput sekali per hari per office.");
         }
 
         // FASE 3: Ambil master data dari kode
@@ -174,6 +180,7 @@ class OilService
         $calculation = OilCalculation::create(
             array_merge($calculations, [
                 'user_id' => $userId,
+                'office' => $userOffice,  // Multi-tenancy: office dari user
                 'lab_master_id' => $masterData->id,
                 'kode' => $masterData->kode,
             ])
@@ -214,7 +221,7 @@ class OilService
 
         // Validasi pembagi tidak boleh nol
         if ($beratBasah == 0) {
-            throw new Exception('Berat Basah tidak boleh 0.');
+            throw new Exception('Berat Sampel Basah tidak boleh 0.');
         }
 
         // Hitung intermediate values

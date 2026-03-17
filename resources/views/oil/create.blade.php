@@ -102,10 +102,16 @@
                     </h3>
                 </div>
 
+                {{-- Info Alert --}}
+                <div class="mb-4 p-3 bg-blue-100 border border-blue-200 rounded-lg text-xs text-blue-800">
+                    <strong>💡 Tips:</strong> Jika Anda mengisi <strong>Kode</strong> atau <strong>Operator</strong>, maka keduanya harus diisi.
+                    <br><strong>Jenis</strong> dan <strong>Sampel Boy</strong> sudah terisi otomatis.
+                </div>
+
                 <div class="space-y-4">
                     <div>
                         <label for="kode" class="block text-sm font-medium text-gray-700 mb-2">
-                            Kode <span class="text-gray-400 text-xs">(Ketik untuk cari)</span>
+                            Kode <span class="text-gray-400 text-xs">(wajib bersama Operator)</span>
                         </label>
                         <select name="kode" id="kode" class="w-full select2-kode
                                 @error('kode') border-red-400 bg-red-50 @enderror">
@@ -116,6 +122,7 @@
                                 </option>
                             @endforeach
                         </select>
+                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Pivot. Pivot hanya untuk informasi.</p>
                         @error('kode')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -143,11 +150,26 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="operator" class="block text-sm font-medium text-gray-700 mb-2">
-                                Operator <span class="text-red-500">*</span>
+                                Operator <span class="text-gray-400 text-xs">(wajib bersama Kode)</span>
                             </label>
-                            <input type="text" name="operator" id="operator" value="{{ old('operator') }}"
-                                placeholder="Nama operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
-                                       @error('operator') border-red-400 bg-red-50 @enderror">
+                            @if(!empty($operatorOptions))
+                                <select name="operator" id="operator" class="w-full select2-operator
+                                    @error('operator') border-red-400 bg-red-50 @enderror">
+                                    <option value="">-- Pilih Operator --</option>
+                                    @foreach($operatorOptions as $operatorName)
+                                        <option value="{{ $operatorName }}" {{ old('operator') == $operatorName ? 'selected' : '' }}>
+                                            {{ $operatorName }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">Daftar operator mengikuti office {{ Auth::user()->office ?? '-' }}.</p>
+                            @else
+                                <input type="text" name="operator" id="operator"
+                                    value="{{ old('operator') }}" placeholder="Nama operator"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
+                                           @error('operator') border-red-400 bg-red-50 @enderror">
+                                <p class="mt-1 text-xs text-gray-500">Dropdown operator belum tersedia untuk office {{ Auth::user()->office ?? '-' }}.</p>
+                            @endif
                             @error('operator')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
@@ -157,7 +179,9 @@
                             <label for="sampel_boy" class="block text-sm font-medium text-gray-700 mb-2">
                                 Sampel Boy <span class="text-gray-400 text-xs">(Otomatis)</span>
                             </label>
-                            <input type="text" name="sampel_boy" id="sampel_boy" value="{{ Auth::user()->name }}"
+                            <input type="text" name="sampel_boy" id="sampel_boy" 
+                                value="{{ Auth::user()->name }}"
+                                data-default-value="{{ Auth::user()->name }}"
                                 readonly
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 cursor-not-allowed
                                        @error('sampel_boy') border-red-400 bg-red-50 @enderror">
@@ -166,20 +190,6 @@
                             @enderror
                         </div>
                     </div>
-
-                    {{-- Parameter Lain --}}
-                    <!-- <div>
-                        <label for="parameter_lain" class="block text-sm font-medium text-gray-700 mb-2">
-                            Parameter Lain <span class="text-gray-400 text-xs">(opsional)</span>
-                        </label>
-                        <textarea name="parameter_lain" id="parameter_lain" rows="2"
-                            placeholder="Catatan atau parameter tambahan lainnya..."
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
-                                   @error('parameter_lain') border-red-400 bg-red-50 @enderror">{{ old('parameter_lain') }}</textarea>
-                        @error('parameter_lain')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div> -->
                 </div>
             </div>
 
@@ -216,16 +226,17 @@
                                 </option>
                             @endforeach
                         </select>
+                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Pivot. Pivot hanya untuk informasi.</p>
                         @error('kode_mode2')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    {{-- Row 1: Cawan Kosong, Berat Basah, Cawan Sample Kering --}}
+                    {{-- Row 1: Cawan Kosong, Berat Sampel Basah, Cawan Sample Kering --}}
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label for="cawan_kosong" class="block text-sm font-medium text-gray-700 mb-2">
-                                Cawan Kosong <span class="text-gray-400 text-xs">(gram)</span>
+                                Cawan Kosong
                             </label>
                             <input type="number" step="0.000001" name="cawan_kosong" id="cawan_kosong"
                                 value="{{ old('cawan_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
@@ -237,7 +248,7 @@
 
                         <div>
                             <label for="berat_basah" class="block text-sm font-medium text-gray-700 mb-2">
-                                Berat Basah <span class="text-gray-400 text-xs">(gram)</span>
+                                Berat Sampel Basah
                             </label>
                             <input type="number" step="0.000001" name="berat_basah" id="berat_basah"
                                 value="{{ old('berat_basah') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
@@ -249,7 +260,7 @@
 
                         <div>
                             <label for="cawan_sample_kering" class="block text-sm font-medium text-gray-700 mb-2">
-                                Cawan + Sample Kering <span class="text-gray-400 text-xs">(gram)</span>
+                                Cawan + Sample Kering
                             </label>
                             <input type="number" step="0.000001" name="cawan_sample_kering" id="cawan_sample_kering"
                                 value="{{ old('cawan_sample_kering') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
@@ -264,7 +275,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="labu_kosong" class="block text-sm font-medium text-gray-700 mb-2">
-                                Labu Kosong <span class="text-gray-400 text-xs">(gram)</span>
+                                Labu Kosong
                             </label>
                             <input type="number" step="0.000001" name="labu_kosong" id="labu_kosong"
                                 value="{{ old('labu_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
@@ -276,7 +287,7 @@
 
                         <div>
                             <label for="oil_labu" class="block text-sm font-medium text-gray-700 mb-2">
-                                Oil + Labu <span class="text-gray-400 text-xs">(gram)</span>
+                                Oil + Labu
                             </label>
                             <input type="number" step="0.000001" name="oil_labu" id="oil_labu" value="{{ old('oil_labu') }}"
                                 placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
@@ -351,6 +362,22 @@
                 }
             });
 
+            // Initialize Select2 for Operator dropdown
+            $('.select2-operator').select2({
+                placeholder: '-- Pilih Operator --',
+                allowClear: true,
+                width: '100%',
+                theme: 'default',
+                language: {
+                    noResults: function () {
+                        return "Tidak ditemukan";
+                    },
+                    searching: function () {
+                        return "Mencari...";
+                    }
+                }
+            });
+
             // Live Clock - Update current date/time display every second
             function updateClock() {
                 const now = new Date();
@@ -380,30 +407,36 @@
                 let errorMessages = [];
 
                 // Mode 1 validation
-                const mode1Fields = {
+                // HANYA cek field yang user bisa edit: kode dan operator
+                // Jenis dan Sampel Boy diabaikan karena punya default value
+                const mode1UserFields = {
                     'kode': 'Kode',
-                    'jenis': 'Jenis',
                     'operator': 'Operator'
                 };
 
-                const mode1Values = Object.keys(mode1Fields).map(field => {
+                const mode1Values = Object.keys(mode1UserFields).map(field => {
                     const value = $(`#${field}`).val();
                     return value && value.trim() !== '';
                 });
 
                 const mode1HasAnyValue = mode1Values.some(v => v === true);
 
+                // Jika user mengisi kode atau operator, maka keduanya harus diisi
                 if (mode1HasAnyValue) {
-                    Object.keys(mode1Fields).forEach(field => {
+                    Object.keys(mode1UserFields).forEach(field => {
                         const value = $(`#${field}`).val();
                         if (!value || value.trim() === '') {
-                            errorMessages.push(`${mode1Fields[field]} wajib diisi (Mode Non-Angka)`);
+                            errorMessages.push(`${mode1UserFields[field]} wajib diisi (Mode Non-Angka)`);
                             $(`#${field}`).addClass('border-red-400 bg-red-50');
                             hasError = true;
                         } else {
                             $(`#${field}`).removeClass('border-red-400 bg-red-50');
                         }
                     });
+                    
+                    // Jenis dan Sampel Boy selalu valid karena sudah ada default
+                    $('#jenis').removeClass('border-red-400 bg-red-50');
+                    $('#sampel_boy').removeClass('border-red-400 bg-red-50');
                 }
 
                 // Mode 2 validation
@@ -449,7 +482,7 @@
                                 </svg>
                                 <div class="flex-1">
                                     <h4 class="text-sm font-bold text-red-900 mb-2">⚠️ Data Tidak Lengkap</h4>
-                                    <p class="text-sm text-red-800 mb-2">Jika Anda mengisi salah satu field di mode tertentu, maka <strong>SEMUA field di mode tersebut harus diisi lengkap</strong>:</p>
+                                    <p class="text-sm text-red-800 mb-2">Jika Anda mengisi <strong>Kode</strong> atau <strong>Operator</strong>, maka keduanya harus diisi:</p>
                                     <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
                                         ${errorMessages.map(msg => `<li>${msg}</li>`).join('')}
                                     </ul>
@@ -479,7 +512,7 @@
         // Confirmation handler for form submission
         async function handleFormSubmit(event, form) {
             event.preventDefault();
-            const confirmed = await window.confirmSave();
+            const confirmed = await window.confirmSave(form); // Pass form element untuk offline save
             if (confirmed) {
                 form.submit();
             }

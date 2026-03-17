@@ -71,7 +71,7 @@ class ReportsExport implements FromCollection, WithHeadings, WithMapping, WithSt
             'SAMPEL BOY',
             'JENIS OLAH',
             'CAWAN KOSONG',
-            'BERAT BASAH',
+            'BERAT SAMPEL BASAH',
             'CAWAN + BASAH',
             'CAWAN + KERING',
             'SETELAH OVEN',

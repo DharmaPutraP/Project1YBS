@@ -24,6 +24,9 @@ class ReportController extends Controller
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $kode = $request->input('kode');
 
+        // Office filter dengan default value
+        $officeFilter = $request->input('office', Auth()->user()->office ?? 'YBS');
+
         $startDateTime = $startDate . ' 00:00:00';
         $endDateTime = $endDate . ' 23:59:59';
 
@@ -46,10 +49,12 @@ class ReportController extends Controller
             ->whereNull('c.deleted_at')
             ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
             ->select([
                 DB::raw('1 as priority'),
                 'c.created_at',
                 'c.kode',
+                'c.office',
                 'u.name as user_name',
 
                 'r.pivot',
@@ -89,6 +94,7 @@ class ReportController extends Controller
             ->whereNull('c.deleted_at')
             ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
             ->whereNotExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('oil_records as r')
@@ -101,6 +107,7 @@ class ReportController extends Controller
                 DB::raw('2 as priority'),
                 'c.created_at',
                 'c.kode',
+                'c.office',
                 'u.name as user_name',
 
                 DB::raw('NULL as pivot'),
@@ -140,6 +147,7 @@ class ReportController extends Controller
             ->whereNull('r.deleted_at')
             ->whereBetween('r.created_at', [$startDateTime, $endDateTime])
             ->when($kode, fn($q) => $q->where('r.kode', $kode))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('r.office', $officeFilter))
             ->whereNotExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('oil_calculations as c')
@@ -152,6 +160,7 @@ class ReportController extends Controller
                 DB::raw('3 as priority'),
                 'r.created_at',
                 'r.kode',
+                'r.office',
                 'u.name as user_name',
 
                 'r.pivot',
@@ -219,7 +228,7 @@ class ReportController extends Controller
             $report->limitOL_fmt = ($report->limitOL === null || $report->limitOL == 0) ? '-' : $this->formatNumber($report->limitOL, 2);
             $report->persen4_fmt = ($report->persen4 === null || $report->persen4 == 0) ? '-' : $this->formatNumber($report->persen4, 2);
         }
-        
+
         $perPage = 25; // Reduced from 50 to improve performance
         $page = $request->get('page', 1);
         $total = count($allReports);
@@ -249,6 +258,7 @@ class ReportController extends Controller
             'kodeOptions' => $kodeOptions,
             'startDate' => $startDate,
             'endDate' => $endDate,
+            'officeFilter' => $officeFilter,
         ]);
     }
 
@@ -315,6 +325,9 @@ class ReportController extends Controller
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $kode = $request->input('kode');
 
+        // Office filter dengan default value
+        $officeFilter = $request->input('office', Auth()->user()->office ?? 'YBS');
+
         $startDateTime = $startDate . ' 00:00:00';
         $endDateTime = $endDate . ' 23:59:59';
 
@@ -332,10 +345,12 @@ class ReportController extends Controller
             ->whereNull('c.deleted_at')
             ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
             ->select([
                 DB::raw('1 as priority'),
                 'c.created_at',
                 'c.kode',
+                'c.office',
                 'u.name as user_name',
                 'r.pivot',
                 'r.operator',
@@ -368,6 +383,7 @@ class ReportController extends Controller
             ->whereNull('c.deleted_at')
             ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
             ->whereNotExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('oil_records as r')
@@ -380,6 +396,7 @@ class ReportController extends Controller
                 DB::raw('2 as priority'),
                 'c.created_at',
                 'c.kode',
+                'c.office',
                 'u.name as user_name',
                 DB::raw('NULL as pivot'),
                 DB::raw('NULL as operator'),
@@ -412,6 +429,7 @@ class ReportController extends Controller
             ->whereNull('r.deleted_at')
             ->whereBetween('r.created_at', [$startDateTime, $endDateTime])
             ->when($kode, fn($q) => $q->where('r.kode', $kode))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('r.office', $officeFilter))
             ->whereNotExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('oil_calculations as c')
@@ -481,11 +499,11 @@ class ReportController extends Controller
         if ($value === null) {
             return '-';
         }
-        
+
         if ($value < 0) {
             return '(' . number_format(abs($value), $decimals) . ')';
         }
-        
+
         return number_format($value, $decimals);
     }
 }

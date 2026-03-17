@@ -14,6 +14,18 @@
 
             <div class="flex-1 w-full">
                 <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    Filter Office/PT
+                </label>
+                <select name="office" class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border rounded-lg text-sm">
+                    <option value="all" {{ $officeFilter == 'all' ? 'selected' : '' }}>-- Semua Office --</option>
+                    <option value="YBS" {{ $officeFilter == 'YBS' ? 'selected' : '' }}>YBS</option>
+                    <option value="SUN" {{ $officeFilter == 'SUN' ? 'selected' : '' }}>SUN</option>
+                    <option value="SJN" {{ $officeFilter == 'SJN' ? 'selected' : '' }}>SJN</option>
+                </select>
+            </div>
+
+            <div class="flex-1 w-full">
+                <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     Filter Kode
                 </label>
                 <select name="kode" class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border rounded-lg text-sm">
@@ -48,7 +60,7 @@
                     Filter
                 </button>
 
-                @if(request()->hasAny(['kode', 'start_date', 'end_date']))
+                @if(request()->hasAny(['kode', 'start_date', 'end_date', 'office']))
                     <a href="{{ route('reports.index') }}"
                         class="px-4 sm:px-6 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm font-medium text-center">
                         Reset
@@ -61,6 +73,7 @@
         @canany(['export laporan oil losses'])
             <form method="POST" action="{{ route('reports.export') }}" class="mt-4">
                 @csrf
+                <input type="hidden" name="office" value="{{ $officeFilter }}">
                 <input type="hidden" name="kode" value="{{ request('kode') }}">
                 <input type="hidden" name="start_date" value="{{ $startDate }}">
                 <input type="hidden" name="end_date" value="{{ $endDate }}">
@@ -102,7 +115,7 @@
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">JENIS OLAH</th>
 
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">CAWAN KOSONG</th>
-                        <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">BERAT BASAH</th>
+                        <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">BERAT SAMPEL BASAH</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">CAWAN + BASAH</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">CAWAN + KERING</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">SETELAH OVEN</th>

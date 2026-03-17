@@ -257,10 +257,10 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             @endcan
 
             @role('Super Admin')
-                <x-sidebar-item href="{{ route('permissions.index') }}" :active="request()->routeIs('permissions.*')"
-                    icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>'>
-                    <span class="sidebar-item-text">Permission Control</span>
-                </x-sidebar-item>
+            <x-sidebar-item href="{{ route('permissions.index') }}" :active="request()->routeIs('permissions.*')"
+                icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>'>
+                <span class="sidebar-item-text">Permission Control</span>
+            </x-sidebar-item>
             @endrole
 
         @endcanany
@@ -285,7 +285,12 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
                 </div>
                 <div class="flex-1 text-left min-w-0">
                     <p class="text-sm font-medium truncate">Logout</p>
-                    <p class="text-xs text-gray-500 group-hover:text-red-500 truncate">{{ Auth::user()->name }}</p>
+                    <p class="text-xs text-gray-500 group-hover:text-red-500 truncate">
+                        {{ Auth::user()->name }}
+                        @if(Auth::user()->office)
+                            • <span class="font-semibold text-green-600">{{ Auth::user()->office }}</span>
+                        @endif
+                    </p>
                 </div>
             </button>
         </form>

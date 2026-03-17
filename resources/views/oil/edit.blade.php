@@ -127,6 +127,8 @@
                                 </option>
                             @endforeach
                         </select>
+                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Pivot. Pivot hanya untuk
+                            informasi.</p>
                         @error('kode')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -157,10 +159,26 @@
                             <label for="operator" class="block text-sm font-medium text-gray-700 mb-2">
                                 Operator
                             </label>
-                            <input type="text" name="operator" id="operator"
-                                value="{{ old('operator', $relatedRecord?->operator) }}" placeholder="Nama operator"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
-                                       @error('operator') border-red-400 bg-red-50 @enderror">
+                            @if(!empty($operatorOptions))
+                                <select name="operator" id="operator" class="w-full select2-operator
+                                        @error('operator') border-red-400 bg-red-50 @enderror">
+                                    <option value="">-- Pilih Operator --</option>
+                                    @foreach($operatorOptions as $operatorName)
+                                        <option value="{{ $operatorName }}" {{ old('operator', $relatedRecord?->operator) == $operatorName ? 'selected' : '' }}>
+                                            {{ $operatorName }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">Daftar operator mengikuti office
+                                    {{ $oilLoss->office ?? '-' }}.</p>
+                            @else
+                                <input type="text" name="operator" id="operator"
+                                    value="{{ old('operator', $relatedRecord?->operator) }}" placeholder="Nama operator"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
+                                               @error('operator') border-red-400 bg-red-50 @enderror">
+                                <p class="mt-1 text-xs text-gray-500">Dropdown operator belum tersedia untuk office
+                                    {{ $oilLoss->office ?? '-' }}.</p>
+                            @endif
                             @error('operator')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
@@ -211,7 +229,7 @@
 
                         <div>
                             <label for="berat_basah" class="block text-sm font-medium text-gray-700 mb-2">
-                                Berat Basah <span class="text-gray-400 text-xs">(gram)</span>
+                                Berat Sampel Basah <span class="text-gray-400 text-xs">(gram)</span>
                             </label>
                             <input type="number" step="0.000001" name="berat_basah" id="berat_basah"
                                 value="{{ old('berat_basah', $oilLoss->berat_basah) }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
@@ -319,6 +337,21 @@
                     }
                 }
             });
+
+            $('.select2-operator').select2({
+                placeholder: '-- Pilih Operator --',
+                allowClear: true,
+                width: '100%',
+                theme: 'default',
+                language: {
+                    noResults: function () {
+                        return "Tidak ditemukan";
+                    },
+                    searching: function () {
+                        return "Mencari...";
+                    }
+                }
+            });
         });
     </script>
 
@@ -326,7 +359,7 @@
         // Confirmation handler for update form submission
         async function handleFormSubmit(event, form) {
             event.preventDefault();
-            const confirmed = await window.confirmUpdate();
+            const confirmed = await window.confirmUpdate(form); // Pass form element untuk offline save
             if (confirmed) {
                 form.submit();
             }

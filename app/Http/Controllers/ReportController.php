@@ -24,8 +24,9 @@ class ReportController extends Controller
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $kode = $request->input('kode');
 
-        // Office filter dengan default value
-        $officeFilter = $request->input('office', Auth()->user()->office ?? 'YBS');
+        // Office filter: user dengan office hanya boleh lihat office-nya sendiri
+        $userOffice = Auth()->user()->office;
+        $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
         $startDateTime = $startDate . ' 00:00:00';
         $endDateTime = $endDate . ' 23:59:59';
@@ -325,8 +326,9 @@ class ReportController extends Controller
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $kode = $request->input('kode');
 
-        // Office filter dengan default value
-        $officeFilter = $request->input('office', Auth()->user()->office ?? 'YBS');
+        // Office filter: user dengan office hanya boleh lihat office-nya sendiri
+        $userOffice = Auth()->user()->office;
+        $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
         $startDateTime = $startDate . ' 00:00:00';
         $endDateTime = $endDate . ' 23:59:59';

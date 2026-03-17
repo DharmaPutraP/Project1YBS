@@ -3,15 +3,17 @@
     <x-ui.card title="Input Data Dirt & Moist">
         <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
             <div class="flex items-start">
-                <svg class="w-5 h-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div class="flex-1">
                     <h4 class="text-sm font-semibold text-indigo-900 mb-1">Waktu Input Otomatis</h4>
                     <p class="text-sm text-indigo-800">
                         Tanggal &amp; Jam akan diisi otomatis saat Anda klik <strong>Simpan Data</strong>.
-                        <span class="text-indigo-600 font-medium">Gunakan tombol "Simpan &amp; Tambah Lagi" untuk input berkali-kali.</span>
+                        <span class="text-indigo-600 font-medium">Gunakan tombol "Simpan &amp; Tambah Lagi" untuk input
+                            berkali-kali.</span>
                     </p>
                     <div class="mt-2 p-3 bg-white rounded border border-indigo-200">
                         <div class="text-xs text-indigo-700">Waktu Saat Ini (Preview):</div>
@@ -68,8 +70,25 @@
                         <label for="operator" class="block text-sm font-medium text-gray-700 mb-2">
                             Operator <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="operator" id="operator" value="{{ old('operator') }}" placeholder="Nama operator"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('operator') border-red-400 bg-red-50 @enderror">
+                        @if(!empty($operatorOptions))
+                            <select name="operator" id="operator"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('operator') border-red-400 bg-red-50 @enderror">
+                                <option value="">-- Pilih Operator --</option>
+                                @foreach($operatorOptions as $operatorName)
+                                    <option value="{{ $operatorName }}" {{ old('operator') == $operatorName ? 'selected' : '' }}>
+                                        {{ $operatorName }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Daftar operator mengikuti office
+                                {{ Auth::user()->office ?? '-' }}.</p>
+                        @else
+                            <input type="text" name="operator" id="operator" value="{{ old('operator') }}"
+                                placeholder="Nama operator"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('operator') border-red-400 bg-red-50 @enderror">
+                            <p class="mt-1 text-xs text-gray-500">Dropdown operator belum tersedia untuk office
+                                {{ Auth::user()->office ?? '-' }}.</p>
+                        @endif
                         @error('operator')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -79,7 +98,8 @@
                         <label for="sampel_boy" class="block text-sm font-medium text-gray-700 mb-2">
                             Sampel Boy
                         </label>
-                        <input type="text" name="sampel_boy" id="sampel_boy" value="{{ old('sampel_boy', Auth::user()->name) }}" readonly
+                        <input type="text" name="sampel_boy" id="sampel_boy"
+                            value="{{ old('sampel_boy', Auth::user()->name) }}" readonly
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 cursor-not-allowed">
                         @error('sampel_boy')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -90,7 +110,8 @@
                         <label for="berat_sampel" class="block text-sm font-medium text-gray-700 mb-2">
                             Berat Sampel (gram) <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" step="0.0001" name="berat_sampel" id="berat_sampel" value="{{ old('berat_sampel') }}" placeholder="0.0000"
+                        <input type="number" step="0.0001" name="berat_sampel" id="berat_sampel"
+                            value="{{ old('berat_sampel') }}" placeholder="0.0000"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('berat_sampel') border-red-400 bg-red-50 @enderror">
                         @error('berat_sampel')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -101,7 +122,8 @@
                         <label for="berat_dirty" class="block text-sm font-medium text-gray-700 mb-2">
                             Berat Dirty (gram) <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" step="0.0001" name="berat_dirty" id="berat_dirty" value="{{ old('berat_dirty') }}" placeholder="0.0000"
+                        <input type="number" step="0.0001" name="berat_dirty" id="berat_dirty"
+                            value="{{ old('berat_dirty') }}" placeholder="0.0000"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('berat_dirty') border-red-400 bg-red-50 @enderror">
                         @error('berat_dirty')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -112,7 +134,8 @@
                         <label for="moist_percent" class="block text-sm font-medium text-gray-700 mb-2">
                             Moist (%) <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" step="0.0001" name="moist_percent" id="moist_percent" value="{{ old('moist_percent') }}" placeholder="0.0000"
+                        <input type="number" step="0.0001" name="moist_percent" id="moist_percent"
+                            value="{{ old('moist_percent') }}" placeholder="0.0000"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('moist_percent') border-red-400 bg-red-50 @enderror">
                         @error('moist_percent')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>

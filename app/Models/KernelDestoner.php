@@ -14,8 +14,9 @@ class KernelDestoner extends Model
 
     protected $fillable = [
         'user_id',
+        'office',
         'kode',
-        'jenis',
+        'rounded_time',
         'operator',
         'sampel_boy',
         'berat_sampel',
@@ -34,18 +35,19 @@ class KernelDestoner extends Model
     ];
 
     protected $casts = [
-        'berat_sampel'        => 'float',
-        'time'                => 'float',
-        'berat_nut'           => 'float',
-        'berat_kernel'        => 'float',
-        'konversi_kg'         => 'float',
-        'rasio_jam_kg'        => 'float',
-        'persen_nut'          => 'float',
-        'persen_kernel'       => 'float',
+        'rounded_time' => 'datetime',
+        'berat_sampel' => 'float',
+        'time' => 'float',
+        'berat_nut' => 'float',
+        'berat_kernel' => 'float',
+        'konversi_kg' => 'float',
+        'rasio_jam_kg' => 'float',
+        'persen_nut' => 'float',
+        'persen_kernel' => 'float',
         'total_losses_kernel' => 'float',
-        'loss_kernel_jam'     => 'float',
-        'loss_kernel_tbs'     => 'float',
-        'limit_value'         => 'float',
+        'loss_kernel_jam' => 'float',
+        'loss_kernel_tbs' => 'float',
+        'limit_value' => 'float',
     ];
 
     public function user()

@@ -55,6 +55,20 @@ class RoleAndPermissionSeeder extends Seeder
 
         'view laporan oil losses',                  // View comprehensive report
         'export laporan oil losses',                // Export comprehensive report
+
+        'view kernel losses',
+        'create kernel losses',
+        'edit kernel losses',
+        'delete kernel losses',
+
+        'view rekap kernel losses',
+        'export rekap kernel losses',
+
+        'view performance kernel losses',
+        'export performance kernel losses',
+
+        'view laporan kernel losses',
+        'export laporan kernel losses',
     ];
     private array $rolePermissions = [
 
@@ -83,6 +97,20 @@ class RoleAndPermissionSeeder extends Seeder
             'view laporan oil losses',
             'export laporan oil losses',
 
+            'view kernel losses',
+            'create kernel losses',
+            'edit kernel losses',
+            'delete kernel losses',
+
+            'view rekap kernel losses',
+            'export rekap kernel losses',
+
+            'view performance kernel losses',
+            'export performance kernel losses',
+
+            'view laporan kernel losses',
+            'export laporan kernel losses',
+
         ],
 
         'Sampel Boy Oil Losses' => [
@@ -92,6 +120,25 @@ class RoleAndPermissionSeeder extends Seeder
             'view oil losses',
             'create oil losses',
             'view laporan oil losses',
+
+        ],
+
+        'Sampel Boy Kernel Losses' => [
+            'view dashboard',
+
+            'view kernel losses',
+            'create kernel losses',
+            'edit kernel losses',
+            'delete kernel losses',
+
+            'view rekap kernel losses',
+            'export rekap kernel losses',
+
+            'view performance kernel losses',
+            'export performance kernel losses',
+
+            'view laporan kernel losses',
+            'export laporan kernel losses',
 
         ],
 

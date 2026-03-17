@@ -15,6 +15,8 @@ class KernelRippleMill extends Model
 
     protected $fillable = [
         'user_id',
+        'office',
+        'rounded_time',
         'kode',
         'jenis',
         'operator',
@@ -30,6 +32,7 @@ class KernelRippleMill extends Model
     ];
 
     protected $casts = [
+        'rounded_time' => 'datetime',
         'berat_sampel' => 'decimal:4',
         'berat_nut_utuh' => 'decimal:4',
         'berat_nut_pecah' => 'decimal:4',

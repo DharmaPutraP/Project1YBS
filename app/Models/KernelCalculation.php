@@ -15,6 +15,8 @@ class KernelCalculation extends Model
 
     protected $fillable = [
         'user_id',
+        'office',
+        'rounded_time',
         'kode',
         'jenis',
         'operator',
@@ -34,18 +36,19 @@ class KernelCalculation extends Model
     ];
 
     protected $casts = [
-        'berat_sampel'               => 'decimal:4',
-        'nut_utuh_nut'               => 'decimal:4',
-        'nut_utuh_kernel'            => 'decimal:4',
-        'nut_pecah_nut'              => 'decimal:4',
-        'nut_pecah_kernel'           => 'decimal:4',
-        'kernel_utuh'                => 'decimal:4',
-        'kernel_pecah'               => 'decimal:4',
-        'kernel_to_sampel_nut_utuh'  => 'decimal:6',
+        'rounded_time' => 'datetime',
+        'berat_sampel' => 'decimal:4',
+        'nut_utuh_nut' => 'decimal:4',
+        'nut_utuh_kernel' => 'decimal:4',
+        'nut_pecah_nut' => 'decimal:4',
+        'nut_pecah_kernel' => 'decimal:4',
+        'kernel_utuh' => 'decimal:4',
+        'kernel_pecah' => 'decimal:4',
+        'kernel_to_sampel_nut_utuh' => 'decimal:6',
         'kernel_to_sampel_nut_pecah' => 'decimal:6',
-        'kernel_utuh_to_sampel'      => 'decimal:6',
-        'kernel_pecah_to_sampel'     => 'decimal:6',
-        'kernel_losses'              => 'decimal:6',
+        'kernel_utuh_to_sampel' => 'decimal:6',
+        'kernel_pecah_to_sampel' => 'decimal:6',
+        'kernel_losses' => 'decimal:6',
     ];
 
     public function user(): BelongsTo

@@ -123,14 +123,16 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             @endcan
 
             @can('view kernel losses')
-                <x-sidebar-item href="{{ route('kernel.dirt-moist.index') }}" :active="request()->routeIs('kernel.dirt-moist.index')"
+                <x-sidebar-item href="{{ route('kernel.dirt-moist.index') }}"
+                    :active="request()->routeIs('kernel.dirt-moist.index')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2z"/></svg>'>
                     <span class="sidebar-item-text">Data Dirt &amp; Moist</span>
                 </x-sidebar-item>
             @endcan
 
             @can('create kernel losses')
-                <x-sidebar-item href="{{ route('kernel.dirt-moist.create') }}" :active="request()->routeIs('kernel.dirt-moist.create')"
+                <x-sidebar-item href="{{ route('kernel.dirt-moist.create') }}"
+                    :active="request()->routeIs('kernel.dirt-moist.create')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
                     <span class="sidebar-item-text">Input Data Dirt &amp; Moist</span>
                 </x-sidebar-item>
@@ -151,28 +153,32 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             @endcan
 
             @can('view kernel losses')
-                <x-sidebar-item href="{{ route('kernel.ripple-mill.index') }}" :active="request()->routeIs('kernel.ripple-mill.index')"
+                <x-sidebar-item href="{{ route('kernel.ripple-mill.index') }}"
+                    :active="request()->routeIs('kernel.ripple-mill.index')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/></svg>'>
                     <span class="sidebar-item-text">Data Ripple Mill</span>
                 </x-sidebar-item>
             @endcan
 
             @can('create kernel losses')
-                <x-sidebar-item href="{{ route('kernel.ripple-mill.create') }}" :active="request()->routeIs('kernel.ripple-mill.create')"
+                <x-sidebar-item href="{{ route('kernel.ripple-mill.create') }}"
+                    :active="request()->routeIs('kernel.ripple-mill.create')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
                     <span class="sidebar-item-text">Input Ripple Mill</span>
                 </x-sidebar-item>
             @endcan
 
             @can('view kernel losses')
-                <x-sidebar-item href="{{ route('kernel.destoner.index') }}" :active="request()->routeIs('kernel.destoner.index')"
+                <x-sidebar-item href="{{ route('kernel.destoner.index') }}"
+                    :active="request()->routeIs('kernel.destoner.index')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/></svg>'>
                     <span class="sidebar-item-text">Data Destoner</span>
                 </x-sidebar-item>
             @endcan
 
             @can('create kernel losses')
-                <x-sidebar-item href="{{ route('kernel.destoner.create') }}" :active="request()->routeIs('kernel.destoner.create')"
+                <x-sidebar-item href="{{ route('kernel.destoner.create') }}"
+                    :active="request()->routeIs('kernel.destoner.create')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
                     <span class="sidebar-item-text">Input Destoner</span>
                 </x-sidebar-item>
@@ -214,7 +220,8 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
                     <span class="sidebar-item-text">Laporan Kernel Losses</span>
                 </x-sidebar-item>
 
-                <x-sidebar-item href="{{ route('reports.kernel.dirt-moist') }}" :active="request()->routeIs('reports.kernel.dirt-moist')"
+                <x-sidebar-item href="{{ route('reports.kernel.dirt-moist') }}"
+                    :active="request()->routeIs('reports.kernel.dirt-moist')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
                     <span class="sidebar-item-text">Laporan Dirt &amp; Moist</span>
                 </x-sidebar-item>
@@ -224,12 +231,14 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
                     <span class="sidebar-item-text">Laporan QWT Fibre Press</span>
                 </x-sidebar-item>
 
-                <x-sidebar-item href="{{ route('reports.kernel.ripple-mill') }}" :active="request()->routeIs('reports.kernel.ripple-mill')"
+                <x-sidebar-item href="{{ route('reports.kernel.ripple-mill') }}"
+                    :active="request()->routeIs('reports.kernel.ripple-mill')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
                     <span class="sidebar-item-text">Laporan Ripple Mill</span>
                 </x-sidebar-item>
 
-                <x-sidebar-item href="{{ route('reports.kernel.destoner') }}" :active="request()->routeIs('reports.kernel.destoner')"
+                <x-sidebar-item href="{{ route('reports.kernel.destoner') }}"
+                    :active="request()->routeIs('reports.kernel.destoner')"
                     icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
                     <span class="sidebar-item-text">Laporan Destoner</span>
                 </x-sidebar-item>

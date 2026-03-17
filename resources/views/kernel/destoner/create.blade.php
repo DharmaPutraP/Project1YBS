@@ -5,15 +5,17 @@
         {{-- Waktu Otomatis --}}
         <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
             <div class="flex items-start">
-                <svg class="w-5 h-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div class="flex-1">
                     <h4 class="text-sm font-semibold text-indigo-900 mb-1">Waktu Input Otomatis</h4>
                     <p class="text-sm text-indigo-800">
                         Tanggal &amp; Jam akan diisi otomatis saat Anda klik <strong>Simpan Data</strong>.
-                        <span class="text-indigo-600 font-medium">Gunakan tombol "Simpan &amp; Tambah Lagi" untuk input berkali-kali.</span>
+                        <span class="text-indigo-600 font-medium">Gunakan tombol "Simpan &amp; Tambah Lagi" untuk input
+                            berkali-kali.</span>
                     </p>
                     <div class="mt-2 p-3 bg-white rounded border border-indigo-200">
                         <div class="text-xs text-indigo-700">Waktu Saat Ini (Preview):</div>
@@ -26,7 +28,7 @@
         </div>
 
         <form action="{{ route('kernel.destoner.store') }}" method="POST" id="destonerForm" class="space-y-5"
-              onsubmit="return handleFormSubmit(event, this)">
+            onsubmit="return handleFormSubmit(event, this)">
             @csrf
             <input type="hidden" name="_action" id="formAction" value="save">
 
@@ -38,8 +40,7 @@
                         <label for="kode" class="block text-sm font-medium text-gray-700 mb-2">
                             Kode <span class="text-red-500">*</span>
                         </label>
-                        <select name="kode" id="kode"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                        <select name="kode" id="kode" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
                                    @error('kode') border-red-400 bg-red-50 @enderror">
                             <option value="">-- Pilih Kode --</option>
                             @foreach($kodeOptions as $kodeValue => $kodeLabel)
@@ -57,8 +58,7 @@
                         <label for="jenis" class="block text-sm font-medium text-gray-700 mb-2">
                             Jenis <span class="text-red-500">*</span>
                         </label>
-                        <select name="jenis" id="jenis"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                        <select name="jenis" id="jenis" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
                                    @error('jenis') border-red-400 bg-red-50 @enderror">
                             @foreach($jenisOptions as $jenisValue => $jenisLabel)
                                 <option value="{{ $jenisValue }}" {{ old('jenis', 'TBS') == $jenisValue ? 'selected' : '' }}>
@@ -78,10 +78,25 @@
                         <label for="operator" class="block text-sm font-medium text-gray-700 mb-2">
                             Operator <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="operator" id="operator" value="{{ old('operator') }}"
-                            placeholder="Nama operator"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
-                                   @error('operator') border-red-400 bg-red-50 @enderror">
+                        @if(!empty($operatorOptions))
+                            <select name="operator" id="operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                           @error('operator') border-red-400 bg-red-50 @enderror">
+                                <option value="">-- Pilih Operator --</option>
+                                @foreach($operatorOptions as $operatorName)
+                                    <option value="{{ $operatorName }}" {{ old('operator') == $operatorName ? 'selected' : '' }}>
+                                        {{ $operatorName }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Daftar operator mengikuti office
+                                {{ Auth::user()->office ?? '-' }}.</p>
+                        @else
+                            <input type="text" name="operator" id="operator" value="{{ old('operator') }}"
+                                placeholder="Nama operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                           @error('operator') border-red-400 bg-red-50 @enderror">
+                            <p class="mt-1 text-xs text-gray-500">Dropdown operator belum tersedia untuk office
+                                {{ Auth::user()->office ?? '-' }}.</p>
+                        @endif
                         @error('operator')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -91,8 +106,7 @@
                         <label for="sampel_boy" class="block text-sm font-medium text-gray-700 mb-2">
                             Sampel Boy <span class="text-gray-400 text-xs">(Otomatis)</span>
                         </label>
-                        <input type="text" name="sampel_boy" id="sampel_boy"
-                            value="{{ Auth::user()->name }}" readonly
+                        <input type="text" name="sampel_boy" id="sampel_boy" value="{{ Auth::user()->name }}" readonly
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 cursor-not-allowed">
                     </div>
                 </div>
@@ -107,8 +121,7 @@
                             <span class="text-gray-400 text-xs">(gram)</span>
                         </label>
                         <input type="number" step="0.0001" name="berat_sampel" id="berat_sampel"
-                            value="{{ old('berat_sampel') }}" placeholder="0.0000"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                            value="{{ old('berat_sampel') }}" placeholder="0.0000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
                                    @error('berat_sampel') border-red-400 bg-red-50 @enderror">
                         @error('berat_sampel')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -120,9 +133,8 @@
                             Time <span class="text-red-500">*</span>
                             <span class="text-gray-400 text-xs">(detik)</span>
                         </label>
-                        <input type="number" step="0.0001" name="time" id="time"
-                            value="{{ old('time') }}" placeholder="0.0000"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                        <input type="number" step="0.0001" name="time" id="time" value="{{ old('time') }}"
+                            placeholder="0.0000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
                                    @error('time') border-red-400 bg-red-50 @enderror">
                         @error('time')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -138,8 +150,7 @@
                             <span class="text-gray-400 text-xs">(gram)</span>
                         </label>
                         <input type="number" step="0.0001" name="berat_nut" id="berat_nut"
-                            value="{{ old('berat_nut') }}" placeholder="0.0000"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                            value="{{ old('berat_nut') }}" placeholder="0.0000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
                                    @error('berat_nut') border-red-400 bg-red-50 @enderror">
                         @error('berat_nut')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -152,8 +163,7 @@
                             <span class="text-gray-400 text-xs">(gram)</span>
                         </label>
                         <input type="number" step="0.0001" name="berat_kernel" id="berat_kernel"
-                            value="{{ old('berat_kernel') }}" placeholder="0.0000"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                            value="{{ old('berat_kernel') }}" placeholder="0.0000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
                                    @error('berat_kernel') border-red-400 bg-red-50 @enderror">
                         @error('berat_kernel')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -239,27 +249,27 @@
         }
 
         function buildDestonerAlertHtml() {
-            const kodeValue   = getInputValue('kode', '');
-            const kode        = getSelectText('kode');
-            const jenis       = getSelectText('jenis');
-            const operator    = getInputValue('operator');
-            const sampelBoy   = getInputValue('sampel_boy');
+            const kodeValue = getInputValue('kode', '');
+            const kode = getSelectText('kode');
+            const jenis = getSelectText('jenis');
+            const operator = getInputValue('operator');
+            const sampelBoy = getInputValue('sampel_boy');
             const beratSampel = parseInputNumber('berat_sampel');
-            const time        = parseInputNumber('time');
-            const beratNut    = parseInputNumber('berat_nut');
+            const time = parseInputNumber('time');
+            const beratNut = parseInputNumber('berat_nut');
             const beratKernel = parseInputNumber('berat_kernel');
 
-            const konversiKg        = beratSampel / 1000;
-            const rasioJamKg        = time > 0 ? (konversiKg * 3600 / time) : 0;
-            const persenNut         = beratSampel > 0 ? (beratNut / beratSampel) * 50 : 0;
-            const persenKernel      = beratSampel > 0 ? (beratKernel / beratSampel) * 100 : 0;
+            const konversiKg = beratSampel / 1000;
+            const rasioJamKg = time > 0 ? (konversiKg * 3600 / time) : 0;
+            const persenNut = beratSampel > 0 ? (beratNut / beratSampel) * 50 : 0;
+            const persenKernel = beratSampel > 0 ? (beratKernel / beratSampel) * 100 : 0;
             const totalLossesKernel = persenKernel + persenNut;
-            const lossKernelJam     = (totalLossesKernel * rasioJamKg) / 100;
-            const lossKernelTbs     = lossKernelJam / 300;
+            const lossKernelJam = (totalLossesKernel * rasioJamKg) / 100;
+            const lossKernelTbs = lossKernelJam / 300;
 
-            const limitConfig  = kernelLimitMap?.[kodeValue] ?? null;
-            const limitStatus  = evaluateLimit(lossKernelTbs, limitConfig);
-            const tbsClass     = limitStatus.isGood === true ? 'text-green-700' : (limitStatus.isGood === false ? 'text-red-700' : 'text-indigo-900');
+            const limitConfig = kernelLimitMap?.[kodeValue] ?? null;
+            const limitStatus = evaluateLimit(lossKernelTbs, limitConfig);
+            const tbsClass = limitStatus.isGood === true ? 'text-green-700' : (limitStatus.isGood === false ? 'text-red-700' : 'text-indigo-900');
 
             return '<div class="text-left">' +
                 '<p class="text-sm text-gray-600 mb-3">Pastikan data yang Anda masukkan sudah benar.</p>' +

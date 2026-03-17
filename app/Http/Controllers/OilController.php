@@ -39,9 +39,9 @@ class OilController extends Controller
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
-        // Office filter dengan default value
-        // Default: user's office (jika ada), atau 'YBS' (jika user->office = NULL)
-        $officeFilter = $request->input('office', Auth::user()->office ?? 'YBS');
+        // Office filter: user dengan office hanya boleh lihat office-nya sendiri
+        $userOffice = Auth::user()->office;
+        $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
         // Query for Mode 2: Lab Calculations (numeric data)
         // Multi-tenancy: filter by selected office or user's office
@@ -609,8 +609,9 @@ class OilController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
-        // Office filter dengan default value
-        $officeFilter = $request->input('office', Auth::user()->office ?? 'YBS');
+        // Office filter: user dengan office hanya boleh lihat office-nya sendiri
+        $userOffice = Auth::user()->office;
+        $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
         // Get all kode with pivot from master data (ordered)
         $allKodesData = OilMasterData::where('is_active', true)
@@ -673,8 +674,9 @@ class OilController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
-        // Office filter dengan default value
-        $officeFilter = $request->input('office', Auth::user()->office ?? 'YBS');
+        // Office filter: user dengan office hanya boleh lihat office-nya sendiri
+        $userOffice = Auth::user()->office;
+        $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
         // Get all kode with pivot from master data (ordered)
         $allKodesData = OilMasterData::where('is_active', true)
@@ -736,8 +738,9 @@ class OilController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
-        // Office filter dengan default value
-        $officeFilter = $request->input('office', Auth::user()->office ?? 'YBS');
+        // Office filter: user dengan office hanya boleh lihat office-nya sendiri
+        $userOffice = Auth::user()->office;
+        $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
         // Get all bobot configs
         $bobotConfigs = BobotConfig::all()->keyBy('jenis');
@@ -931,8 +934,9 @@ class OilController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
-        // Office filter dengan default value
-        $officeFilter = $request->input('office', Auth::user()->office ?? 'YBS');
+        // Office filter: user dengan office hanya boleh lihat office-nya sendiri
+        $userOffice = Auth::user()->office;
+        $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
         // Get all bobot configs
         $bobotConfigs = BobotConfig::all()->keyBy('jenis');
@@ -1044,6 +1048,7 @@ class OilController extends Controller
             ->whereBetween('oil_records.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->whereNotNull('oil_records.operator')
             ->where('oil_records.operator', '!=', '')
+            ->when($officeFilter !== 'all', fn($q) => $q->where('oil_records.office', $officeFilter))
             ->orderBy('oil_records.created_at', 'desc')
             ->get();
 
@@ -1277,17 +1282,11 @@ class OilController extends Controller
      */
     private function getOperatorOptionsByOffice(?string $office): array
     {
-        return match ($office) {
-            'SUN' => [
-                'Ramanda',
-                'Agus Prawitno Sitohang',
-                'Rizky Setiawan',
-                'Andri Kaswari',
-                'Dedi Prastiawan',
-                'Ahmad Prawira Putra Pohan',
-            ],
-            default => [],
-        };
+        if (!$office) {
+            return [];
+        }
+
+        return config('operator-options.oil.' . $office, []);
     }
 
     /**

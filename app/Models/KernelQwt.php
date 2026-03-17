@@ -15,6 +15,8 @@ class KernelQwt extends Model
 
     protected $fillable = [
         'user_id',
+        'office',
+        'rounded_time',
         'kode',
         'jenis',
         'operator',
@@ -41,6 +43,7 @@ class KernelQwt extends Model
     ];
 
     protected $casts = [
+        'rounded_time' => 'datetime',
         'sampel_setelah_kuarter' => 'decimal:4',
         'berat_nut_utuh' => 'decimal:4',
         'berat_nut_pecah' => 'decimal:4',

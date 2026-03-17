@@ -15,16 +15,23 @@
             <form method="GET" action="{{ route('oil.olwb') }}"
                 class="flex flex-col sm:flex-row gap-2 sm:gap-4 items-end">
                 <div class="flex-1 w-full">
-                    <label for="office" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                         Office/PT
                     </label>
-                    <select name="office" id="office"
-                        class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
-                        <option value="all" {{ $officeFilter == 'all' ? 'selected' : '' }}>-- Semua Office --</option>
-                        <option value="YBS" {{ $officeFilter == 'YBS' ? 'selected' : '' }}>YBS</option>
-                        <option value="SUN" {{ $officeFilter == 'SUN' ? 'selected' : '' }}>SUN</option>
-                        <option value="SJN" {{ $officeFilter == 'SJN' ? 'selected' : '' }}>SJN</option>
-                    </select>
+                    @if(auth()->user()->office)
+                        <div
+                            class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm text-gray-700">
+                            {{ auth()->user()->office }}
+                        </div>
+                    @else
+                        <select name="office" id="office"
+                            class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
+                            <option value="all" {{ $officeFilter == 'all' ? 'selected' : '' }}>-- Semua Office --</option>
+                            <option value="YBS" {{ $officeFilter == 'YBS' ? 'selected' : '' }}>YBS</option>
+                            <option value="SUN" {{ $officeFilter == 'SUN' ? 'selected' : '' }}>SUN</option>
+                            <option value="SJN" {{ $officeFilter == 'SJN' ? 'selected' : '' }}>SJN</option>
+                        </select>
+                    @endif
                 </div>
 
                 <div class="flex-1 w-full">

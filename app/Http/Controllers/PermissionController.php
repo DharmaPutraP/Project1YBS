@@ -38,7 +38,7 @@ class PermissionController extends Controller
         abort_unless(auth()->user()->hasRole('Super Admin'), 403, 'Akses ditolak.');
 
         $validated = $request->validate([
-            'permissions'   => ['nullable', 'array'],
+            'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 

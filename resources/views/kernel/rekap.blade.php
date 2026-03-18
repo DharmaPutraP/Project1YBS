@@ -24,6 +24,23 @@
                         class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
 
+                <div class="flex-1 w-full min-w-[140px]">
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Office/PT</label>
+                    @if(auth()->user()->office)
+                        <div class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 text-gray-700">
+                            {{ auth()->user()->office }}
+                        </div>
+                    @else
+                        <select name="office"
+                            class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="all" {{ $officeFilter == 'all' ? 'selected' : '' }}>-- Semua Office --</option>
+                            <option value="YBS" {{ $officeFilter == 'YBS' ? 'selected' : '' }}>YBS</option>
+                            <option value="SUN" {{ $officeFilter == 'SUN' ? 'selected' : '' }}>SUN</option>
+                            <option value="SJN" {{ $officeFilter == 'SJN' ? 'selected' : '' }}>SJN</option>
+                        </select>
+                    @endif
+                </div>
+
                 <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button type="submit"
                         class="inline-flex items-center justify-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition">
@@ -33,7 +50,7 @@
                         </svg>
                         Filter
                     </button>
-                    @if(request('start_date') || request('end_date'))
+                    @if(request('start_date') || request('end_date') || request('office'))
                         <a href="{{ route('kernel.rekap') }}"
                             class="inline-flex items-center justify-center gap-2 px-5 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition">
                             Reset
@@ -48,6 +65,7 @@
                     @csrf
                     <input type="hidden" name="start_date" value="{{ $startDate }}">
                     <input type="hidden" name="end_date" value="{{ $endDate }}">
+                    <input type="hidden" name="office" value="{{ $officeFilter }}">
                     <button type="submit"
                         class="inline-flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,6 +82,9 @@
                 <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                     {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} —
                     {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+                </span>
+                <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Office: {{ $officeFilter }}
                 </span>
             </div>
         </div>

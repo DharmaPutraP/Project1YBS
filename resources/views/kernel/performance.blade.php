@@ -13,7 +13,7 @@
         {{-- Date Range Filter --}}
         <div class="mb-6 bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
             <form method="GET" action="{{ route('kernel.performance') }}"
-                  class="flex flex-col sm:flex-row gap-2 sm:gap-4 items-end">
+                class="flex flex-col sm:flex-row gap-2 sm:gap-4 items-end">
                 <div class="flex-1 w-full">
                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
                     <input type="date" name="start_date" value="{{ $startDate }}"
@@ -24,20 +24,40 @@
                     <input type="date" name="end_date" value="{{ $endDate }}"
                         class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
                 </div>
+                <div class="flex-1 w-full">
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Office/PT</label>
+                    @if(auth()->user()->office)
+                        <div
+                            class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 text-gray-700">
+                            {{ auth()->user()->office }}
+                        </div>
+                    @else
+                        <select name="office"
+                            class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
+                            <option value="all" {{ $officeFilter == 'all' ? 'selected' : '' }}>-- Semua Office --</option>
+                            <option value="YBS" {{ $officeFilter == 'YBS' ? 'selected' : '' }}>YBS</option>
+                            <option value="SUN" {{ $officeFilter == 'SUN' ? 'selected' : '' }}>SUN</option>
+                            <option value="SJN" {{ $officeFilter == 'SJN' ? 'selected' : '' }}>SJN</option>
+                        </select>
+                    @endif
+                </div>
                 <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button type="submit"
                         class="inline-flex items-center justify-center px-4 sm:px-6 py-1.5 sm:py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                         </svg>
                         Filter
                     </button>
-                    @if(request('start_date') || request('end_date'))
+                    @if(request('start_date') || request('end_date') || request('office'))
                         <a href="{{ route('kernel.performance') }}"
                             class="inline-flex items-center justify-center px-4 sm:px-6 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium text-sm">
-                            <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
                             </svg>
                             Reset
                         </a>
@@ -47,9 +67,14 @@
 
             <div class="mt-3 text-sm text-gray-600">
                 <span class="font-medium">Periode:</span>
-                <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                <span
+                    class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                     {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} -
                     {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+                </span>
+                <span
+                    class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Office: {{ $officeFilter }}
                 </span>
             </div>
 
@@ -60,12 +85,13 @@
                         @csrf
                         <input type="hidden" name="start_date" value="{{ $startDate }}">
                         <input type="hidden" name="end_date" value="{{ $endDate }}">
+                        <input type="hidden" name="office" value="{{ $officeFilter }}">
                         <button type="submit"
                             class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                             <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                             Export ke Excel
                         </button>
@@ -79,7 +105,7 @@
             <div class="text-center py-12">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <p class="mt-4 text-lg text-gray-500">Tidak ada data pada periode ini</p>
                 <p class="mt-2 text-sm text-gray-400">Silakan pilih rentang tanggal lain atau input data baru</p>
@@ -89,25 +115,32 @@
                 <table class="min-w-full divide-y divide-gray-200 border border-gray-300 text-xs">
                     <thead>
                         <tr class="bg-indigo-50">
-                            <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[90px]">
+                            <th
+                                class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[90px]">
                                 Tanggal
                             </th>
-                            <th class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[70px]">
+                            <th
+                                class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[70px]">
                                 Jam
                             </th>
-                            <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[150px]">
+                            <th
+                                class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[150px]">
                                 Nama Operator
                             </th>
-                            <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[150px]">
+                            <th
+                                class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[150px]">
                                 Sample Boy
                             </th>
-                            <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[160px]">
+                            <th
+                                class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[160px]">
                                 Jenis Sampel
                             </th>
-                            <th class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[110px]">
+                            <th
+                                class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[110px]">
                                 Nilai Parameter
                             </th>
-                            <th class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[120px] bg-blue-50">
+                            <th
+                                class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[120px] bg-blue-50">
                                 Nilai Performance
                             </th>
                         </tr>
@@ -116,11 +149,13 @@
                         @foreach($individualRecords as $rec)
                             <tr class="hover:bg-gray-50">
                                 {{-- Tanggal --}}
-                                <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-800 border-r border-gray-300">
+                                <td
+                                    class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-800 border-r border-gray-300">
                                     {{ \Carbon\Carbon::parse($rec['date'])->format('d-M') }}
                                 </td>
                                 {{-- Jam --}}
-                                <td class="px-3 py-2 text-center whitespace-nowrap text-sm text-gray-700 border-r border-gray-300">
+                                <td
+                                    class="px-3 py-2 text-center whitespace-nowrap text-sm text-gray-700 border-r border-gray-300">
                                     {{ $rec['time'] }}
                                 </td>
                                 {{-- Operator --}}
@@ -144,15 +179,24 @@
                                 {{-- Nilai Performance (Bobot) --}}
                                 <td class="px-3 py-2 text-center border-r border-gray-300 bg-blue-50/40">
                                     @if($rec['bobot'] === null)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">—</span>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">—</span>
                                     @elseif($rec['bobot'] === 0)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">0</span>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">0</span>
                                     @else
                                         @php
                                             $b = $rec['bobot'];
-                                            if ($b >= 90)      { $bg = 'bg-green-100'; $tc = 'text-green-800'; }
-                                            elseif ($b >= 70)  { $bg = 'bg-yellow-100'; $tc = 'text-yellow-800'; }
-                                            else               { $bg = 'bg-red-100'; $tc = 'text-red-800'; }
+                                            if ($b >= 90) {
+                                                $bg = 'bg-green-100';
+                                                $tc = 'text-green-800';
+                                            } elseif ($b >= 70) {
+                                                $bg = 'bg-yellow-100';
+                                                $tc = 'text-yellow-800';
+                                            } else {
+                                                $bg = 'bg-red-100';
+                                                $tc = 'text-red-800';
+                                            }
                                         @endphp
                                         <span @class(['inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold', $bg, $tc])>
                                             {{ $b }}
@@ -206,15 +250,18 @@
                     <table class="min-w-full text-sm text-gray-700 divide-y divide-gray-200">
                         <thead class="bg-indigo-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[220px]">
+                                <th
+                                    class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[220px]">
                                     Operator
                                 </th>
                                 @foreach($reportDates as $date)
-                                    <th class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[100px]">
+                                    <th
+                                        class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[100px]">
                                         {{ \Carbon\Carbon::parse($date)->format('d M') }}
                                     </th>
                                 @endforeach
-                                <th class="px-3 py-3 text-center text-xs font-bold text-indigo-700 uppercase tracking-wider border-gray-300 min-w-[100px] bg-indigo-50">
+                                <th
+                                    class="px-3 py-3 text-center text-xs font-bold text-indigo-700 uppercase tracking-wider border-gray-300 min-w-[100px] bg-indigo-50">
                                     Rata-rata
                                 </th>
                             </tr>
@@ -222,22 +269,25 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($operators as $operator)
                                 @php
-                                    $grandSum   = 0;
+                                    $grandSum = 0;
                                     $grandCount = 0;
                                 @endphp
                                 <tr class="hover:bg-indigo-50/40 transition">
                                     <td class="px-4 py-3 border-r border-gray-300">
                                         <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div
+                                                class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                                 </svg>
                                             </div>
                                             <div>
                                                 <p class="font-semibold text-gray-900 text-sm">{{ $operator }}</p>
                                                 @if(isset($operatorActivities[$operator]))
-                                                    <p class="text-xs text-gray-400">{{ $operatorActivities[$operator]['total_input'] }} input</p>
+                                                    <p class="text-xs text-gray-400">
+                                                        {{ $operatorActivities[$operator]['total_input'] }} input</p>
                                                 @endif
                                             </div>
                                         </div>
@@ -247,8 +297,8 @@
                                         @php
                                             $opStats = $operatorDailyPerformance[$operator][$date] ?? null;
                                             if ($opStats && $opStats['count'] > 0) {
-                                                $opDateAvg   = round($opStats['sum'] / $opStats['count'], 1);
-                                                $grandSum   += $opStats['sum'];
+                                                $opDateAvg = round($opStats['sum'] / $opStats['count'], 1);
+                                                $grandSum += $opStats['sum'];
                                                 $grandCount += $opStats['count'];
                                             } else {
                                                 $opDateAvg = null;
@@ -257,9 +307,16 @@
                                         <td class="px-3 py-3 text-center border-r border-gray-300">
                                             @if($opDateAvg !== null)
                                                 @php
-                                                    if ($opDateAvg >= 90)     { $bg = 'bg-green-100'; $tc = 'text-green-800'; }
-                                                    elseif ($opDateAvg >= 70) { $bg = 'bg-yellow-100'; $tc = 'text-yellow-800'; }
-                                                    else                      { $bg = 'bg-red-100'; $tc = 'text-red-800'; }
+                                                    if ($opDateAvg >= 90) {
+                                                        $bg = 'bg-green-100';
+                                                        $tc = 'text-green-800';
+                                                    } elseif ($opDateAvg >= 70) {
+                                                        $bg = 'bg-yellow-100';
+                                                        $tc = 'text-yellow-800';
+                                                    } else {
+                                                        $bg = 'bg-red-100';
+                                                        $tc = 'text-red-800';
+                                                    }
                                                 @endphp
                                                 <span @class(['inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold', $bg, $tc])>
                                                     {{ $opDateAvg }}
@@ -276,9 +333,16 @@
                                         @if($grandCount > 0)
                                             @php
                                                 $grandAvg = round($grandSum / $grandCount, 2);
-                                                if ($grandAvg >= 90)     { $bg = 'bg-green-100'; $tc = 'text-green-800'; }
-                                                elseif ($grandAvg >= 70) { $bg = 'bg-yellow-100'; $tc = 'text-yellow-800'; }
-                                                else                     { $bg = 'bg-red-100'; $tc = 'text-red-800'; }
+                                                if ($grandAvg >= 90) {
+                                                    $bg = 'bg-green-100';
+                                                    $tc = 'text-green-800';
+                                                } elseif ($grandAvg >= 70) {
+                                                    $bg = 'bg-yellow-100';
+                                                    $tc = 'text-yellow-800';
+                                                } else {
+                                                    $bg = 'bg-red-100';
+                                                    $tc = 'text-red-800';
+                                                }
                                             @endphp
                                             <span @class(['inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold', $bg, $tc])>
                                                 {{ $grandAvg }}

@@ -83,7 +83,6 @@
         {{-- Permission Groups --}}
         <div class="space-y-4">
             @foreach($groupedPermissions as $module => $perms)
-                @if($module === 'Lainnya') @continue @endif
                 <x-ui.card>
                     {{-- Module header with select-all toggle --}}
                     <div class="flex items-center justify-between mb-3">

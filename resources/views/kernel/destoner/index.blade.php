@@ -108,6 +108,24 @@
                 </div>
 
                 <div class="flex-1 w-full">
+                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Office/PT</label>
+                    @if(auth()->user()->office)
+                        <div
+                            class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-700">
+                            {{ auth()->user()->office }}
+                        </div>
+                    @else
+                        <select name="office"
+                            class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="all" {{ $officeFilter == 'all' ? 'selected' : '' }}>-- Semua Office --</option>
+                            <option value="YBS" {{ $officeFilter == 'YBS' ? 'selected' : '' }}>YBS</option>
+                            <option value="SUN" {{ $officeFilter == 'SUN' ? 'selected' : '' }}>SUN</option>
+                            <option value="SJN" {{ $officeFilter == 'SJN' ? 'selected' : '' }}>SJN</option>
+                        </select>
+                    @endif
+                </div>
+
+                <div class="flex-1 w-full">
                     <label for="start_date" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                         Tanggal Mulai
                     </label>
@@ -132,7 +150,7 @@
                         </svg>
                         Filter
                     </button>
-                    @if((request('start_date') && request('start_date') != now()->format('Y-m-d')) || (request('end_date') && request('end_date') != now()->format('Y-m-d')) || request('kode'))
+                    @if((request('start_date') && request('start_date') != now()->format('Y-m-d')) || (request('end_date') && request('end_date') != now()->format('Y-m-d')) || request('kode') || request('office'))
                         <a href="{{ route('kernel.destoner.index') }}"
                             class="inline-flex items-center justify-center px-4 md:px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium text-sm whitespace-nowrap">
                             <svg class="w-4 h-4 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -359,19 +377,22 @@
                                                             class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition"
                                                             title="Edit">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                             </svg>
                                                         </a>
                                                     @endcan
                                                     @can('delete kernel losses')
-                                                        <form action="{{ route('kernel.destoner.destroy', $row->id) }}" method="POST" class="delete-form" data-item-name="Data {{ $row->kode ?? 'ini' }}">
+                                                        <form action="{{ route('kernel.destoner.destroy', $row->id) }}" method="POST"
+                                                            class="delete-form" data-item-name="Data {{ $row->kode ?? 'ini' }}">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit"
                                                                 class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-red-200 text-red-600 hover:bg-red-50 transition"
                                                                 title="Hapus">
                                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                                 </svg>
                                                             </button>
                                                         </form>

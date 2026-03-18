@@ -52,6 +52,22 @@
                 </div>
 
                 <div class="flex-1 w-full">
+                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Office/PT</label>
+                    @if(auth()->user()->office)
+                        <div class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-700">
+                            {{ auth()->user()->office }}
+                        </div>
+                    @else
+                        <select name="office" class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="all" {{ $officeFilter == 'all' ? 'selected' : '' }}>-- Semua Office --</option>
+                            <option value="YBS" {{ $officeFilter == 'YBS' ? 'selected' : '' }}>YBS</option>
+                            <option value="SUN" {{ $officeFilter == 'SUN' ? 'selected' : '' }}>SUN</option>
+                            <option value="SJN" {{ $officeFilter == 'SJN' ? 'selected' : '' }}>SJN</option>
+                        </select>
+                    @endif
+                </div>
+
+                <div class="flex-1 w-full">
                     <label for="start_date" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal
                         Mulai</label>
                     <input type="date" id="start_date" name="start_date" value="{{ $startDate }}"

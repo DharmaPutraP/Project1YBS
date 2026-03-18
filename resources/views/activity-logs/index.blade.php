@@ -65,6 +65,24 @@
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari..."
                         class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border rounded-lg text-sm">
                 </div>
+
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                        Office/PT
+                    </label>
+                    @if(auth()->user()->office)
+                        <div class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border rounded-lg text-sm bg-gray-100 text-gray-700">
+                            {{ auth()->user()->office }}
+                        </div>
+                    @else
+                        <select name="office" class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border rounded-lg text-sm">
+                            <option value="all" {{ $officeFilter == 'all' ? 'selected' : '' }}>-- Semua Office --</option>
+                            <option value="YBS" {{ $officeFilter == 'YBS' ? 'selected' : '' }}>YBS</option>
+                            <option value="SUN" {{ $officeFilter == 'SUN' ? 'selected' : '' }}>SUN</option>
+                            <option value="SJN" {{ $officeFilter == 'SJN' ? 'selected' : '' }}>SJN</option>
+                        </select>
+                    @endif
+                </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -95,7 +113,7 @@
                     <i class="fas fa-filter mr-1"></i> Filter
                 </button>
 
-                @if(request()->hasAny(['user_id', 'action', 'model_type', 'search', 'start_date', 'end_date']))
+                @if(request()->hasAny(['user_id', 'action', 'model_type', 'search', 'start_date', 'end_date', 'office']))
                     <a href="{{ route('activity-logs.index') }}"
                         class="px-4 sm:px-6 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm font-medium text-center">
                         <i class="fas fa-times mr-1"></i> Reset
@@ -143,13 +161,13 @@
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                        @if($log->action_badge_color == 'green') bg-green-100 text-green-800
-                                        @elseif($log->action_badge_color == 'yellow') bg-yellow-100 text-yellow-800
-                                        @elseif($log->action_badge_color == 'red') bg-red-100 text-red-800
-                                        @elseif($log->action_badge_color == 'blue') bg-blue-100 text-blue-800
-                                        @elseif($log->action_badge_color == 'indigo') bg-indigo-100 text-indigo-800
-                                        @else bg-gray-100 text-gray-800
-                                        @endif">
+                                            @if($log->action_badge_color == 'green') bg-green-100 text-green-800
+                                            @elseif($log->action_badge_color == 'yellow') bg-yellow-100 text-yellow-800
+                                            @elseif($log->action_badge_color == 'red') bg-red-100 text-red-800
+                                            @elseif($log->action_badge_color == 'blue') bg-blue-100 text-blue-800
+                                            @elseif($log->action_badge_color == 'indigo') bg-indigo-100 text-indigo-800
+                                            @else bg-gray-100 text-gray-800
+                                            @endif">
                                     {{ $log->action_label }}
                                 </span>
                             </td>

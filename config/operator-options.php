@@ -16,27 +16,27 @@ return [
     ],
     'kernel' => [
         'YBS' => [],
-        'SUN' => [],
+        'SUN' => ['Diki Apriadi Nasution', 'Jovyel Romatuah Silaen', 'Apriandi', 'Sarianda', 'Muhammad Zainuddin Siagian', 'Roy Vandi Haviki'],
         'SJN' => [],
     ],
     'dirt_moist' => [
         'YBS' => [],
-        'SUN' => [],
+        'SUN' => ['Diki Apriadi Nasution', 'Jovyel Romatuah Silaen', 'Apriandi', 'Sarianda', 'Muhammad Zainuddin Siagian', 'Roy Vandi Haviki'],
         'SJN' => [],
     ],
     'qwt' => [
         'YBS' => [],
-        'SUN' => [],
+        'SUN' => ['Diki Apriadi Nasution', 'Jovyel Romatuah Silaen', 'Apriandi', 'Sarianda', 'Muhammad Zainuddin Siagian', 'Roy Vandi Haviki'],
         'SJN' => [],
     ],
     'ripple_mill' => [
         'YBS' => [],
-        'SUN' => [],
+        'SUN' => ['Diki Apriadi Nasution', 'Jovyel Romatuah Silaen', 'Apriandi', 'Sarianda', 'Muhammad Zainuddin Siagian', 'Roy Vandi Haviki'],
         'SJN' => [],
     ],
     'destoner' => [
         'YBS' => [],
-        'SUN' => [],
+        'SUN' => ['Diki Apriadi Nasution', 'Jovyel Romatuah Silaen', 'Apriandi', 'Sarianda', 'Muhammad Zainuddin Siagian', 'Roy Vandi Haviki'],
         'SJN' => [],
     ],
 ];

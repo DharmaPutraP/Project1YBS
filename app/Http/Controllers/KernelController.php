@@ -17,6 +17,7 @@ use App\Models\KernelQwt;
 use App\Models\KernelDestoner;
 use App\Models\KernelRippleMill;
 use App\Models\KernelRecord;
+use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,19 +26,19 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class KernelController extends Controller
 {
+    use LogsActivity;
+
     public function index(Request $request)
     {
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
+        $officeFilter = $this->resolveOfficeFilter($request);
 
         $calculationsQuery = KernelCalculation::with('user')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->orderBy('created_at', 'desc');
 
-        $userOffice = $this->getUserOffice();
-        if ($userOffice) {
-            $calculationsQuery->where('office', $userOffice);
-        }
+        $this->applyOfficeFilter($calculationsQuery, $officeFilter);
 
         if ($request->filled('kode')) {
             $calculationsQuery->where('kode', $request->kode);
@@ -52,14 +53,14 @@ class KernelController extends Controller
         $statistics = [
             'total_records' => $totalCalculations,
             'records_today' => KernelCalculation::whereDate('created_at', today())
-                ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+                ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
                 ->count(),
             'calculations_count' => $totalCalculations,
         ];
 
         $kernelCalculations = $calculationsQuery->paginate(15, ['*'], 'calculations');
 
-        $kernelCalculations->appends($request->only(['start_date', 'end_date', 'kode']));
+        $kernelCalculations->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         $kodeOptions = KernelMasterData::getKodeDropdown();
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
@@ -70,7 +71,8 @@ class KernelController extends Controller
             'kodeOptions',
             'masterData',
             'startDate',
-            'endDate'
+            'endDate',
+            'officeFilter'
         ));
     }
 
@@ -153,7 +155,7 @@ class KernelController extends Controller
         $kernelPecahToSampel = $beratSampel > 0 ? round(($validated['kernel_pecah'] / $beratSampel) * 100, 6) : 0;
         $kernelLosses = ($ktsNutUtuh + $ktsNutPecah + $kernelUtuhToSampel + $kernelPecahToSampel) / 100;
 
-        KernelCalculation::create([
+        $kernelCalculation = KernelCalculation::create([
             'user_id' => Auth::id(),
             'office' => $userOffice,
             'rounded_time' => $this->getRoundedTime(),
@@ -174,6 +176,12 @@ class KernelController extends Controller
             'kernel_pecah_to_sampel' => $kernelPecahToSampel,
             'kernel_losses' => $kernelLosses,
         ]);
+
+        $this->logCreate(
+            $kernelCalculation,
+            "Input data kernel losses untuk kode {$kernelCalculation->kode}",
+            ['module' => 'kernel_losses', 'office' => $userOffice]
+        );
 
         $message = 'Data Kernel Losses berhasil disimpan.';
 
@@ -202,6 +210,8 @@ class KernelController extends Controller
     public function update(Request $request, KernelCalculation $kernelCalculation)
     {
         $this->ensurePpicRole();
+
+        $oldAttributes = $kernelCalculation->getOriginal();
 
         $validated = $request->validate([
             'kode' => ['required', 'string', Rule::in(array_keys($this->getKernelLossesKodeOptions()))],
@@ -244,6 +254,13 @@ class KernelController extends Controller
             'kernel_losses' => $kernelLosses,
         ]);
 
+        $this->logUpdate(
+            $kernelCalculation,
+            $oldAttributes,
+            "Update data kernel losses kode {$kernelCalculation->kode}",
+            ['module' => 'kernel_losses', 'office' => $kernelCalculation->office]
+        );
+
         return redirect()->route('kernel.index')->with('success', 'Data Kernel Losses berhasil diperbarui.');
     }
 
@@ -251,15 +268,13 @@ class KernelController extends Controller
     {
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
+        $officeFilter = $this->resolveOfficeFilter($request);
 
         $query = KernelDirtMoistCalculation::with('user')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->orderBy('created_at', 'desc');
 
-        $userOffice = $this->getUserOffice();
-        if ($userOffice) {
-            $query->where('office', $userOffice);
-        }
+        $this->applyOfficeFilter($query, $officeFilter);
 
         if ($request->filled('kode')) {
             $query->where('kode', $request->kode);
@@ -274,13 +289,13 @@ class KernelController extends Controller
         $statistics = [
             'total_records' => $totalRows,
             'records_today' => KernelDirtMoistCalculation::whereDate('created_at', today())
-                ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+                ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
                 ->count(),
             'calculations_count' => $totalRows,
         ];
 
         $dirtMoistCalculations = $query->paginate(15, ['*'], 'calculations');
-        $dirtMoistCalculations->appends($request->only(['start_date', 'end_date', 'kode']));
+        $dirtMoistCalculations->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         $kodeOptions = $this->getDirtMoistKodeOptions();
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
@@ -291,7 +306,8 @@ class KernelController extends Controller
             'kodeOptions',
             'masterData',
             'startDate',
-            'endDate'
+            'endDate',
+            'officeFilter'
         ));
     }
 
@@ -353,7 +369,7 @@ class KernelController extends Controller
         $moistLimitOperator = data_get($limitConfig, 'moist.operator');
         $moistLimitValue = data_get($limitConfig, 'moist.value');
 
-        KernelDirtMoistCalculation::create([
+        $dirtMoistCalculation = KernelDirtMoistCalculation::create([
             'user_id' => Auth::id(),
             'office' => $userOffice,
             'rounded_time' => $this->getRoundedTime(),
@@ -370,6 +386,12 @@ class KernelController extends Controller
             'moist_limit_operator' => $moistLimitOperator,
             'moist_limit_value' => $moistLimitValue,
         ]);
+
+        $this->logCreate(
+            $dirtMoistCalculation,
+            "Input data dirt & moist untuk kode {$dirtMoistCalculation->kode}",
+            ['module' => 'dirt_moist', 'office' => $userOffice]
+        );
 
         $message = 'Data dirt & moist berhasil disimpan.';
 
@@ -398,6 +420,8 @@ class KernelController extends Controller
     public function dirtMoistUpdate(Request $request, KernelDirtMoistCalculation $dirtMoistCalculation)
     {
         $this->ensurePpicRole();
+
+        $oldAttributes = $dirtMoistCalculation->getOriginal();
 
         $validated = $request->validate([
             'kode' => 'required|string',
@@ -429,12 +453,25 @@ class KernelController extends Controller
             'moist_limit_value' => data_get($limitConfig, 'moist.value'),
         ]);
 
+        $this->logUpdate(
+            $dirtMoistCalculation,
+            $oldAttributes,
+            "Update data dirt & moist kode {$dirtMoistCalculation->kode}",
+            ['module' => 'dirt_moist', 'office' => $dirtMoistCalculation->office]
+        );
+
         return redirect()->route('kernel.dirt-moist.index')->with('success', 'Data Dirt & Moist berhasil diperbarui.');
     }
 
     public function dirtMoistDestroy(KernelDirtMoistCalculation $dirtMoistCalculation)
     {
         $this->ensurePpicRole();
+
+        $this->logDelete(
+            $dirtMoistCalculation,
+            "Hapus data dirt & moist kode {$dirtMoistCalculation->kode}",
+            ['module' => 'dirt_moist', 'office' => $dirtMoistCalculation->office]
+        );
 
         $dirtMoistCalculation->delete();
 
@@ -445,15 +482,13 @@ class KernelController extends Controller
     {
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
+        $officeFilter = $this->resolveOfficeFilter($request);
 
         $query = KernelQwt::with('user')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->orderBy('created_at', 'desc');
 
-        $userOffice = $this->getUserOffice();
-        if ($userOffice) {
-            $query->where('office', $userOffice);
-        }
+        $this->applyOfficeFilter($query, $officeFilter);
 
         if ($request->filled('kode')) {
             $query->where('kode', $request->kode);
@@ -468,13 +503,13 @@ class KernelController extends Controller
         $statistics = [
             'total_records' => $totalRows,
             'records_today' => KernelQwt::whereDate('created_at', today())
-                ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+                ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
                 ->count(),
             'calculations_count' => $totalRows,
         ];
 
         $kernelQwtRows = $query->paginate(15, ['*'], 'calculations');
-        $kernelQwtRows->appends($request->only(['start_date', 'end_date', 'kode']));
+        $kernelQwtRows->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         $kodeOptions = $this->getQwtKodeOptions();
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
@@ -485,7 +520,8 @@ class KernelController extends Controller
             'kodeOptions',
             'masterData',
             'startDate',
-            'endDate'
+            'endDate',
+            'officeFilter'
         ));
     }
 
@@ -577,7 +613,7 @@ class KernelController extends Controller
         $limitMap = $this->getQwtLimitMap();
         $kode = $validated['kode'];
 
-        KernelQwt::create([
+        $kernelQwt = KernelQwt::create([
             'user_id' => Auth::id(),
             'office' => $userOffice,
             'rounded_time' => $this->getRoundedTime(),
@@ -606,6 +642,12 @@ class KernelController extends Controller
             'moist_limit_value' => data_get($limitMap, $kode . '.moist.value'),
         ]);
 
+        $this->logCreate(
+            $kernelQwt,
+            "Input data QWT Fibre Press untuk kode {$kernelQwt->kode}",
+            ['module' => 'qwt', 'office' => $userOffice]
+        );
+
         $message = 'Data QWT Fibre Press berhasil disimpan.';
 
         if ($request->wantsJson()) {
@@ -633,6 +675,8 @@ class KernelController extends Controller
     public function qwtUpdate(Request $request, KernelQwt $kernelQwt)
     {
         $this->ensurePpicRole();
+
+        $oldAttributes = $kernelQwt->getOriginal();
 
         $validated = $request->validate([
             'kode' => 'required|string',
@@ -701,12 +745,25 @@ class KernelController extends Controller
             'moist_limit_value' => data_get($limitMap, $kode . '.moist.value'),
         ]);
 
+        $this->logUpdate(
+            $kernelQwt,
+            $oldAttributes,
+            "Update data QWT Fibre Press kode {$kernelQwt->kode}",
+            ['module' => 'qwt', 'office' => $kernelQwt->office]
+        );
+
         return redirect()->route('kernel.qwt.index')->with('success', 'Data QWT Fibre Press berhasil diperbarui.');
     }
 
     public function qwtDestroy(KernelQwt $kernelQwt)
     {
         $this->ensurePpicRole();
+
+        $this->logDelete(
+            $kernelQwt,
+            "Hapus data QWT Fibre Press kode {$kernelQwt->kode}",
+            ['module' => 'qwt', 'office' => $kernelQwt->office]
+        );
 
         $kernelQwt->delete();
 
@@ -717,15 +774,13 @@ class KernelController extends Controller
     {
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
+        $officeFilter = $this->resolveOfficeFilter($request);
 
         $query = KernelRippleMill::with('user')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->orderBy('created_at', 'desc');
 
-        $userOffice = $this->getUserOffice();
-        if ($userOffice) {
-            $query->where('office', $userOffice);
-        }
+        $this->applyOfficeFilter($query, $officeFilter);
 
         if ($request->filled('kode')) {
             $query->where('kode', $request->kode);
@@ -740,13 +795,13 @@ class KernelController extends Controller
         $statistics = [
             'total_records' => $totalRows,
             'records_today' => KernelRippleMill::whereDate('created_at', today())
-                ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+                ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
                 ->count(),
             'calculations_count' => $totalRows,
         ];
 
         $rippleMillRows = $query->paginate(15, ['*'], 'calculations');
-        $rippleMillRows->appends($request->only(['start_date', 'end_date', 'kode']));
+        $rippleMillRows->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         $kodeOptions = $this->getRippleMillKodeOptions();
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
@@ -757,7 +812,8 @@ class KernelController extends Controller
             'kodeOptions',
             'masterData',
             'startDate',
-            'endDate'
+            'endDate',
+            'officeFilter'
         ));
     }
 
@@ -819,7 +875,7 @@ class KernelController extends Controller
         $limitMap = $this->getRippleMillLimitMap();
         $kode = $validated['kode'];
 
-        KernelRippleMill::create([
+        $kernelRippleMill = KernelRippleMill::create([
             'user_id' => Auth::id(),
             'office' => $userOffice,
             'rounded_time' => $this->getRoundedTime(),
@@ -836,6 +892,12 @@ class KernelController extends Controller
             'limit_operator' => data_get($limitMap, $kode . '.operator', 'gt'),
             'limit_value' => data_get($limitMap, $kode . '.value'),
         ]);
+
+        $this->logCreate(
+            $kernelRippleMill,
+            "Input data Ripple Mill untuk kode {$kernelRippleMill->kode}",
+            ['module' => 'ripple_mill', 'office' => $userOffice]
+        );
 
         $message = 'Data Ripple Mill berhasil disimpan.';
 
@@ -864,6 +926,8 @@ class KernelController extends Controller
     public function rippleMillUpdate(Request $request, KernelRippleMill $kernelRippleMill)
     {
         $this->ensurePpicRole();
+
+        $oldAttributes = $kernelRippleMill->getOriginal();
 
         $validated = $request->validate([
             'kode' => 'required|string',
@@ -899,12 +963,25 @@ class KernelController extends Controller
             'limit_value' => data_get($limitMap, $kode . '.value'),
         ]);
 
+        $this->logUpdate(
+            $kernelRippleMill,
+            $oldAttributes,
+            "Update data Ripple Mill kode {$kernelRippleMill->kode}",
+            ['module' => 'ripple_mill', 'office' => $kernelRippleMill->office]
+        );
+
         return redirect()->route('kernel.ripple-mill.index')->with('success', 'Data Ripple Mill berhasil diperbarui.');
     }
 
     public function rippleMillDestroy(KernelRippleMill $kernelRippleMill)
     {
         $this->ensurePpicRole();
+
+        $this->logDelete(
+            $kernelRippleMill,
+            "Hapus data Ripple Mill kode {$kernelRippleMill->kode}",
+            ['module' => 'ripple_mill', 'office' => $kernelRippleMill->office]
+        );
 
         $kernelRippleMill->delete();
 
@@ -915,15 +992,13 @@ class KernelController extends Controller
     {
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
+        $officeFilter = $this->resolveOfficeFilter($request);
 
         $query = KernelDestoner::with('user')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->orderBy('created_at', 'desc');
 
-        $userOffice = $this->getUserOffice();
-        if ($userOffice) {
-            $query->where('office', $userOffice);
-        }
+        $this->applyOfficeFilter($query, $officeFilter);
 
         if ($request->filled('kode')) {
             $query->where('kode', $request->kode);
@@ -938,13 +1013,13 @@ class KernelController extends Controller
         $statistics = [
             'total_records' => $totalRows,
             'records_today' => KernelDestoner::whereDate('created_at', today())
-                ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+                ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
                 ->count(),
             'calculations_count' => $totalRows,
         ];
 
         $destonerRows = $query->paginate(15, ['*'], 'calculations');
-        $destonerRows->appends($request->only(['start_date', 'end_date', 'kode']));
+        $destonerRows->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         $kodeOptions = $this->getDestonerKodeOptions();
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
@@ -955,7 +1030,8 @@ class KernelController extends Controller
             'kodeOptions',
             'masterData',
             'startDate',
-            'endDate'
+            'endDate',
+            'officeFilter'
         ));
     }
 
@@ -1029,7 +1105,7 @@ class KernelController extends Controller
         $limitMap = $this->getDestonerLimitMap();
         $kode = $validated['kode'];
 
-        KernelDestoner::create([
+        $kernelDestoner = KernelDestoner::create([
             'user_id' => Auth::id(),
             'office' => $userOffice,
             'rounded_time' => $this->getRoundedTime(),
@@ -1051,6 +1127,12 @@ class KernelController extends Controller
             'limit_operator' => data_get($limitMap, $kode . '.operator', 'gt'),
             'limit_value' => data_get($limitMap, $kode . '.value'),
         ]);
+
+        $this->logCreate(
+            $kernelDestoner,
+            "Input data Destoner untuk kode {$kernelDestoner->kode}",
+            ['module' => 'destoner', 'office' => $userOffice]
+        );
 
         $message = 'Data Destoner berhasil disimpan.';
 
@@ -1079,6 +1161,8 @@ class KernelController extends Controller
     public function destonerUpdate(Request $request, KernelDestoner $kernelDestoner)
     {
         $this->ensurePpicRole();
+
+        $oldAttributes = $kernelDestoner->getOriginal();
 
         $validated = $request->validate([
             'kode' => 'required|string',
@@ -1128,12 +1212,25 @@ class KernelController extends Controller
             'limit_value' => data_get($limitMap, $kode . '.value'),
         ]);
 
+        $this->logUpdate(
+            $kernelDestoner,
+            $oldAttributes,
+            "Update data Destoner kode {$kernelDestoner->kode}",
+            ['module' => 'destoner', 'office' => $kernelDestoner->office]
+        );
+
         return redirect()->route('kernel.destoner.index')->with('success', 'Data Destoner berhasil diperbarui.');
     }
 
     public function destonerDestroy(KernelDestoner $kernelDestoner)
     {
         $this->ensurePpicRole();
+
+        $this->logDelete(
+            $kernelDestoner,
+            "Hapus data Destoner kode {$kernelDestoner->kode}",
+            ['module' => 'destoner', 'office' => $kernelDestoner->office]
+        );
 
         $kernelDestoner->delete();
 
@@ -1143,6 +1240,13 @@ class KernelController extends Controller
     public function destroyRecord(KernelRecord $kernelRecord)
     {
         $this->ensurePpicRole();
+
+        $this->logDelete(
+            $kernelRecord,
+            "Hapus data jenis & sampel kernel kode {$kernelRecord->kode}",
+            ['module' => 'kernel_record', 'office' => $kernelRecord->office]
+        );
+
         $kernelRecord->delete();
         return back()->with('success', 'Data jenis & sampel berhasil dihapus.');
     }
@@ -1150,6 +1254,13 @@ class KernelController extends Controller
     public function destroyCalculation(KernelCalculation $kernelCalculation)
     {
         $this->ensurePpicRole();
+
+        $this->logDelete(
+            $kernelCalculation,
+            "Hapus data perhitungan kernel losses kode {$kernelCalculation->kode}",
+            ['module' => 'kernel_losses', 'office' => $kernelCalculation->office]
+        );
+
         $kernelCalculation->delete();
         return back()->with('success', 'Data perhitungan lab berhasil dihapus.');
     }
@@ -1158,12 +1269,13 @@ class KernelController extends Controller
     {
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
+        $officeFilter = $this->resolveOfficeFilter($request);
 
-        [$allKodesData, $dataByDate] = $this->buildRekapData($startDate, $endDate);
+        [$allKodesData, $dataByDate] = $this->buildRekapData($startDate, $endDate, $officeFilter);
         $columnGroups = $this->getKernelColumnGroups();
         $masterMap = collect($allKodesData)->keyBy('kode');
 
-        return view('kernel.rekap', compact('allKodesData', 'dataByDate', 'startDate', 'endDate', 'columnGroups', 'masterMap'));
+        return view('kernel.rekap', compact('allKodesData', 'dataByDate', 'startDate', 'endDate', 'columnGroups', 'masterMap', 'officeFilter'));
     }
 
     public function exportRekap(Request $request)
@@ -1174,9 +1286,16 @@ class KernelController extends Controller
 
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
+        $officeFilter = $this->resolveOfficeFilter($request);
 
-        [$allKodesData, $dataByDate] = $this->buildRekapData($startDate, $endDate);
+        [$allKodesData, $dataByDate] = $this->buildRekapData($startDate, $endDate, $officeFilter);
         $columnGroups = $this->getKernelColumnGroups();
+
+        $this->logExport('Rekap Kernel Losses', [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'office' => $officeFilter,
+        ]);
 
         $filename = 'Rekap_Kernel_Losses_'
             . \Carbon\Carbon::parse($startDate)->format('Ymd') . '_'
@@ -1188,7 +1307,7 @@ class KernelController extends Controller
         );
     }
 
-    private function buildRekapData(string $startDate, string $endDate): array
+    private function buildRekapData(string $startDate, string $endDate, string $officeFilter): array
     {
         $allKodesData = KernelMasterData::where('is_active', true)
             ->orderBy('kode')
@@ -1206,7 +1325,7 @@ class KernelController extends Controller
             ->get()
             ->keyBy('kode');
 
-        $calculations = $this->getUnifiedKernelReportRecords($startDate, $endDate)
+        $calculations = $this->getUnifiedKernelReportRecords($startDate, $endDate, $officeFilter)
             ->sortBy('created_at')
             ->values();
 
@@ -1337,8 +1456,9 @@ class KernelController extends Controller
     {
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
+        $officeFilter = $this->resolveOfficeFilter($request);
 
-        [$reportData, $allKodesData, $operators, $operatorActivities, $reportDates, $dailyPerformance, $allIndividualRecords, $operatorDailyPerformance] = $this->buildPerformanceData($startDate, $endDate);
+        [$reportData, $allKodesData, $operators, $operatorActivities, $reportDates, $dailyPerformance, $allIndividualRecords, $operatorDailyPerformance] = $this->buildPerformanceData($startDate, $endDate, $officeFilter);
 
         // Paginate individual records (25 per page)
         $perPage = 25;
@@ -1357,6 +1477,7 @@ class KernelController extends Controller
             'allKodesData',
             'startDate',
             'endDate',
+            'officeFilter',
             'operators',
             'operatorActivities',
             'reportDates',
@@ -1374,8 +1495,15 @@ class KernelController extends Controller
 
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
+        $officeFilter = $this->resolveOfficeFilter($request);
 
-        [$reportData, $allKodesData, $operators, $operatorActivities, $reportDates, $dailyPerformance] = $this->buildPerformanceData($startDate, $endDate);
+        [$reportData, $allKodesData, $operators, $operatorActivities, $reportDates, $dailyPerformance] = $this->buildPerformanceData($startDate, $endDate, $officeFilter);
+
+        $this->logExport('Performance Kernel Losses', [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'office' => $officeFilter,
+        ]);
 
         $filename = 'Performance_Kernel_'
             . Carbon::parse($startDate)->format('Ymd') . '_'
@@ -1387,7 +1515,7 @@ class KernelController extends Controller
         );
     }
 
-    private function buildPerformanceData(string $startDate, string $endDate): array
+    private function buildPerformanceData(string $startDate, string $endDate, string $officeFilter): array
     {
         $bobotConfigs = KernelBobotConfig::all()->keyBy('jenis');
 
@@ -1407,7 +1535,7 @@ class KernelController extends Controller
         $masterDataMap = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
 
         // Get unified records from all kernel modules grouped by date+kode
-        $calculations = $this->getUnifiedKernelReportRecords($startDate, $endDate)
+        $calculations = $this->getUnifiedKernelReportRecords($startDate, $endDate, $officeFilter)
             ->sortBy('created_at')
             ->values();
 
@@ -1709,6 +1837,26 @@ class KernelController extends Controller
         return Auth::user()->office;
     }
 
+    private function resolveOfficeFilter(?Request $request = null): string
+    {
+        $userOffice = $this->getUserOffice();
+
+        if ($userOffice) {
+            return $userOffice;
+        }
+
+        return $request?->input('office', 'YBS') ?? 'YBS';
+    }
+
+    private function applyOfficeFilter($query, string $officeFilter)
+    {
+        if ($officeFilter !== 'all') {
+            $query->where('office', $officeFilter);
+        }
+
+        return $query;
+    }
+
     private function getRoundedTime(): Carbon
     {
         $now = now();
@@ -1762,45 +1910,44 @@ class KernelController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
+        $officeFilter = $this->resolveOfficeFilter($request);
 
         $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
-
-        $userOffice = $this->getUserOffice();
 
         $kernelQuery = KernelCalculation::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, function ($query) use ($kode) {
                 $query->where('kode', $kode);
             })
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice));
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter));
 
         $dirtMoistQuery = KernelDirtMoistCalculation::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, function ($query) use ($kode) {
                 $query->where('kode', $kode);
             })
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice));
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter));
 
         $qwtQuery = KernelQwt::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, function ($query) use ($kode) {
                 $query->where('kode', $kode);
             })
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice));
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter));
 
         $rippleMillQuery = KernelRippleMill::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, function ($query) use ($kode) {
                 $query->where('kode', $kode);
             })
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice));
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter));
 
         $destonerQuery = KernelDestoner::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, function ($query) use ($kode) {
                 $query->where('kode', $kode);
             })
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice));
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter));
 
         $totalRecords = (clone $kernelQuery)->count();
         $avgLosses = (clone $kernelQuery)->avg('kernel_losses');
@@ -1851,6 +1998,7 @@ class KernelController extends Controller
             'kodeOptions',
             'startDate',
             'endDate',
+            'officeFilter',
             'kode',
             'totalRecords',
             'avgLosses',
@@ -1867,18 +2015,21 @@ class KernelController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
         $kode = $request->input('kode');
+        $officeFilter = $this->resolveOfficeFilter($request);
 
-        $userOffice = $this->getUserOffice();
-
-        $data = $this->getUnifiedKernelReportRecords($startDate, $endDate)
+        $data = $this->getUnifiedKernelReportRecords($startDate, $endDate, $officeFilter)
             ->when($kode, function ($collection) use ($kode) {
                 return $collection->where('kode', $kode);
             })
-            ->when($userOffice, function ($collection) use ($userOffice) {
-                return $collection->where('office', $userOffice);
-            })
             ->sortBy('created_at')
             ->values();
+
+        $this->logExport('Laporan Kernel Losses', [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'kode' => $kode,
+            'office' => $officeFilter,
+        ]);
 
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
 
@@ -1890,15 +2041,15 @@ class KernelController extends Controller
         );
     }
 
-    private function getUnifiedKernelReportRecords(string $startDate, string $endDate)
+    private function getUnifiedKernelReportRecords(string $startDate, string $endDate, ?string $officeFilter = null)
     {
         $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
 
-        $userOffice = $this->getUserOffice();
+        $officeFilter = $officeFilter ?? $this->resolveOfficeFilter();
 
         $kernelRows = KernelCalculation::with('user')
             ->whereBetween('created_at', $range)
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->get()
             ->map(function ($row) {
                 $row->source_module = 'Kernel Losses';
@@ -1907,7 +2058,7 @@ class KernelController extends Controller
 
         $dirtMoistRows = KernelDirtMoistCalculation::with('user')
             ->whereBetween('created_at', $range)
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->get()
             ->map(function ($row) {
                 $isOutlet = str_starts_with((string) $row->kode, 'OUT');
@@ -1941,7 +2092,7 @@ class KernelController extends Controller
 
         $qwtRows = KernelQwt::with('user')
             ->whereBetween('created_at', $range)
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->get()
             ->map(function ($row) {
                 $metricPercent = (float) ($row->bn_tn ?? 0);
@@ -1972,7 +2123,7 @@ class KernelController extends Controller
 
         $rippleRows = KernelRippleMill::with('user')
             ->whereBetween('created_at', $range)
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->get()
             ->map(function ($row) {
                 $metricPercent = (float) ($row->efficiency ?? 0);
@@ -2003,7 +2154,7 @@ class KernelController extends Controller
 
         $destonerRows = KernelDestoner::with('user')
             ->whereBetween('created_at', $range)
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->get()
             ->map(function ($row) {
                 $metricPercent = (float) ($row->total_losses_kernel ?? 0);
@@ -2050,24 +2201,13 @@ class KernelController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
+        $officeFilter = $this->resolveOfficeFilter($request);
         $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
-
-        $userOffice = $this->getUserOffice();
-
-        $userOffice = $this->getUserOffice();
-
-        $userOffice = $this->getUserOffice();
-
-        $userOffice = $this->getUserOffice();
-
-        $userOffice = $this->getUserOffice();
-
-        $userOffice = $this->getUserOffice();
 
         $query = KernelDirtMoistCalculation::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->orderBy('created_at');
 
         $totalRecords = (clone $query)->count();
@@ -2077,11 +2217,11 @@ class KernelController extends Controller
 
         $avgDirty = KernelDirtMoistCalculation::whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->avg('dirty_to_sampel');
         $avgMoist = KernelDirtMoistCalculation::whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->avg('moist_percent');
 
         return view('kernel.laporan-dirt-moist', compact(
@@ -2090,6 +2230,7 @@ class KernelController extends Controller
             'kodeOptions',
             'startDate',
             'endDate',
+            'officeFilter',
             'kode',
             'totalRecords',
             'avgDirty',
@@ -2105,16 +2246,22 @@ class KernelController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
+        $officeFilter = $this->resolveOfficeFilter($request);
         $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
-
-        $userOffice = $this->getUserOffice();
 
         $data = KernelDirtMoistCalculation::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->orderBy('created_at')
             ->get();
+
+        $this->logExport('Laporan Dirt & Moist', [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'kode' => $kode,
+            'office' => $officeFilter,
+        ]);
 
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
         $filename = 'laporan-dirt-moist-' . $startDate . '-sd-' . $endDate . '.xlsx';
@@ -2133,14 +2280,13 @@ class KernelController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
+        $officeFilter = $this->resolveOfficeFilter($request);
         $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
-
-        $userOffice = $this->getUserOffice();
 
         $query = KernelQwt::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->orderBy('created_at');
 
         $totalRecords = (clone $query)->count();
@@ -2150,11 +2296,11 @@ class KernelController extends Controller
 
         $avgBnTn = KernelQwt::whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->avg('bn_tn');
         $avgMoist = KernelQwt::whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->avg('moisture');
 
         return view('kernel.laporan-qwt', compact(
@@ -2163,6 +2309,7 @@ class KernelController extends Controller
             'kodeOptions',
             'startDate',
             'endDate',
+            'officeFilter',
             'kode',
             'totalRecords',
             'avgBnTn',
@@ -2178,16 +2325,22 @@ class KernelController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
+        $officeFilter = $this->resolveOfficeFilter($request);
         $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
-
-        $userOffice = $this->getUserOffice();
 
         $data = KernelQwt::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->orderBy('created_at')
             ->get();
+
+        $this->logExport('Laporan QWT Fibre Press', [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'kode' => $kode,
+            'office' => $officeFilter,
+        ]);
 
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
         $filename = 'laporan-qwt-fibre-press-' . $startDate . '-sd-' . $endDate . '.xlsx';
@@ -2206,14 +2359,13 @@ class KernelController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
+        $officeFilter = $this->resolveOfficeFilter($request);
         $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
-
-        $userOffice = $this->getUserOffice();
 
         $query = KernelRippleMill::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->orderBy('created_at');
 
         $totalRecords = (clone $query)->count();
@@ -2223,7 +2375,7 @@ class KernelController extends Controller
 
         $avgEfficiency = KernelRippleMill::whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->avg('efficiency');
 
         return view('kernel.laporan-ripple-mill', compact(
@@ -2232,6 +2384,7 @@ class KernelController extends Controller
             'kodeOptions',
             'startDate',
             'endDate',
+            'officeFilter',
             'kode',
             'totalRecords',
             'avgEfficiency'
@@ -2246,16 +2399,22 @@ class KernelController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
+        $officeFilter = $this->resolveOfficeFilter($request);
         $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
-
-        $userOffice = $this->getUserOffice();
 
         $data = KernelRippleMill::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->orderBy('created_at')
             ->get();
+
+        $this->logExport('Laporan Ripple Mill', [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'kode' => $kode,
+            'office' => $officeFilter,
+        ]);
 
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
         $filename = 'laporan-ripple-mill-' . $startDate . '-sd-' . $endDate . '.xlsx';
@@ -2274,14 +2433,13 @@ class KernelController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
+        $officeFilter = $this->resolveOfficeFilter($request);
         $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
-
-        $userOffice = $this->getUserOffice();
 
         $query = KernelDestoner::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->orderBy('created_at');
 
         $totalRecords = (clone $query)->count();
@@ -2291,7 +2449,7 @@ class KernelController extends Controller
 
         $avgLossKernelTbs = KernelDestoner::whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->avg('loss_kernel_tbs');
 
         return view('kernel.laporan-destoner', compact(
@@ -2300,6 +2458,7 @@ class KernelController extends Controller
             'kodeOptions',
             'startDate',
             'endDate',
+            'officeFilter',
             'kode',
             'totalRecords',
             'avgLossKernelTbs'
@@ -2314,16 +2473,22 @@ class KernelController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
+        $officeFilter = $this->resolveOfficeFilter($request);
         $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
-
-        $userOffice = $this->getUserOffice();
 
         $data = KernelDestoner::with('user')
             ->whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
-            ->when($userOffice, fn($q) => $q->where('office', $userOffice))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->orderBy('created_at')
             ->get();
+
+        $this->logExport('Laporan Destoner', [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'kode' => $kode,
+            'office' => $officeFilter,
+        ]);
 
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
         $filename = 'laporan-destoner-' . $startDate . '-sd-' . $endDate . '.xlsx';

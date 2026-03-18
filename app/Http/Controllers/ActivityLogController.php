@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ActivityLogController extends Controller
 {
@@ -15,9 +16,18 @@ class ActivityLogController extends Controller
     {
         $this->authorize('view user activity log');
 
+        $userOffice = Auth::user()->office;
+        $officeFilter = $userOffice ?: $request->input('office', 'YBS');
+
         $query = ActivityLog::with('user')
             ->whereNotIn('action', ['login', 'logout'])
             ->orderBy('created_at', 'desc');
+
+        if ($officeFilter !== 'all') {
+            $query->whereHas('user', function ($q) use ($officeFilter) {
+                $q->where('office', $officeFilter);
+            });
+        }
 
         // Filter by user
         if ($request->filled('user_id') && $request->user_id !== 'all') {
@@ -52,6 +62,9 @@ class ActivityLogController extends Controller
 
         // Get filter options
         $users = User::whereNull('deleted_at')
+            ->when($officeFilter !== 'all', function ($q) use ($officeFilter) {
+                $q->where('office', $officeFilter);
+            })
             ->orderBy('name')
             ->get(['id', 'name']);
 
@@ -71,7 +84,8 @@ class ActivityLogController extends Controller
             'logs',
             'users',
             'actions',
-            'modelTypes'
+            'modelTypes',
+            'officeFilter'
         ));
     }
 

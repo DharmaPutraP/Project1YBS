@@ -80,7 +80,7 @@ class KernelController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk input data kernel losses.');
         }
 
-        $kodeOptions = KernelMasterData::getKodeDropdown();
+        $kodeOptions = $this->getKernelLossesKodeOptions();
         $jenisOptions = KernelRecord::getJenisOptions();
 
         $kernelLimitMap = KernelMasterData::where('is_active', true)
@@ -117,7 +117,7 @@ class KernelController extends Controller
         }
 
         $validated = $request->validate([
-            'kode' => 'required|string',
+            'kode' => ['required', 'string', Rule::in(array_keys($this->getKernelLossesKodeOptions()))],
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($userOffice, true, 'kernel'),
             'sampel_boy' => 'required|string|max:255',
@@ -131,6 +131,7 @@ class KernelController extends Controller
             'kernel_pecah' => 'required|numeric|min:0',
         ], [
             'kode.required' => 'Kode wajib dipilih.',
+            'kode.in' => 'Kode tidak valid untuk input Kernel Losses.',
             'jenis.required' => 'Jenis wajib dipilih.',
             'operator.required' => 'Operator wajib diisi.',
             'operator.in' => 'Operator tidak sesuai dengan daftar office.',
@@ -185,6 +186,65 @@ class KernelController extends Controller
         }
 
         return redirect()->route('kernel.index')->with('success', $message);
+    }
+
+    public function edit(KernelCalculation $kernelCalculation)
+    {
+        $this->ensurePpicRole();
+
+        $kodeOptions = $this->getKernelLossesKodeOptions();
+        $jenisOptions = KernelRecord::getJenisOptions();
+        $operatorOptions = $this->getOperatorOptionsByOffice($kernelCalculation->office, 'kernel');
+
+        return view('kernel.edit', compact('kernelCalculation', 'kodeOptions', 'jenisOptions', 'operatorOptions'));
+    }
+
+    public function update(Request $request, KernelCalculation $kernelCalculation)
+    {
+        $this->ensurePpicRole();
+
+        $validated = $request->validate([
+            'kode' => ['required', 'string', Rule::in(array_keys($this->getKernelLossesKodeOptions()))],
+            'jenis' => 'required|string',
+            'operator' => $this->getOperatorValidationRules($kernelCalculation->office, true, 'kernel'),
+            'sampel_boy' => 'required|string|max:255',
+            'berat_sampel' => 'required|numeric|min:0',
+            'nut_utuh_nut' => 'required|numeric|min:0',
+            'nut_utuh_kernel' => 'required|numeric|min:0',
+            'nut_pecah_nut' => 'required|numeric|min:0',
+            'nut_pecah_kernel' => 'required|numeric|min:0',
+            'kernel_utuh' => 'required|numeric|min:0',
+            'kernel_pecah' => 'required|numeric|min:0',
+        ]);
+
+        $beratSampel = $validated['berat_sampel'];
+        $ktsNutUtuh = $beratSampel > 0 ? round(($validated['nut_utuh_kernel'] / $beratSampel) * 100, 6) : 0;
+        $ktsNutPecah = $beratSampel > 0 ? round(($validated['nut_pecah_kernel'] / $beratSampel) * 100, 6) : 0;
+        $kernelUtuhToSampel = $beratSampel > 0 ? round(($validated['kernel_utuh'] / $beratSampel) * 100, 6) : 0;
+        $kernelPecahToSampel = $beratSampel > 0 ? round(($validated['kernel_pecah'] / $beratSampel) * 100, 6) : 0;
+        $kernelLosses = ($ktsNutUtuh + $ktsNutPecah + $kernelUtuhToSampel + $kernelPecahToSampel) / 100;
+
+        $kernelCalculation->update([
+            'user_id' => Auth::id(),
+            'kode' => $validated['kode'],
+            'jenis' => $validated['jenis'],
+            'operator' => $validated['operator'],
+            'sampel_boy' => $validated['sampel_boy'],
+            'berat_sampel' => $beratSampel,
+            'nut_utuh_nut' => $validated['nut_utuh_nut'],
+            'nut_utuh_kernel' => $validated['nut_utuh_kernel'],
+            'nut_pecah_nut' => $validated['nut_pecah_nut'],
+            'nut_pecah_kernel' => $validated['nut_pecah_kernel'],
+            'kernel_utuh' => $validated['kernel_utuh'],
+            'kernel_pecah' => $validated['kernel_pecah'],
+            'kernel_to_sampel_nut_utuh' => $ktsNutUtuh,
+            'kernel_to_sampel_nut_pecah' => $ktsNutPecah,
+            'kernel_utuh_to_sampel' => $kernelUtuhToSampel,
+            'kernel_pecah_to_sampel' => $kernelPecahToSampel,
+            'kernel_losses' => $kernelLosses,
+        ]);
+
+        return redirect()->route('kernel.index')->with('success', 'Data Kernel Losses berhasil diperbarui.');
     }
 
     public function dirtMoistIndex(Request $request)
@@ -322,6 +382,63 @@ class KernelController extends Controller
         }
 
         return redirect()->route('kernel.dirt-moist.index')->with('success', $message);
+    }
+
+    public function dirtMoistEdit(KernelDirtMoistCalculation $dirtMoistCalculation)
+    {
+        $this->ensurePpicRole();
+
+        $kodeOptions = $this->getDirtMoistKodeOptions();
+        $jenisOptions = KernelRecord::getJenisOptions();
+        $operatorOptions = $this->getOperatorOptionsByOffice($dirtMoistCalculation->office, 'dirt_moist');
+
+        return view('kernel.dirt-moist.edit', compact('dirtMoistCalculation', 'kodeOptions', 'jenisOptions', 'operatorOptions'));
+    }
+
+    public function dirtMoistUpdate(Request $request, KernelDirtMoistCalculation $dirtMoistCalculation)
+    {
+        $this->ensurePpicRole();
+
+        $validated = $request->validate([
+            'kode' => 'required|string',
+            'jenis' => 'required|string',
+            'operator' => $this->getOperatorValidationRules($dirtMoistCalculation->office, true, 'dirt_moist'),
+            'sampel_boy' => 'nullable|string|max:255',
+            'berat_sampel' => 'required|numeric|gt:0',
+            'berat_dirty' => 'required|numeric|min:0',
+            'moist_percent' => 'required|numeric|min:0',
+        ]);
+
+        $dirtyToSampel = round(($validated['berat_dirty'] / $validated['berat_sampel']) * 100, 6);
+        $limitMap = $this->getDirtMoistLimitMap();
+        $limitConfig = $limitMap[$validated['kode']] ?? ['dirty' => null, 'moist' => null];
+
+        $dirtMoistCalculation->update([
+            'user_id' => Auth::id(),
+            'kode' => $validated['kode'],
+            'jenis' => $validated['jenis'],
+            'operator' => $validated['operator'],
+            'sampel_boy' => $validated['sampel_boy'] ?? $dirtMoistCalculation->sampel_boy,
+            'berat_sampel' => $validated['berat_sampel'],
+            'berat_dirty' => $validated['berat_dirty'],
+            'dirty_to_sampel' => $dirtyToSampel,
+            'moist_percent' => $validated['moist_percent'],
+            'dirty_limit_operator' => data_get($limitConfig, 'dirty.operator'),
+            'dirty_limit_value' => data_get($limitConfig, 'dirty.value'),
+            'moist_limit_operator' => data_get($limitConfig, 'moist.operator'),
+            'moist_limit_value' => data_get($limitConfig, 'moist.value'),
+        ]);
+
+        return redirect()->route('kernel.dirt-moist.index')->with('success', 'Data Dirt & Moist berhasil diperbarui.');
+    }
+
+    public function dirtMoistDestroy(KernelDirtMoistCalculation $dirtMoistCalculation)
+    {
+        $this->ensurePpicRole();
+
+        $dirtMoistCalculation->delete();
+
+        return back()->with('success', 'Data Dirt & Moist berhasil dihapus.');
     }
 
     public function qwtIndex(Request $request)
@@ -502,6 +619,100 @@ class KernelController extends Controller
         return redirect()->route('kernel.qwt.index')->with('success', $message);
     }
 
+    public function qwtEdit(KernelQwt $kernelQwt)
+    {
+        $this->ensurePpicRole();
+
+        $kodeOptions = $this->getQwtKodeOptions();
+        $jenisOptions = KernelRecord::getJenisOptions();
+        $operatorOptions = $this->getOperatorOptionsByOffice($kernelQwt->office, 'qwt');
+
+        return view('kernel.qwt.edit', compact('kernelQwt', 'kodeOptions', 'jenisOptions', 'operatorOptions'));
+    }
+
+    public function qwtUpdate(Request $request, KernelQwt $kernelQwt)
+    {
+        $this->ensurePpicRole();
+
+        $validated = $request->validate([
+            'kode' => 'required|string',
+            'jenis' => 'required|string',
+            'operator' => $this->getOperatorValidationRules($kernelQwt->office, true, 'qwt'),
+            'sampel_boy' => 'required|string|max:255',
+            'sampel_setelah_kuarter' => 'required|numeric|gt:0',
+            'berat_nut_utuh' => 'required|numeric|min:0',
+            'berat_nut_pecah' => 'required|numeric|min:0',
+            'berat_kernel_utuh' => 'required|numeric|min:0',
+            'berat_kernel_pecah' => 'required|numeric|min:0',
+            'berat_cangkang' => 'required|numeric|min:0',
+            'berat_batu' => 'required|numeric|min:0',
+            'moisture' => 'required|numeric|min:0',
+            'ampere_screw' => 'required|numeric|min:0',
+            'tekanan_hydraulic' => 'required|numeric|min:0',
+            'kecepatan_screw' => 'required|numeric|min:0',
+        ]);
+
+        $totalBeratNut = round(
+            $validated['berat_nut_utuh']
+            + $validated['berat_nut_pecah']
+            + $validated['berat_kernel_utuh']
+            + $validated['berat_kernel_pecah']
+            + $validated['berat_cangkang'],
+            6
+        );
+
+        $beratFiber = round($validated['sampel_setelah_kuarter'] - $totalBeratNut, 6);
+        $beratBrokenNut = round(
+            $validated['berat_nut_pecah']
+            + $validated['berat_kernel_utuh']
+            + $validated['berat_kernel_pecah']
+            + $validated['berat_cangkang'],
+            6
+        );
+        $bnTn = $totalBeratNut > 0 ? round(($beratBrokenNut / $totalBeratNut) * 100, 6) : 0;
+
+        $limitMap = $this->getQwtLimitMap();
+        $kode = $validated['kode'];
+
+        $kernelQwt->update([
+            'user_id' => Auth::id(),
+            'kode' => $kode,
+            'jenis' => $validated['jenis'],
+            'operator' => $validated['operator'],
+            'sampel_boy' => $validated['sampel_boy'],
+            'sampel_setelah_kuarter' => $validated['sampel_setelah_kuarter'],
+            'berat_nut_utuh' => $validated['berat_nut_utuh'],
+            'berat_nut_pecah' => $validated['berat_nut_pecah'],
+            'berat_kernel_utuh' => $validated['berat_kernel_utuh'],
+            'berat_kernel_pecah' => $validated['berat_kernel_pecah'],
+            'berat_cangkang' => $validated['berat_cangkang'],
+            'berat_batu' => $validated['berat_batu'],
+            'berat_fiber' => $beratFiber,
+            'berat_broken_nut' => $beratBrokenNut,
+            'total_berat_nut' => $totalBeratNut,
+            'bn_tn' => $bnTn,
+            'moisture' => $validated['moisture'],
+            'ampere_screw' => $validated['ampere_screw'],
+            'tekanan_hydraulic' => $validated['tekanan_hydraulic'],
+            'kecepatan_screw' => $validated['kecepatan_screw'],
+            'bn_tn_limit_operator' => data_get($limitMap, $kode . '.bn_tn.operator', 'le'),
+            'bn_tn_limit_value' => data_get($limitMap, $kode . '.bn_tn.value'),
+            'moist_limit_operator' => data_get($limitMap, $kode . '.moist.operator', 'le'),
+            'moist_limit_value' => data_get($limitMap, $kode . '.moist.value'),
+        ]);
+
+        return redirect()->route('kernel.qwt.index')->with('success', 'Data QWT Fibre Press berhasil diperbarui.');
+    }
+
+    public function qwtDestroy(KernelQwt $kernelQwt)
+    {
+        $this->ensurePpicRole();
+
+        $kernelQwt->delete();
+
+        return back()->with('success', 'Data QWT Fibre Press berhasil dihapus.');
+    }
+
     public function rippleMillIndex(Request $request)
     {
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
@@ -637,6 +848,67 @@ class KernelController extends Controller
         }
 
         return redirect()->route('kernel.ripple-mill.index')->with('success', $message);
+    }
+
+    public function rippleMillEdit(KernelRippleMill $kernelRippleMill)
+    {
+        $this->ensurePpicRole();
+
+        $kodeOptions = $this->getRippleMillKodeOptions();
+        $jenisOptions = KernelRecord::getJenisOptions();
+        $operatorOptions = $this->getOperatorOptionsByOffice($kernelRippleMill->office, 'ripple_mill');
+
+        return view('kernel.ripple-mill.edit', compact('kernelRippleMill', 'kodeOptions', 'jenisOptions', 'operatorOptions'));
+    }
+
+    public function rippleMillUpdate(Request $request, KernelRippleMill $kernelRippleMill)
+    {
+        $this->ensurePpicRole();
+
+        $validated = $request->validate([
+            'kode' => 'required|string',
+            'jenis' => 'required|string',
+            'operator' => $this->getOperatorValidationRules($kernelRippleMill->office, true, 'ripple_mill'),
+            'sampel_boy' => 'required|string|max:255',
+            'berat_sampel' => 'required|numeric|gt:0',
+            'berat_nut_utuh' => 'required|numeric|min:0',
+            'berat_nut_pecah' => 'required|numeric|min:0',
+        ]);
+
+        $beratSampel = (float) $validated['berat_sampel'];
+        $sampleNutUtuh = round(((float) $validated['berat_nut_utuh'] / $beratSampel) * 100, 6);
+        $sampleNutPecah = round(((float) $validated['berat_nut_pecah'] / $beratSampel) * 100, 6);
+        $efficiency = round(100 - $sampleNutPecah - $sampleNutUtuh, 6);
+
+        $limitMap = $this->getRippleMillLimitMap();
+        $kode = $validated['kode'];
+
+        $kernelRippleMill->update([
+            'user_id' => Auth::id(),
+            'kode' => $kode,
+            'jenis' => $validated['jenis'],
+            'operator' => $validated['operator'],
+            'sampel_boy' => $validated['sampel_boy'],
+            'berat_sampel' => $beratSampel,
+            'berat_nut_utuh' => $validated['berat_nut_utuh'],
+            'berat_nut_pecah' => $validated['berat_nut_pecah'],
+            'sample_nut_utuh' => $sampleNutUtuh,
+            'sample_nut_pecah' => $sampleNutPecah,
+            'efficiency' => $efficiency,
+            'limit_operator' => data_get($limitMap, $kode . '.operator', 'gt'),
+            'limit_value' => data_get($limitMap, $kode . '.value'),
+        ]);
+
+        return redirect()->route('kernel.ripple-mill.index')->with('success', 'Data Ripple Mill berhasil diperbarui.');
+    }
+
+    public function rippleMillDestroy(KernelRippleMill $kernelRippleMill)
+    {
+        $this->ensurePpicRole();
+
+        $kernelRippleMill->delete();
+
+        return back()->with('success', 'Data Ripple Mill berhasil dihapus.');
     }
 
     public function destonerIndex(Request $request)
@@ -793,20 +1065,91 @@ class KernelController extends Controller
         return redirect()->route('kernel.destoner.index')->with('success', $message);
     }
 
+    public function destonerEdit(KernelDestoner $kernelDestoner)
+    {
+        $this->ensurePpicRole();
+
+        $kodeOptions = $this->getDestonerKodeOptions();
+        $jenisOptions = KernelRecord::getJenisOptions();
+        $operatorOptions = $this->getOperatorOptionsByOffice($kernelDestoner->office, 'destoner');
+
+        return view('kernel.destoner.edit', compact('kernelDestoner', 'kodeOptions', 'jenisOptions', 'operatorOptions'));
+    }
+
+    public function destonerUpdate(Request $request, KernelDestoner $kernelDestoner)
+    {
+        $this->ensurePpicRole();
+
+        $validated = $request->validate([
+            'kode' => 'required|string',
+            'jenis' => 'required|string',
+            'operator' => $this->getOperatorValidationRules($kernelDestoner->office, true, 'destoner'),
+            'sampel_boy' => 'required|string|max:255',
+            'berat_sampel' => 'required|numeric|gt:0',
+            'time' => 'required|numeric|gt:0',
+            'berat_nut' => 'required|numeric|min:0',
+            'berat_kernel' => 'required|numeric|min:0',
+        ]);
+
+        $beratSampel = (float) $validated['berat_sampel'];
+        $time = (float) $validated['time'];
+        $beratNut = (float) $validated['berat_nut'];
+        $beratKernel = (float) $validated['berat_kernel'];
+
+        $konversiKg = round($beratSampel / 1000, 6);
+        $rasioJamKg = round($konversiKg * 3600 / $time, 6);
+        $persenNut = round(($beratNut / $beratSampel) * 50, 6);
+        $persenKernel = round(($beratKernel / $beratSampel) * 100, 6);
+        $totalLossesKernel = round($persenKernel + $persenNut, 6);
+        $lossKernelJam = round(($totalLossesKernel * $rasioJamKg) / 100, 6);
+        $lossKernelTbs = round($lossKernelJam / 300, 8);
+
+        $limitMap = $this->getDestonerLimitMap();
+        $kode = $validated['kode'];
+
+        $kernelDestoner->update([
+            'user_id' => Auth::id(),
+            'kode' => $kode,
+            'jenis' => $validated['jenis'],
+            'operator' => $validated['operator'],
+            'sampel_boy' => $validated['sampel_boy'],
+            'berat_sampel' => $beratSampel,
+            'time' => $time,
+            'berat_nut' => $beratNut,
+            'berat_kernel' => $beratKernel,
+            'konversi_kg' => $konversiKg,
+            'rasio_jam_kg' => $rasioJamKg,
+            'persen_nut' => $persenNut,
+            'persen_kernel' => $persenKernel,
+            'total_losses_kernel' => $totalLossesKernel,
+            'loss_kernel_jam' => $lossKernelJam,
+            'loss_kernel_tbs' => $lossKernelTbs,
+            'limit_operator' => data_get($limitMap, $kode . '.operator', 'gt'),
+            'limit_value' => data_get($limitMap, $kode . '.value'),
+        ]);
+
+        return redirect()->route('kernel.destoner.index')->with('success', 'Data Destoner berhasil diperbarui.');
+    }
+
+    public function destonerDestroy(KernelDestoner $kernelDestoner)
+    {
+        $this->ensurePpicRole();
+
+        $kernelDestoner->delete();
+
+        return back()->with('success', 'Data Destoner berhasil dihapus.');
+    }
+
     public function destroyRecord(KernelRecord $kernelRecord)
     {
-        if (!Auth::user()->can('delete kernel losses')) {
-            abort(403);
-        }
+        $this->ensurePpicRole();
         $kernelRecord->delete();
         return back()->with('success', 'Data jenis & sampel berhasil dihapus.');
     }
 
     public function destroyCalculation(KernelCalculation $kernelCalculation)
     {
-        if (!Auth::user()->can('delete kernel losses')) {
-            abort(403);
-        }
+        $this->ensurePpicRole();
         $kernelCalculation->delete();
         return back()->with('success', 'Data perhitungan lab berhasil dihapus.');
     }
@@ -1195,6 +1538,32 @@ class KernelController extends Controller
         $jenis = $map[$prefix] ?? null;
 
         return ($jenis && isset($bobotConfigs[$jenis])) ? $bobotConfigs[$jenis] : null;
+    }
+
+    private function ensurePpicRole(): void
+    {
+        if (!Auth::user() || !Auth::user()->hasRole('PPIC')) {
+            abort(403, 'Aksi ini hanya tersedia untuk role PPIC.');
+        }
+    }
+
+    private function getKernelLossesKodeOptions(): array
+    {
+        $orderedCodes = ['FC1', 'FC2', 'L1', 'L2', 'L3', 'L4', 'CWS', 'CWS2', 'CWS3'];
+
+        $options = KernelMasterData::where('is_active', true)
+            ->whereIn('kode', $orderedCodes)
+            ->pluck('nama_sample', 'kode')
+            ->toArray();
+
+        $orderedOptions = [];
+        foreach ($orderedCodes as $kode) {
+            if (isset($options[$kode])) {
+                $orderedOptions[$kode] = $options[$kode];
+            }
+        }
+
+        return $orderedOptions;
     }
 
     private function getQwtKodeOptions(): array

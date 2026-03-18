@@ -16,6 +16,7 @@ class KernelDestoner extends Model
         'user_id',
         'office',
         'kode',
+        'jenis',
         'rounded_time',
         'operator',
         'sampel_boy',

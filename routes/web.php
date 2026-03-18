@@ -112,6 +112,14 @@ Route::middleware('auth')->group(function () {
             ->name('store')
             ->middleware('permission:create kernel losses');
 
+        Route::get('/{kernelCalculation}/edit', [KernelController::class, 'edit'])
+            ->name('edit')
+            ->middleware('permission:edit kernel losses');
+
+        Route::put('/{kernelCalculation}', [KernelController::class, 'update'])
+            ->name('update')
+            ->middleware('permission:edit kernel losses');
+
         Route::get('/dirt-moist', [KernelController::class, 'dirtMoistIndex'])
             ->name('dirt-moist.index')
             ->middleware('permission:view kernel losses');
@@ -123,6 +131,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/dirt-moist', [KernelController::class, 'dirtMoistStore'])
             ->name('dirt-moist.store')
             ->middleware('permission:create kernel losses');
+
+        Route::get('/dirt-moist/{dirtMoistCalculation}/edit', [KernelController::class, 'dirtMoistEdit'])
+            ->name('dirt-moist.edit')
+            ->middleware('permission:edit kernel losses');
+
+        Route::put('/dirt-moist/{dirtMoistCalculation}', [KernelController::class, 'dirtMoistUpdate'])
+            ->name('dirt-moist.update')
+            ->middleware('permission:edit kernel losses');
+
+        Route::delete('/dirt-moist/{dirtMoistCalculation}', [KernelController::class, 'dirtMoistDestroy'])
+            ->name('dirt-moist.destroy')
+            ->middleware('permission:delete kernel losses');
 
         Route::get('/qwt-fibre-press', [KernelController::class, 'qwtIndex'])
             ->name('qwt.index')
@@ -136,6 +156,18 @@ Route::middleware('auth')->group(function () {
             ->name('qwt.store')
             ->middleware('permission:create kernel losses');
 
+        Route::get('/qwt-fibre-press/{kernelQwt}/edit', [KernelController::class, 'qwtEdit'])
+            ->name('qwt.edit')
+            ->middleware('permission:edit kernel losses');
+
+        Route::put('/qwt-fibre-press/{kernelQwt}', [KernelController::class, 'qwtUpdate'])
+            ->name('qwt.update')
+            ->middleware('permission:edit kernel losses');
+
+        Route::delete('/qwt-fibre-press/{kernelQwt}', [KernelController::class, 'qwtDestroy'])
+            ->name('qwt.destroy')
+            ->middleware('permission:delete kernel losses');
+
         Route::get('/ripple-mill', [KernelController::class, 'rippleMillIndex'])
             ->name('ripple-mill.index')
             ->middleware('permission:view kernel losses');
@@ -148,6 +180,18 @@ Route::middleware('auth')->group(function () {
             ->name('ripple-mill.store')
             ->middleware('permission:create kernel losses');
 
+        Route::get('/ripple-mill/{kernelRippleMill}/edit', [KernelController::class, 'rippleMillEdit'])
+            ->name('ripple-mill.edit')
+            ->middleware('permission:edit kernel losses');
+
+        Route::put('/ripple-mill/{kernelRippleMill}', [KernelController::class, 'rippleMillUpdate'])
+            ->name('ripple-mill.update')
+            ->middleware('permission:edit kernel losses');
+
+        Route::delete('/ripple-mill/{kernelRippleMill}', [KernelController::class, 'rippleMillDestroy'])
+            ->name('ripple-mill.destroy')
+            ->middleware('permission:delete kernel losses');
+
         Route::get('/destoner', [KernelController::class, 'destonerIndex'])
             ->name('destoner.index')
             ->middleware('permission:view kernel losses');
@@ -159,6 +203,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/destoner', [KernelController::class, 'destonerStore'])
             ->name('destoner.store')
             ->middleware('permission:create kernel losses');
+
+        Route::get('/destoner/{kernelDestoner}/edit', [KernelController::class, 'destonerEdit'])
+            ->name('destoner.edit')
+            ->middleware('permission:edit kernel losses');
+
+        Route::put('/destoner/{kernelDestoner}', [KernelController::class, 'destonerUpdate'])
+            ->name('destoner.update')
+            ->middleware('permission:edit kernel losses');
+
+        Route::delete('/destoner/{kernelDestoner}', [KernelController::class, 'destonerDestroy'])
+            ->name('destoner.destroy')
+            ->middleware('permission:delete kernel losses');
 
         Route::delete('/records/{kernelRecord}', [KernelController::class, 'destroyRecord'])
             ->name('records.destroy')

@@ -69,6 +69,9 @@ class RoleAndPermissionSeeder extends Seeder
 
         'view laporan kernel losses',
         'export laporan kernel losses',
+
+        'view informasi proses mesin',
+        'view performance sampel boy'
     ];
     private array $rolePermissions = [
 
@@ -81,13 +84,10 @@ class RoleAndPermissionSeeder extends Seeder
         'PPIC' => [
             'view dashboard',
 
-            // User Management
             'view users',
             'view user activity log',
 
-            // Oil Losses Module - FULL ACCESS
             'view oil losses',
-            'create oil losses',
             'edit oil losses',
             'delete oil losses',
             'view olwb',
@@ -98,7 +98,6 @@ class RoleAndPermissionSeeder extends Seeder
             'export laporan oil losses',
 
             'view kernel losses',
-            'create kernel losses',
             'edit kernel losses',
             'delete kernel losses',
 
@@ -121,6 +120,15 @@ class RoleAndPermissionSeeder extends Seeder
 
         ],
 
+        'Sampel Boy Kernel Losses' => [
+            'view dashboard',
+
+            'view kernel losses',
+            'create kernel losses',
+            'view laporan kernel losses',
+        ],
+
+
         'Analis' => [
             'view dashboard',
             'view oil losses',
@@ -130,35 +138,10 @@ class RoleAndPermissionSeeder extends Seeder
             'view kernel losses',
             'create kernel losses',
             'edit kernel losses',
-            'delete kernel losses',
 
             'view rekap kernel losses',
-            'export rekap kernel losses',
-
-            'view performance kernel losses',
-            'export performance kernel losses',
 
             'view laporan kernel losses',
-            'export laporan kernel losses',
-        ],
-
-        'Sampel Boy Kernel Losses' => [
-            'view dashboard',
-
-            'view kernel losses',
-            'create kernel losses',
-            'edit kernel losses',
-            'delete kernel losses',
-
-            'view rekap kernel losses',
-            'export rekap kernel losses',
-
-            'view performance kernel losses',
-            'export performance kernel losses',
-
-            'view laporan kernel losses',
-            'export laporan kernel losses',
-
         ],
 
         'Asisten Lab' => [
@@ -171,34 +154,25 @@ class RoleAndPermissionSeeder extends Seeder
 
         ],
 
-        'PCM' => [
+        'Manager' => [
             'view dashboard',
             'view oil losses',
             'view olwb',
             'view performance oil losses',
+            'export performance reports oil losses',
+
             'view laporan oil losses',
+            'export laporan oil losses',
 
-        ],
+            'view kernel losses',
+            'view rekap kernel losses',
+            'export rekap kernel losses',
 
-        'Direksi' => [
-            'view dashboard',
+            'view performance kernel losses',
+            'export performance kernel losses',
 
-            // Oil Losses Module - View Only
-            'view oil losses',
-            'view olwb',
-            'view performance oil losses',
-            'view laporan oil losses',
-
-        ],
-
-        'Koor Sistem Informasi' => [
-            'view dashboard',
-
-            // Oil Losses Module - View Only
-            'view oil losses',
-            'view olwb',
-            'view performance oil losses',
-            'view laporan oil losses',
+            'view laporan kernel losses',
+            'export laporan kernel losses',
 
         ],
     ];

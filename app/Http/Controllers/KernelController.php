@@ -2025,6 +2025,215 @@ class KernelController extends Controller
         return $now->copy()->setTime((int) $now->format('H'), $roundedMinute, 0);
     }
 
+    private function buildProofInput(string $label, $value, string $unit = '', int $decimals = 2): array
+    {
+        return [
+            'label' => $label,
+            'value' => $value,
+            'unit' => $unit,
+            'decimals' => $decimals,
+        ];
+    }
+
+    private function buildProofMetric(
+        string $label,
+        $value,
+        string $unit = '',
+        int $decimals = 2,
+        ?string $limitOperator = null,
+        $limitValue = null,
+        ?int $limitDecimals = null
+    ): array {
+        return [
+            'label' => $label,
+            'value' => $value,
+            'unit' => $unit,
+            'decimals' => $decimals,
+            'limit_operator' => $limitOperator,
+            'limit_value' => $limitValue,
+            'limit_decimals' => $limitDecimals ?? $decimals,
+        ];
+    }
+
+    private function buildKernelProofBase(string $module, string $message, $row, ?KernelMasterData $master): array
+    {
+        return [
+            'module' => $module,
+            'message' => $message,
+            'generated_at' => now()->format('d/m/Y H:i:s'),
+            'tanggal_input' => $row->created_at->format('d/m/Y H:i:s'),
+            'jam_proses' => $row->rounded_time
+                ? $row->rounded_time->format('H:i')
+                : $row->created_at->format('H:i'),
+            'office' => $row->office,
+            'input_by' => $row->user?->name ?? Auth::user()->name,
+            'kode' => $row->kode,
+            'kode_label' => $row->kode . ' - ' . ($master?->nama_sample ?? '-'),
+            'jenis' => $row->jenis ?? '-',
+            'operator' => $row->operator ?? '-',
+            'sampel_boy' => $row->sampel_boy ?? '-',
+        ];
+    }
+
+    private function buildKernelLossesProofData(KernelCalculation $calc, string $message): array
+    {
+        $master = KernelMasterData::where('kode', $calc->kode)->first();
+        $lossPercent = (float) ($calc->kernel_losses ?? 0) * 100;
+
+        $proof = $this->buildKernelProofBase('kernel', $message, $calc, $master);
+        $proof['metrics'] = [
+            $this->buildProofMetric(
+                'Kernel Losses',
+                $lossPercent,
+                '%',
+                2,
+                $master?->limit_operator,
+                $master?->limit_value,
+                2
+            ),
+        ];
+        $proof['inputs'] = [
+            $this->buildProofInput('Berat Sampel', $calc->berat_sampel, ' g', 2),
+            $this->buildProofInput('Nut Utuh - Nut', $calc->nut_utuh_nut, ' g', 2),
+            $this->buildProofInput('Nut Utuh - Kernel', $calc->nut_utuh_kernel, ' g', 2),
+            $this->buildProofInput('Nut Pecah - Nut', $calc->nut_pecah_nut, ' g', 2),
+            $this->buildProofInput('Nut Pecah - Kernel', $calc->nut_pecah_kernel, ' g', 2),
+            $this->buildProofInput('Kernel Utuh', $calc->kernel_utuh, ' g', 2),
+            $this->buildProofInput('Kernel Pecah', $calc->kernel_pecah, ' g', 2),
+        ];
+
+        return $proof;
+    }
+
+    private function buildDirtMoistProofData(KernelDirtMoistCalculation $calc, string $message): array
+    {
+        $master = KernelMasterData::where('kode', $calc->kode)->first();
+        $limitMap = $this->getDirtMoistLimitMap();
+        $limitConfig = $limitMap[$calc->kode] ?? ['dirty' => null, 'moist' => null];
+
+        $proof = $this->buildKernelProofBase('dirt_moist', $message, $calc, $master);
+        $proof['metrics'] = [
+            $this->buildProofMetric(
+                'Dirty to Sampel',
+                $calc->dirty_to_sampel,
+                '%',
+                2,
+                data_get($limitConfig, 'dirty.operator'),
+                data_get($limitConfig, 'dirty.value'),
+                2
+            ),
+            $this->buildProofMetric(
+                'Moist',
+                $calc->moist_percent,
+                '%',
+                2,
+                data_get($limitConfig, 'moist.operator'),
+                data_get($limitConfig, 'moist.value'),
+                2
+            ),
+        ];
+        $proof['inputs'] = [
+            $this->buildProofInput('Berat Sampel', $calc->berat_sampel, ' g', 2),
+            $this->buildProofInput('Berat Dirty', $calc->berat_dirty, ' g', 2),
+            $this->buildProofInput('Moist', $calc->moist_percent, ' %', 2),
+        ];
+
+        return $proof;
+    }
+
+    private function buildQwtProofData(KernelQwt $row, string $message): array
+    {
+        $master = KernelMasterData::where('kode', $row->kode)->first();
+
+        $proof = $this->buildKernelProofBase('qwt', $message, $row, $master);
+        $proof['metrics'] = [
+            $this->buildProofMetric(
+                'BN / TN',
+                $row->bn_tn,
+                '%',
+                2,
+                $row->bn_tn_limit_operator,
+                $row->bn_tn_limit_value,
+                2
+            ),
+            $this->buildProofMetric(
+                'Moisture',
+                $row->moisture,
+                '%',
+                2,
+                $row->moist_limit_operator,
+                $row->moist_limit_value,
+                2
+            ),
+        ];
+        $proof['inputs'] = [
+            $this->buildProofInput('Sampel Setelah Kuarter', $row->sampel_setelah_kuarter, ' g', 2),
+            $this->buildProofInput('Berat Nut Utuh', $row->berat_nut_utuh, ' g', 2),
+            $this->buildProofInput('Berat Nut Pecah', $row->berat_nut_pecah, ' g', 2),
+            $this->buildProofInput('Berat Kernel Utuh', $row->berat_kernel_utuh, ' g', 2),
+            $this->buildProofInput('Berat Kernel Pecah', $row->berat_kernel_pecah, ' g', 2),
+            $this->buildProofInput('Berat Cangkang', $row->berat_cangkang, ' g', 2),
+            $this->buildProofInput('Berat Batu', $row->berat_batu, ' g', 2),
+            $this->buildProofInput('Ampere Screw', $row->ampere_screw, '', 2),
+            $this->buildProofInput('Tekanan Hydraulic', $row->tekanan_hydraulic, '', 2),
+            $this->buildProofInput('Kecepatan Screw', $row->kecepatan_screw, '', 2),
+        ];
+
+        return $proof;
+    }
+
+    private function buildRippleMillProofData(KernelRippleMill $row, string $message): array
+    {
+        $master = KernelMasterData::where('kode', $row->kode)->first();
+
+        $proof = $this->buildKernelProofBase('ripple_mill', $message, $row, $master);
+        $proof['metrics'] = [
+            $this->buildProofMetric(
+                'Efficiency',
+                $row->efficiency,
+                '%',
+                2,
+                $master?->limit_operator,
+                $master?->limit_value,
+                2
+            ),
+        ];
+        $proof['inputs'] = [
+            $this->buildProofInput('Berat Sampel', $row->berat_sampel, ' g', 2),
+            $this->buildProofInput('Berat Nut Utuh', $row->berat_nut_utuh, ' g', 2),
+            $this->buildProofInput('Berat Nut Pecah', $row->berat_nut_pecah, ' g', 2),
+        ];
+
+        return $proof;
+    }
+
+    private function buildDestonerProofData(KernelDestoner $row, string $message): array
+    {
+        $master = KernelMasterData::where('kode', $row->kode)->first();
+
+        $proof = $this->buildKernelProofBase('destoner', $message, $row, $master);
+        $proof['metrics'] = [
+            $this->buildProofMetric('Total Losses Kernel', $row->total_losses_kernel, '%', 4, null, null, 4),
+            $this->buildProofMetric(
+                'Loss Kernel/TBS',
+                $row->loss_kernel_tbs,
+                '',
+                8,
+                $row->limit_operator,
+                $row->limit_value,
+                3
+            ),
+        ];
+        $proof['inputs'] = [
+            $this->buildProofInput('Berat Sampel', $row->berat_sampel, ' g', 2),
+            $this->buildProofInput('Time', $row->time, ' detik', 2),
+            $this->buildProofInput('Berat Nut', $row->berat_nut, ' g', 2),
+            $this->buildProofInput('Berat Kernel', $row->berat_kernel, ' g', 2),
+        ];
+
+        return $proof;
+    }
+
     private function calculateKernelBobot(float $value, $config, ?string $kode = null): int
     {
         $normalizedKode = strtoupper((string) $kode);

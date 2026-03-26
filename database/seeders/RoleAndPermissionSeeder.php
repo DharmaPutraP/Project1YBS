@@ -88,8 +88,6 @@ class RoleAndPermissionSeeder extends Seeder
             'view user activity log',
 
             'view oil losses',
-            'edit oil losses',
-            'delete oil losses',
             'view olwb',
             'export olwb reports',
             'view performance oil losses',
@@ -98,8 +96,6 @@ class RoleAndPermissionSeeder extends Seeder
             'export laporan oil losses',
 
             'view kernel losses',
-            'edit kernel losses',
-            'delete kernel losses',
 
             'view rekap kernel losses',
             'export rekap kernel losses',
@@ -109,6 +105,7 @@ class RoleAndPermissionSeeder extends Seeder
 
             'view laporan kernel losses',
             'export laporan kernel losses',
+            'view performance sampel boy'
 
         ],
 
@@ -116,8 +113,10 @@ class RoleAndPermissionSeeder extends Seeder
             'view dashboard',
             'view oil losses',
             'create oil losses',
+            'view olwb',
+            'export olwb reports',
             'view laporan oil losses',
-
+            'export laporan oil losses',
         ],
 
         'Sampel Boy Kernel Losses' => [
@@ -126,38 +125,44 @@ class RoleAndPermissionSeeder extends Seeder
             'view kernel losses',
             'create kernel losses',
             'view laporan kernel losses',
+            'export laporan kernel losses',
+            'view rekap kernel losses',
+            'export rekap kernel losses',
         ],
-
 
         'Analis' => [
             'view dashboard',
             'view oil losses',
             'create oil losses',
+            'view olwb',
+            'export olwb reports',
             'view laporan oil losses',
+            'export laporan oil losses',
 
-            'view kernel losses',
-            'create kernel losses',
-            'edit kernel losses',
-
-            'view rekap kernel losses',
-
-            'view laporan kernel losses',
         ],
 
         'Asisten Lab' => [
             'view dashboard',
             'view oil losses',
-            'edit oil losses',
             'view olwb',
             'view performance oil losses',
             'view laporan oil losses',
+            'view informasi proses mesin',
+            'view performance sampel boy',
+            'view kernel losses',
 
+            'view rekap kernel losses',
+            'export rekap kernel losses',
+
+            'view performance kernel losses',
+            'export performance kernel losses',
         ],
 
         'Manager' => [
             'view dashboard',
             'view oil losses',
             'view olwb',
+            'export olwb reports',
             'view performance oil losses',
             'export performance reports oil losses',
 

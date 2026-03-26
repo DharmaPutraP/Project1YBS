@@ -9,15 +9,16 @@ use App\Models\KernelMesin;
 use App\Models\KernelProsses;
 use App\Models\KernelQwt;
 use App\Models\KernelRippleMill;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ProcessController extends Controller
 {
-    private const TEAM_MEMBERS = ['corry', 'besto', 'vira', 'jevina', 'kevin', 'dharma'];
     private const TEAM_OPTIONS = ['Tim 1', 'Tim 2'];
 
     private const MACHINE_GROUPS = [
@@ -136,7 +137,7 @@ class ProcessController extends Controller
 
     public function index()
     {
-        $teamMembers = self::TEAM_MEMBERS;
+        $teamMembers = $this->getTeamMembersByOffice();
 
         $records = KernelProsses::query()
             ->withCount('mesin')
@@ -162,6 +163,7 @@ class ProcessController extends Controller
 
     public function store(Request $request)
     {
+        $teamMemberRules = $this->buildTeamMemberValidationRules();
         $inputTeam = (string) $request->input('input_team');
         if (!in_array($inputTeam, self::TEAM_OPTIONS, true)) {
             return back()->withInput()->withErrors([
@@ -179,14 +181,14 @@ class ProcessController extends Controller
             'team_1_start_downtime' => ['nullable', 'date_format:H:i', 'required_with:team_1_end_downtime'],
             'team_1_end_downtime' => ['nullable', 'date_format:H:i', 'required_with:team_1_start_downtime'],
             'team_1_members' => ['nullable', 'array'],
-            'team_1_members.*' => ['string', 'in:' . implode(',', self::TEAM_MEMBERS)],
+            'team_1_members.*' => $teamMemberRules,
 
             'team_2_start_time' => [$isTeamOneInput ? 'nullable' : 'required', 'date_format:H:i'],
             'team_2_end_time' => [$isTeamOneInput ? 'nullable' : 'required', 'date_format:H:i'],
             'team_2_start_downtime' => ['nullable', 'date_format:H:i', 'required_with:team_2_end_downtime'],
             'team_2_end_downtime' => ['nullable', 'date_format:H:i', 'required_with:team_2_start_downtime'],
             'team_2_members' => ['nullable', 'array'],
-            'team_2_members.*' => ['string', 'in:' . implode(',', self::TEAM_MEMBERS)],
+            'team_2_members.*' => $teamMemberRules,
 
             'machines' => ['nullable', 'array'],
             'machines.*.selected' => ['nullable'],
@@ -284,12 +286,13 @@ class ProcessController extends Controller
         $visibleTeam = in_array((string) $kernelProsses->input_team, self::TEAM_OPTIONS, true)
             ? (string) $kernelProsses->input_team
             : null;
+        $teamMembers = $this->getTeamMembersByOffice();
 
         return view('process.edit', [
             'record' => $kernelProsses,
             'team1' => $team1,
             'team2' => $team2,
-            'teamMembers' => self::TEAM_MEMBERS,
+            'teamMembers' => $teamMembers,
             'visibleTeam' => $visibleTeam,
         ]);
     }
@@ -308,7 +311,7 @@ class ProcessController extends Controller
         $records = KernelProsses::query()
             ->with('mesin')
             ->whereDate('process_date', $selectedDate)
-            ->when($selectedOffice !== 'all', fn ($query) => $query->where('office', $selectedOffice))
+            ->when($selectedOffice !== 'all', fn($query) => $query->where('office', $selectedOffice))
             ->orderBy('process_date')
             ->orderBy('id')
             ->get();
@@ -473,7 +476,7 @@ class ProcessController extends Controller
 
                 $teamSparesByMachineName = $teamMachines
                     ->where('is_spare_input', true)
-                    ->groupBy(fn (KernelMesin $machine): string => (string) $machine->machine_name);
+                    ->groupBy(fn(KernelMesin $machine): string => (string) $machine->machine_name);
 
                 $teamSpareRows = $teamMachines
                     ->where('is_spare_input', true)
@@ -486,7 +489,7 @@ class ProcessController extends Controller
                     ->values();
 
                 $groupedMachines = $teamMainMachines
-                    ->groupBy(fn (KernelMesin $machine): string => (string) $machine->machine_group)
+                    ->groupBy(fn(KernelMesin $machine): string => (string) $machine->machine_group)
                     ->map(function ($machines) use ($teamSparesByMachineName) {
                         return $machines->map(function (KernelMesin $machine) use ($teamSparesByMachineName): array {
                             $totalMinutes = $this->resolveMachineTotalMinutes($machine);
@@ -505,7 +508,7 @@ class ProcessController extends Controller
                 $orphanSpares = $teamMachines
                     ->where('is_spare_input', true)
                     ->filter(function (KernelMesin $spare) use ($teamMainMachines): bool {
-                        return !$teamMainMachines->contains(fn (KernelMesin $machine): bool => $machine->machine_name === $spare->machine_name);
+                        return !$teamMainMachines->contains(fn(KernelMesin $machine): bool => $machine->machine_name === $spare->machine_name);
                     })
                     ->map(function (KernelMesin $spare): array {
                         return [
@@ -517,7 +520,7 @@ class ProcessController extends Controller
 
                 $expectedSamplesTotal = (int) $groupedMachines
                     ->flatten(1)
-                    ->sum(fn (array $item): int => (int) ($item['expected_samples'] ?? 0));
+                    ->sum(fn(array $item): int => (int) ($item['expected_samples'] ?? 0));
 
                 return [
                     $teamName => [
@@ -576,12 +579,14 @@ class ProcessController extends Controller
 
         foreach (self::TEAM_OPTIONS as $teamName) {
             if (empty($spareRowsByTeam[$teamName])) {
-                $spareRowsByTeam[$teamName] = [[
-                    'team_name' => $teamName,
-                    'machine_name' => '',
-                    'start_time' => '',
-                    'end_time' => '',
-                ]];
+                $spareRowsByTeam[$teamName] = [
+                    [
+                        'team_name' => $teamName,
+                        'machine_name' => '',
+                        'start_time' => '',
+                        'end_time' => '',
+                    ]
+                ];
             }
         }
 
@@ -640,6 +645,7 @@ class ProcessController extends Controller
 
     public function updateBoth(Request $request, KernelProsses $kernelProsses)
     {
+        $teamMemberRules = $this->buildTeamMemberValidationRules();
         $validated = $request->validate([
             'process_date' => ['required', 'date'],
 
@@ -648,14 +654,14 @@ class ProcessController extends Controller
             'team_1_start_downtime' => ['nullable', 'date_format:H:i', 'required_with:team_1_end_downtime'],
             'team_1_end_downtime' => ['nullable', 'date_format:H:i', 'required_with:team_1_start_downtime'],
             'team_1_members' => ['nullable', 'array'],
-            'team_1_members.*' => ['string', 'in:' . implode(',', self::TEAM_MEMBERS)],
+            'team_1_members.*' => $teamMemberRules,
 
             'team_2_start_time' => ['required', 'date_format:H:i'],
             'team_2_end_time' => ['required', 'date_format:H:i'],
             'team_2_start_downtime' => ['nullable', 'date_format:H:i', 'required_with:team_2_end_downtime'],
             'team_2_end_downtime' => ['nullable', 'date_format:H:i', 'required_with:team_2_start_downtime'],
             'team_2_members' => ['nullable', 'array'],
-            'team_2_members.*' => ['string', 'in:' . implode(',', self::TEAM_MEMBERS)],
+            'team_2_members.*' => $teamMemberRules,
         ]);
 
         $conflicts = array_intersect($validated['team_1_members'] ?? [], $validated['team_2_members'] ?? []);
@@ -689,6 +695,7 @@ class ProcessController extends Controller
     public function editOld(KernelProsses $kernelProsses, int $team)
     {
         $this->ensureValidTeam($team);
+        $teamMembers = $this->getTeamMembersByOffice();
 
         $otherMembers = $team === 1
             ? ($kernelProsses->team_2_members ?? [])
@@ -714,7 +721,7 @@ class ProcessController extends Controller
             'record' => $kernelProsses,
             'team' => $team,
             'teamLabel' => $team === 1 ? 'Tim 1' : 'Tim 2',
-            'teamMembers' => self::TEAM_MEMBERS,
+            'teamMembers' => $teamMembers,
             'teamData' => $teamData,
             'otherMembers' => $otherMembers,
         ]);
@@ -723,6 +730,7 @@ class ProcessController extends Controller
     public function update(Request $request, KernelProsses $kernelProsses, int $team)
     {
         $this->ensureValidTeam($team);
+        $teamMemberRules = $this->buildTeamMemberValidationRules();
 
         $validated = $request->validate([
             'process_date' => ['required', 'date'],
@@ -731,7 +739,7 @@ class ProcessController extends Controller
             'start_downtime' => ['nullable', 'date_format:H:i', 'required_with:end_downtime'],
             'end_downtime' => ['nullable', 'date_format:H:i', 'required_with:start_downtime'],
             'members' => ['nullable', 'array'],
-            'members.*' => ['string', 'in:' . implode(',', self::TEAM_MEMBERS)],
+            'members.*' => $teamMemberRules,
         ]);
 
         $selectedMembers = $validated['members'] ?? [];
@@ -820,7 +828,7 @@ class ProcessController extends Controller
         $productionHours = max($processHours - $downtimeHours, 0);
         $spareMinutes = (int) $teamMachines
             ->where('is_spare_input', false)
-            ->sum(fn ($machine): int => $this->hoursToMinutes((float) ($machine->is_spare ?? 0)));
+            ->sum(fn($machine): int => $this->hoursToMinutes((float) ($machine->is_spare ?? 0)));
         $spareHours = intdiv($spareMinutes, 60);
 
         $teamDeductionHours = $isTeamOne ? 2 : 1;
@@ -939,8 +947,8 @@ class ProcessController extends Controller
                 ];
             })
             ->filter()
-            ->groupBy(fn (array $row): string => $row['group'])
-            ->map(fn (Collection $rows): int => (int) $rows->sum('minutes'));
+            ->groupBy(fn(array $row): string => $row['group'])
+            ->map(fn(Collection $rows): int => (int) $rows->sum('minutes'));
 
         foreach (array_keys(self::PERFORMANCE_GROUP_INTERVAL_MINUTES) as $groupKey) {
             $intervalMinutes = (int) (self::PERFORMANCE_GROUP_INTERVAL_MINUTES[$groupKey] ?? 0);
@@ -961,7 +969,7 @@ class ProcessController extends Controller
             ->where('team_name', $teamName)
             ->where('is_spare_input', false)
             ->get()
-            ->sum(fn (KernelMesin $machine): int => $this->hoursToMinutes((float) ($machine->is_spare ?? 0)));
+            ->sum(fn(KernelMesin $machine): int => $this->hoursToMinutes((float) ($machine->is_spare ?? 0)));
 
         return intdiv((int) $spareMinutes, 60);
     }
@@ -1209,7 +1217,7 @@ class ProcessController extends Controller
                 $builder->whereDate('rounded_time', $date)
                     ->orWhereDate('created_at', $date);
             })
-            ->when($office !== '', fn ($builder) => $builder->where('office', $office))
+            ->when($office !== '', fn($builder) => $builder->where('office', $office))
             ->get(['kode', 'rounded_time', 'created_at', 'pengulangan']);
 
         return $rows->map(function ($row): array {
@@ -1423,7 +1431,7 @@ class ProcessController extends Controller
     private function extractMachinePayload(Request $request, ?string $inputTeam = null): array
     {
         $allowedByGroup = collect(self::MACHINE_GROUPS)
-            ->map(fn (array $machines): array => array_values($machines));
+            ->map(fn(array $machines): array => array_values($machines));
 
         $machineToGroup = collect(self::MACHINE_GROUPS)
             ->flatMap(function (array $machines, string $group): array {
@@ -1544,7 +1552,7 @@ class ProcessController extends Controller
         $spareMinutesByMachine = collect($entries)
             ->where('is_spare_input', true)
             ->groupBy('machine_name')
-            ->map(fn ($rows): float => round((float) $rows->sum('row_hours'), 2));
+            ->map(fn($rows): float => round((float) $rows->sum('row_hours'), 2));
 
         return collect($entries)
             ->map(function (array $entry) use ($spareMinutesByMachine): array {
@@ -1596,8 +1604,8 @@ class ProcessController extends Controller
             ->distinct()
             ->orderBy('office')
             ->pluck('office')
-            ->map(fn ($office) => trim((string) $office))
-            ->filter(fn ($office) => $office !== '')
+            ->map(fn($office) => trim((string) $office))
+            ->filter(fn($office) => $office !== '')
             ->values()
             ->all();
 
@@ -1608,5 +1616,34 @@ class ProcessController extends Controller
         }
 
         return $offices;
+    }
+
+    private function getTeamMembersByOffice(): array
+    {
+        $office = trim((string) (auth()->user()->office ?? ''));
+
+        return User::query()
+            ->whereHas('roles', function ($query) {
+                $query->where('name', 'like', 'Sampel Boy%');
+            })
+            ->when($office !== '', fn($query) => $query->where('office', $office))
+            ->orderBy('name')
+            ->pluck('name')
+            ->filter(fn($name) => $name !== null && $name !== '')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function buildTeamMemberValidationRules(): array
+    {
+        $members = $this->getTeamMembersByOffice();
+        $rules = ['string'];
+
+        if (!empty($members)) {
+            $rules[] = Rule::in($members);
+        }
+
+        return $rules;
     }
 }

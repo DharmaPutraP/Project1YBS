@@ -62,7 +62,7 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
         $lossVal = (float) ($row->loss_kernel_tbs ?? 0);
         $limOp   = $row->limit_operator ?? null;
         $limV    = $row->limit_value !== null ? (float) $row->limit_value : null;
-        $limStr  = $limV !== null ? (($limOp === 'le') ? '<= ' : '> ') . number_format($limV, 4) . '%' : '-';
+        $limStr  = $limV !== null ? (($limOp === 'le') ? '<= ' : '> ') . $limV . '%' : '-';
 
         return [
             $counter,
@@ -75,17 +75,17 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
             $row->jenis ?? '-',
             $row->operator ?? '-',
             $row->sampel_boy ?? '-',
-            (float) ($row->berat_sampel ?? 0),
-            (float) ($row->konversi_kg ?? 0),
+            round((float) ($row->berat_sampel ?? 0), 2),
+            round((float) ($row->konversi_kg ?? 0), 2),
             $row->time ?? '-',
-            (float) ($row->rasio_jam_kg ?? 0),
-            (float) ($row->berat_nut ?? 0),
-            (float) ($row->persen_nut ?? 0),
-            (float) ($row->berat_kernel ?? 0),
-            (float) ($row->persen_kernel ?? 0),
-            (float) ($row->total_losses_kernel ?? 0),
-            (float) ($row->loss_kernel_jam ?? 0),
-            round($lossVal, 8),
+            round((float) ($row->rasio_jam_kg ?? 0), 2),
+            round((float) ($row->berat_nut ?? 0), 2),
+            round((float) ($row->persen_nut ?? 0), 2),
+            round((float) ($row->berat_kernel ?? 0), 2),
+            round((float) ($row->persen_kernel ?? 0), 2),
+            round((float) ($row->total_losses_kernel ?? 0), 2),
+            round((float) ($row->loss_kernel_jam ?? 0), 2),
+            $lossVal,
             $limStr,
         ];
     }

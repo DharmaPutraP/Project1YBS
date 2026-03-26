@@ -21,12 +21,16 @@ use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class KernelController extends Controller
 {
     use LogsActivity;
+
+    private array $pengulanganColumnCache = [];
 
     public function index(Request $request)
     {
@@ -123,6 +127,7 @@ class KernelController extends Controller
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($userOffice, true, 'kernel'),
             'sampel_boy' => 'required|string|max:255',
+            'pengulangan' => 'nullable|boolean',
             'parameter_lain' => 'nullable|string|max:500',
             'berat_sampel' => 'required|numeric|min:0',
             'nut_utuh_nut' => 'required|numeric|min:0',
@@ -147,6 +152,15 @@ class KernelController extends Controller
             'kernel_pecah.required' => 'Kernel Pecah wajib diisi.',
         ]);
 
+        $isPengulangan = (bool) $request->boolean('pengulangan');
+        $this->validatePengulanganWindow(
+            KernelCalculation::class,
+            $validated['kode'],
+            $userOffice,
+            $isPengulangan,
+            'Kernel Losses'
+        );
+
         // Save calculation record (all ratios stored as percentages ×100)
         $beratSampel = $validated['berat_sampel'];
         $ktsNutUtuh = $beratSampel > 0 ? round(($validated['nut_utuh_kernel'] / $beratSampel) * 100, 6) : 0;
@@ -163,6 +177,7 @@ class KernelController extends Controller
             'jenis' => $validated['jenis'],
             'operator' => $validated['operator'],
             'sampel_boy' => $validated['sampel_boy'],
+            'pengulangan' => $isPengulangan,
             'berat_sampel' => $beratSampel,
             'nut_utuh_nut' => $validated['nut_utuh_nut'],
             'nut_utuh_kernel' => $validated['nut_utuh_kernel'],
@@ -346,6 +361,7 @@ class KernelController extends Controller
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($userOffice, true, 'dirt_moist'),
             'sampel_boy' => 'nullable|string|max:255',
+            'pengulangan' => 'nullable|boolean',
             'berat_sampel' => 'required|numeric|gt:0',
             'berat_dirty' => 'required|numeric|min:0',
             'moist_percent' => 'required|numeric|min:0',
@@ -359,6 +375,15 @@ class KernelController extends Controller
             'berat_dirty.required' => 'Berat dirty wajib diisi.',
             'moist_percent.required' => 'Moist wajib diisi.',
         ]);
+
+        $isPengulangan = (bool) $request->boolean('pengulangan');
+        $this->validatePengulanganWindow(
+            KernelDirtMoistCalculation::class,
+            $validated['kode'],
+            $userOffice,
+            $isPengulangan,
+            'Dirt & Moist'
+        );
 
         $dirtyToSampel = round(($validated['berat_dirty'] / $validated['berat_sampel']) * 100, 6);
 
@@ -377,6 +402,7 @@ class KernelController extends Controller
             'jenis' => $validated['jenis'],
             'operator' => $validated['operator'],
             'sampel_boy' => $validated['sampel_boy'] ?? Auth::user()->name,
+            'pengulangan' => $isPengulangan,
             'berat_sampel' => $validated['berat_sampel'],
             'berat_dirty' => $validated['berat_dirty'],
             'dirty_to_sampel' => $dirtyToSampel,
@@ -560,6 +586,7 @@ class KernelController extends Controller
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($userOffice, true, 'qwt'),
             'sampel_boy' => 'required|string|max:255',
+            'pengulangan' => 'nullable|boolean',
             'sampel_setelah_kuarter' => 'required|numeric|gt:0',
             'berat_nut_utuh' => 'required|numeric|min:0',
             'berat_nut_pecah' => 'required|numeric|min:0',
@@ -591,6 +618,15 @@ class KernelController extends Controller
             'kecepatan_screw.required' => 'Kecepatan screw wajib diisi.',
         ]);
 
+        $isPengulangan = (bool) $request->boolean('pengulangan');
+        $this->validatePengulanganWindow(
+            KernelQwt::class,
+            $validated['kode'],
+            $userOffice,
+            $isPengulangan,
+            'QWT Fibre Press'
+        );
+
         $totalBeratNut = round(
             $validated['berat_nut_utuh']
             + $validated['berat_nut_pecah']
@@ -621,6 +657,7 @@ class KernelController extends Controller
             'jenis' => $validated['jenis'],
             'operator' => $validated['operator'],
             'sampel_boy' => $validated['sampel_boy'],
+            'pengulangan' => $isPengulangan,
             'sampel_setelah_kuarter' => $validated['sampel_setelah_kuarter'],
             'berat_nut_utuh' => $validated['berat_nut_utuh'],
             'berat_nut_pecah' => $validated['berat_nut_pecah'],
@@ -852,6 +889,7 @@ class KernelController extends Controller
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($userOffice, true, 'ripple_mill'),
             'sampel_boy' => 'required|string|max:255',
+            'pengulangan' => 'nullable|boolean',
             'berat_sampel' => 'required|numeric|gt:0',
             'berat_nut_utuh' => 'required|numeric|min:0',
             'berat_nut_pecah' => 'required|numeric|min:0',
@@ -866,6 +904,15 @@ class KernelController extends Controller
             'berat_nut_utuh.required' => 'Berat nut utuh wajib diisi.',
             'berat_nut_pecah.required' => 'Berat nut pecah wajib diisi.',
         ]);
+
+        $isPengulangan = (bool) $request->boolean('pengulangan');
+        $this->validatePengulanganWindow(
+            KernelRippleMill::class,
+            $validated['kode'],
+            $userOffice,
+            $isPengulangan,
+            'Ripple Mill'
+        );
 
         $beratSampel = (float) $validated['berat_sampel'];
         $sampleNutUtuh = round(((float) $validated['berat_nut_utuh'] / $beratSampel) * 100, 6);
@@ -883,6 +930,7 @@ class KernelController extends Controller
             'jenis' => $validated['jenis'],
             'operator' => $validated['operator'],
             'sampel_boy' => $validated['sampel_boy'],
+            'pengulangan' => $isPengulangan,
             'berat_sampel' => $beratSampel,
             'berat_nut_utuh' => $validated['berat_nut_utuh'],
             'berat_nut_pecah' => $validated['berat_nut_pecah'],
@@ -1070,6 +1118,7 @@ class KernelController extends Controller
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($userOffice, true, 'destoner'),
             'sampel_boy' => 'required|string|max:255',
+            'pengulangan' => 'nullable|boolean',
             'berat_sampel' => 'required|numeric|gt:0',
             'time' => 'required|numeric|gt:0',
             'berat_nut' => 'required|numeric|min:0',
@@ -1087,6 +1136,15 @@ class KernelController extends Controller
             'berat_nut.required' => 'Berat Nut wajib diisi.',
             'berat_kernel.required' => 'Berat Kernel wajib diisi.',
         ]);
+
+        $isPengulangan = (bool) $request->boolean('pengulangan');
+        $this->validatePengulanganWindow(
+            KernelDestoner::class,
+            $validated['kode'],
+            $userOffice,
+            $isPengulangan,
+            'Destoner'
+        );
 
         $beratSampel = (float) $validated['berat_sampel'];
         $time = (float) $validated['time'];
@@ -1113,6 +1171,7 @@ class KernelController extends Controller
             'jenis' => $validated['jenis'],
             'operator' => $validated['operator'],
             'sampel_boy' => $validated['sampel_boy'],
+            'pengulangan' => $isPengulangan,
             'berat_sampel' => $beratSampel,
             'time' => $time,
             'berat_nut' => $beratNut,
@@ -1522,6 +1581,9 @@ class KernelController extends Controller
         // Get all active kodes that have a matching bobot config
         $allKodesData = KernelMasterData::where('is_active', true)
             ->get()
+            ->reject(function ($m) {
+                return str_starts_with(strtoupper((string) $m->kode), 'D');
+            })
             ->filter(function ($m) use ($bobotConfigs) {
                 return $this->mapKodeToKernelConfig($m->kode, $bobotConfigs) !== null;
             })
@@ -1536,6 +1598,9 @@ class KernelController extends Controller
 
         // Get unified records from all kernel modules grouped by date+kode
         $calculations = $this->getUnifiedKernelReportRecords($startDate, $endDate, $officeFilter)
+            ->reject(function ($row) {
+                return str_starts_with(strtoupper((string) ($row->kode ?? '')), 'D');
+            })
             ->sortBy('created_at')
             ->values();
 
@@ -1544,7 +1609,7 @@ class KernelController extends Controller
         foreach ($calculations as $calc) {
             $valuePercent = (float) ($calc->kernel_losses ?? 0) * 100;
             $config = $this->mapKodeToKernelConfig($calc->kode, $bobotConfigs);
-            $bobot = $config ? $this->calculateKernelBobot($valuePercent, $config) : null;
+            $bobot = $config ? $this->calculateKernelBobot($valuePercent, $config, $calc->kode) : null;
             $master = $masterDataMap->get($calc->kode);
             $individualRecords[] = [
                 'date' => $calc->created_at->format('Y-m-d'),
@@ -1584,7 +1649,7 @@ class KernelController extends Controller
                     $valuePercent = $avgFraction * 100;
 
                     $config = $this->mapKodeToKernelConfig($kode, $bobotConfigs);
-                    $bobot = $config ? $this->calculateKernelBobot($valuePercent, $config) : null;
+                    $bobot = $config ? $this->calculateKernelBobot($valuePercent, $config, $kode) : null;
 
                     $dateData['kodes'][$kode] = [
                         'kernel_losses' => $valuePercent,
@@ -1811,6 +1876,85 @@ class KernelController extends Controller
         return $map;
     }
 
+    private function getPengulanganIntervalHours(string $kode): ?int
+    {
+        if (preg_match('/^(FC|L|R)/', $kode)) {
+            return 2;
+        }
+
+        if (preg_match('/^(CWS|IN|OUT)/', $kode)) {
+            return 1;
+        }
+
+        if (preg_match('/^(P|D)/', $kode)) {
+            return 4;
+        }
+
+        return null;
+    }
+
+    private function validatePengulanganWindow(string $modelClass, string $kode, ?string $office, bool $isPengulangan, string $moduleName): void
+    {
+        $intervalHours = $this->getPengulanganIntervalHours($kode);
+        if (!$intervalHours) {
+            throw ValidationException::withMessages([
+                'pengulangan' => "Kode {$kode} belum memiliki aturan interval sampel ulang.",
+            ]);
+        }
+
+        $query = $modelClass::query()
+            ->where('kode', $kode)
+            ->when($office, fn($q) => $q->where('office', $office));
+
+        if ($this->hasPengulanganColumn($modelClass)) {
+            $query->where('pengulangan', false);
+        }
+
+        $lastNormalSample = $query->latest('created_at')->first();
+
+        if (!$lastNormalSample) {
+            if (!$isPengulangan) {
+                return;
+            }
+
+            throw ValidationException::withMessages([
+                'pengulangan' => "Belum ada data awal untuk kode {$kode} pada modul {$moduleName}. Centang sampel ulang setelah data awal tersedia.",
+            ]);
+        }
+
+        $referenceTime = $this->getRoundedTime();
+        $lastSampleTime = $lastNormalSample->rounded_time ?? $lastNormalSample->created_at;
+        $elapsedSeconds = $lastSampleTime->diffInSeconds($referenceTime, false);
+        $minSeconds = $intervalHours * 3600;
+
+        if ($elapsedSeconds < $minSeconds && !$isPengulangan) {
+            $elapsedHours = max(0, $elapsedSeconds) / 3600;
+            throw ValidationException::withMessages([
+                'pengulangan' => "Input {$kode} masih dalam interval {$intervalHours} jam sejak data normal terakhir ({$elapsedHours} jam). Tandai sebagai sampel ulang.",
+            ]);
+        }
+
+        if ($elapsedSeconds >= $minSeconds && $isPengulangan) {
+            $elapsedHours = max(0, $elapsedSeconds) / 3600;
+            throw ValidationException::withMessages([
+                'pengulangan' => "Input {$kode} sudah melewati interval {$intervalHours} jam sejak data normal terakhir ({$elapsedHours} jam), sehingga tidak boleh dicentang sebagai sampel ulang.",
+            ]);
+        }
+    }
+
+    private function hasPengulanganColumn(string $modelClass): bool
+    {
+        if (array_key_exists($modelClass, $this->pengulanganColumnCache)) {
+            return $this->pengulanganColumnCache[$modelClass];
+        }
+
+        $table = (new $modelClass())->getTable();
+        $exists = Schema::hasColumn($table, 'pengulangan');
+        $this->pengulanganColumnCache[$modelClass] = $exists;
+
+        return $exists;
+    }
+
     private function getOperatorOptionsByOffice(?string $office, string $module): array
     {
         if (!$office) {
@@ -1866,8 +2010,44 @@ class KernelController extends Controller
         return $now->copy()->setTime((int) $now->format('H'), $roundedMinute, 0);
     }
 
-    private function calculateKernelBobot(float $value, $config): int
+    private function calculateKernelBobot(float $value, $config, ?string $kode = null): int
     {
+        $normalizedKode = strtoupper((string) $kode);
+
+        if (str_starts_with($normalizedKode, 'IN')) {
+            // Inlet Kernel Silo conversion (uses highest matching score first).
+            if ($value == 6.80)
+                return 100;
+            if ($value >= 6.49 && $value <= 7.10)
+                return 90;
+            if ($value >= 6.00 && $value <= 7.40)
+                return 80;
+            if ($value >= 5.49 && $value <= 7.70)
+                return 70;
+            if ($value >= 5.00 && $value <= 8.00)
+                return 60;
+            if ($value >= 4.50 && $value <= 9.00)
+                return 50;
+            return 0;
+        }
+
+        if (str_starts_with($normalizedKode, 'OUT')) {
+            // Outlet Kernel Silo conversion (uses highest matching score first).
+            if ($value >= 6.50 && $value <= 7.50)
+                return 100;
+            if ($value >= 6.10 && $value <= 7.80)
+                return 90;
+            if ($value >= 5.50 && $value <= 8.00)
+                return 80;
+            if ($value >= 5.10 && $value <= 9.00)
+                return 70;
+            if ($value >= 4.50 && $value <= 10.00)
+                return 60;
+            if ($value >= 0.00 && $value <= 20.00)
+                return 50;
+            return 0;
+        }
+
         if ($config->direction === 'desc') {
             // Higher is better (≥)
             if ($value >= $config->limit_100)
@@ -2061,10 +2241,7 @@ class KernelController extends Controller
             ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->get()
             ->map(function ($row) {
-                $isOutlet = str_starts_with((string) $row->kode, 'OUT');
-                $metricPercent = $isOutlet
-                    ? (float) ($row->moist_percent ?? 0)
-                    : (float) ($row->dirty_to_sampel ?? 0);
+                $metricPercent = (float) ($row->dirty_to_sampel ?? 0);
 
                 return (object) [
                     'created_at' => $row->created_at,
@@ -2086,7 +2263,7 @@ class KernelController extends Controller
                     'kernel_pecah_to_sampel' => null,
                     'kernel_losses' => $metricPercent / 100,
                     'user' => $row->user,
-                    'source_module' => $isOutlet ? 'Dirt & Moist (%Moist)' : 'Dirt & Moist (%Dirty)',
+                    'source_module' => 'Dirt & Moist (%Dirty)',
                 ];
             });
 

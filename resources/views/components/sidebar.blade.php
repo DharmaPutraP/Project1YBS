@@ -245,6 +245,22 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             @endcan
         @endcanany
 
+        {{-- ── Process ─────────────────────────────────────── --}}
+        <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
+            Process
+        </p>
+
+        <x-sidebar-item href="{{ route('process.index') }}" :active="request()->routeIs('process.*')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
+            <span class="sidebar-item-text">Informasi Proses</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('process.performance-sampel-boy') }}"
+            :active="request()->routeIs('process.performance-sampel-boy')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2z"/></svg>'>
+            <span class="sidebar-item-text">Performance Sampel Boy</span>
+        </x-sidebar-item>
+
         {{-- ── Admin ───────────────────────────────────────── --}}
         @canany(['view users', 'view user activity log'])
             <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">

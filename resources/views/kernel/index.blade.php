@@ -238,6 +238,8 @@
                                         Operator</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Sampel Boy</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        Pengulangan</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Berat Sampel (g)</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -311,6 +313,11 @@
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                             {{ $calc->sampel_boy ?? '-' }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $calc->pengulangan ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700' }}">
+                                                {{ $calc->pengulangan ? 'Ya' : 'Tidak' }}
+                                            </span>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                             {{ number_format($calc->berat_sampel ?? 0, 2) }}

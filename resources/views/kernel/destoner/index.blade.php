@@ -236,6 +236,9 @@
                                         Sampel Boy</th>
                                     <th
                                         class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                                        Pengulangan</th>
+                                    <th
+                                        class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
                                         Berat Sampel (gram)</th>
                                     <th
                                         class="px-4 py-3 text-center text-xs font-medium text-blue-700 uppercase tracking-wider bg-blue-100 whitespace-nowrap">
@@ -320,48 +323,53 @@
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row->sampel_boy ?? '-' }}
                                         </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $row->pengulangan ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700' }}">
+                                                {{ $row->pengulangan ? 'Ya' : 'Tidak' }}
+                                            </span>
+                                        </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ number_format($row->berat_sampel, 4) }}
+                                            {{ number_format($row->berat_sampel, 2) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
-                                            {{ number_format($row->konversi_kg, 6) }}
+                                            {{ number_format($row->konversi_kg, 2) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ number_format($row->time, 4) }}
+                                            {{ number_format($row->time, 2) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
-                                            {{ number_format($row->rasio_jam_kg, 6) }}
+                                            {{ number_format($row->rasio_jam_kg, 2) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ number_format($row->berat_nut, 4) }}
+                                            {{ number_format($row->berat_nut, 2) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-center bg-purple-50">
-                                            {{ number_format($row->persen_nut, 4) }}
+                                            {{ number_format($row->persen_nut, 2) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ number_format($row->berat_kernel, 4) }}
+                                            {{ number_format($row->berat_kernel, 2) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-center bg-purple-50">
-                                            {{ number_format($row->persen_kernel, 4) }}
+                                            {{ number_format($row->persen_kernel, 2) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-center bg-red-50">
                                             <span
                                                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
-                                                {{ number_format($total, 4) }}
+                                                {{ number_format($total, 2) }}
                                             </span>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-center bg-orange-50">
-                                            {{ number_format($row->loss_kernel_jam, 6) }}
+                                            {{ number_format($row->loss_kernel_jam, 2) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-center bg-orange-50">
                                             <span
                                                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $limitBadge }}">
-                                                {{ number_format($row->loss_kernel_tbs, 8) }}
+                                                {{ $row->loss_kernel_tbs }}
                                             </span>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-center text-xs font-semibold text-orange-800">
                                             @if($limitOp && $limitVal !== null)
-                                                {{ $limitOp === 'gt' ? '>' : '≤' }} {{ number_format($limitVal, 3) }}
+                                                {{ $limitOp === 'gt' ? '>' : '≤' }} {{ $limitVal }}
                                             @else
                                                 -
                                             @endif

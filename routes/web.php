@@ -8,6 +8,7 @@ use App\Http\Controllers\KernelController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ProcessController;
 // use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
 
@@ -292,6 +293,44 @@ Route::middleware('auth')->group(function () {
         Route::post('/kernel/destoner/export', [KernelController::class, 'exportLaporanDestoner'])
             ->name('kernel.destoner.export')
             ->middleware('permission:view laporan kernel losses');
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── PROCESS INFO ──────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('process')->name('process.')->group(function () {
+        Route::get('/', [ProcessController::class, 'index'])
+            ->name('index');
+
+        Route::get('/performance-sampel-boy', [ProcessController::class, 'performanceSampelBoy'])
+            ->name('performance-sampel-boy');
+
+        Route::post('/performance-sampel-boy/export', [ProcessController::class, 'exportPerformanceSampelBoy'])
+            ->name('performance-sampel-boy.export');
+
+        Route::post('/', [ProcessController::class, 'store'])
+            ->name('store');
+
+        Route::get('/{kernelProsses}/detail', [ProcessController::class, 'show'])
+            ->name('show');
+
+        Route::get('/{kernelProsses}/edit', [ProcessController::class, 'edit'])
+            ->name('edit');
+
+        Route::put('/{kernelProsses}', [ProcessController::class, 'updateBoth'])
+            ->name('update');
+
+        Route::get('/{kernelProsses}/machines', [ProcessController::class, 'machineDetail'])
+            ->name('machines.show');
+
+        Route::get('/{kernelProsses}/machines/edit', [ProcessController::class, 'editMachines'])
+            ->name('machines.edit');
+
+        Route::put('/{kernelProsses}/machines', [ProcessController::class, 'updateMachines'])
+            ->name('machines.update');
+
+        Route::delete('/{kernelProsses}/machines', [ProcessController::class, 'destroyMachines'])
+            ->name('machines.destroy');
     });
 
     // ══════════════════════════════════════════════════════════════════════════

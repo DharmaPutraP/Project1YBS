@@ -52,7 +52,8 @@
                     <h2 class="text-xl font-semibold text-slate-900">Bukti Input Data</h2>
                     <p class="mt-1 text-sm text-slate-600">Simpan bukti input data atau unduh JPG.</p>
                 </div>
-                <button type="button" onclick="closeSuccessProofModal()" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                <button type="button" onclick="closeSuccessProofModal()"
+                    class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -64,10 +65,12 @@
             </div>
 
             <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
-                <button type="button" onclick="downloadSuccessProofImage()" class="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
+                <button type="button" onclick="downloadSuccessProofImage()"
+                    class="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
                     Unduh Gambar (JPG)
                 </button>
-                <button type="button" onclick="closeSuccessProofModal()" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                <button type="button" onclick="closeSuccessProofModal()"
+                    class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
                     Tutup
                 </button>
             </div>

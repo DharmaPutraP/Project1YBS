@@ -330,7 +330,8 @@
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row->sampel_boy ?? '-' }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-center">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $row->pengulangan ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700' }}">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $row->pengulangan ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700' }}">
                                                 {{ $row->pengulangan ? 'Ya' : 'Tidak' }}
                                             </span>
                                         </td>

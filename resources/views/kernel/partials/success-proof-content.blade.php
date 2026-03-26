@@ -38,7 +38,8 @@
 <section class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
     <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-            <p class="text-sm font-semibold text-emerald-900">{{ $successProof['message'] ?? 'Data berhasil disimpan.' }}</p>
+            <p class="text-sm font-semibold text-emerald-900">
+                {{ $successProof['message'] ?? 'Data berhasil disimpan.' }}</p>
             <p class="mt-1 text-sm text-emerald-800">Waktu bukti dibuat: {{ $successProof['generated_at'] ?? '-' }}</p>
             <p class="mt-1 text-xs text-emerald-700">Silakan unduh gambar untuk bukti input data.</p>
         </div>
@@ -70,7 +71,8 @@
                 <tr>
                     <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['tanggal_input'] ?? '-' }}</td>
                     <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['jam_proses'] ?? '-' }}</td>
-                    <td class="px-4 py-3 whitespace-nowrap font-semibold text-blue-900">{{ $successProof['kode_label'] ?? ($successProof['kode'] ?? '-') }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap font-semibold text-blue-900">
+                        {{ $successProof['kode_label'] ?? ($successProof['kode'] ?? '-') }}</td>
                     <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['jenis'] ?? '-' }}</td>
                     <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['operator'] ?? '-' }}</td>
                     <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['sampel_boy'] ?? '-' }}</td>
@@ -123,7 +125,8 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $badgeClass }}">
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $badgeClass }}">
                                     {{ $formatValue($metric['value'] ?? null, $decimals, $metric['unit'] ?? '') }}
                                 </span>
                             </td>
@@ -137,4 +140,3 @@
         </div>
     </section>
 @endif
-

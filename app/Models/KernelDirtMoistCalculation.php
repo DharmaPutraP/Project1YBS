@@ -21,6 +21,7 @@ class KernelDirtMoistCalculation extends Model
         'jenis',
         'operator',
         'sampel_boy',
+        'pengulangan',
         'berat_sampel',
         'berat_dirty',
         'dirty_to_sampel',
@@ -33,6 +34,7 @@ class KernelDirtMoistCalculation extends Model
 
     protected $casts = [
         'rounded_time' => 'datetime',
+        'pengulangan' => 'boolean',
         'berat_sampel' => 'decimal:4',
         'berat_dirty' => 'decimal:4',
         'dirty_to_sampel' => 'decimal:6',

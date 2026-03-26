@@ -119,7 +119,7 @@
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 border-l-4 border-l-orange-500">
             <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Rata-rata Loss Kernel/TBS</p>
             <p class="text-2xl font-bold text-orange-600">
-                {{ $avgLossKernelTbs !== null ? number_format((float) $avgLossKernelTbs, 8) : '0.00000000' }}
+                {{ $avgLossKernelTbs !== null ? number_format((float) $avgLossKernelTbs, 2) : '0.00' }}
             </p>
         </div>
     </div>
@@ -194,38 +194,38 @@
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $row->operator ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $row->sampel_boy ?? '-' }}</td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_sampel ?? 0), 4) }}</td>
-                            <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->konversi_kg ?? 0), 6) }}
+                                {{ number_format((float) ($row->berat_sampel ?? 0), 2) }}</td>
+                            <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->konversi_kg ?? 0), 2) }}
                             </td>
-                            <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->time ?? 0), 4) }}</td>
+                            <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->time ?? 0), 2) }}</td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->rasio_jam_kg ?? 0), 6) }}</td>
-                            <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->berat_nut ?? 0), 4) }}
+                                {{ number_format((float) ($row->rasio_jam_kg ?? 0), 2) }}</td>
+                            <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->berat_nut ?? 0), 2) }}
                             </td>
                             <td class="border px-3 py-2 text-center bg-purple-50">
-                                {{ number_format((float) ($row->persen_nut ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->persen_nut ?? 0), 2) }}</td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_kernel ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->berat_kernel ?? 0), 2) }}</td>
                             <td class="border px-3 py-2 text-center bg-purple-50">
-                                {{ number_format((float) ($row->persen_kernel ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->persen_kernel ?? 0), 2) }}</td>
                             <td class="border px-3 py-2 text-center bg-red-50">
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
-                                    {{ number_format((float) ($row->total_losses_kernel ?? 0), 4) }}
+                                    {{ number_format((float) ($row->total_losses_kernel ?? 0), 2) }}
                                 </span>
                             </td>
                             <td class="border px-3 py-2 text-right bg-orange-50">
-                                {{ number_format((float) ($row->loss_kernel_jam ?? 0), 6) }}</td>
+                                {{ number_format((float) ($row->loss_kernel_jam ?? 0), 2) }}</td>
                             <td class="border px-3 py-2 text-center bg-orange-50">
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $limitBadge }}">
-                                    {{ number_format($lossTbs, 8) }}
+                                    {{ $lossTbs }}
                                 </span>
                             </td>
                             <td
                                 class="border px-3 py-2 text-center bg-orange-50 text-orange-800 font-medium whitespace-nowrap">
                                 @if($limitOp && $limitVal !== null)
-                                    {{ $limitOp === 'gt' ? '>' : '<=' }} {{ number_format($limitVal, 4) }}
+                                    {{ $limitOp === 'gt' ? '>' : '<=' }} {{ $limitVal }}
                                 @else
                                     -
                                 @endif

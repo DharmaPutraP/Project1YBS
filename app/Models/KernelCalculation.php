@@ -21,6 +21,7 @@ class KernelCalculation extends Model
         'jenis',
         'operator',
         'sampel_boy',
+        'pengulangan',
         'berat_sampel',
         'nut_utuh_nut',
         'nut_utuh_kernel',
@@ -37,6 +38,7 @@ class KernelCalculation extends Model
 
     protected $casts = [
         'rounded_time' => 'datetime',
+        'pengulangan' => 'boolean',
         'berat_sampel' => 'decimal:4',
         'nut_utuh_nut' => 'decimal:4',
         'nut_utuh_kernel' => 'decimal:4',

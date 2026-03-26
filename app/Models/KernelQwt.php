@@ -21,6 +21,7 @@ class KernelQwt extends Model
         'jenis',
         'operator',
         'sampel_boy',
+        'pengulangan',
         'sampel_setelah_kuarter',
         'berat_nut_utuh',
         'berat_nut_pecah',
@@ -44,6 +45,7 @@ class KernelQwt extends Model
 
     protected $casts = [
         'rounded_time' => 'datetime',
+        'pengulangan' => 'boolean',
         'sampel_setelah_kuarter' => 'decimal:4',
         'berat_nut_utuh' => 'decimal:4',
         'berat_nut_pecah' => 'decimal:4',

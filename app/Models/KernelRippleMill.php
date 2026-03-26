@@ -21,6 +21,7 @@ class KernelRippleMill extends Model
         'jenis',
         'operator',
         'sampel_boy',
+        'pengulangan',
         'berat_sampel',
         'berat_nut_utuh',
         'berat_nut_pecah',
@@ -33,6 +34,7 @@ class KernelRippleMill extends Model
 
     protected $casts = [
         'rounded_time' => 'datetime',
+        'pengulangan' => 'boolean',
         'berat_sampel' => 'decimal:4',
         'berat_nut_utuh' => 'decimal:4',
         'berat_nut_pecah' => 'decimal:4',

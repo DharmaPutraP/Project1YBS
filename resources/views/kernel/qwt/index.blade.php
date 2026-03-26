@@ -1,5 +1,11 @@
 <x-layouts.app title="Data QWT Fibre Press">
 
+    @php
+        $successProof = session('success_proof');
+    @endphp
+
+    @include('kernel.partials.success-proof-modal', ['successProof' => $successProof])
+
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
         <div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-indigo-500">
             <p class="text-xs md:text-sm text-gray-500 font-medium">Total Records</p>

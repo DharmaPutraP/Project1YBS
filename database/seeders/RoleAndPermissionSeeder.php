@@ -115,12 +115,31 @@ class RoleAndPermissionSeeder extends Seeder
 
         'Sampel Boy Oil Losses' => [
             'view dashboard',
-
-            // Oil Losses Module - Data Entry Only
             'view oil losses',
             'create oil losses',
             'view laporan oil losses',
 
+        ],
+
+        'Analis' => [
+            'view dashboard',
+            'view oil losses',
+            'create oil losses',
+            'view laporan oil losses',
+
+            'view kernel losses',
+            'create kernel losses',
+            'edit kernel losses',
+            'delete kernel losses',
+
+            'view rekap kernel losses',
+            'export rekap kernel losses',
+
+            'view performance kernel losses',
+            'export performance kernel losses',
+
+            'view laporan kernel losses',
+            'export laporan kernel losses',
         ],
 
         'Sampel Boy Kernel Losses' => [
@@ -144,9 +163,8 @@ class RoleAndPermissionSeeder extends Seeder
 
         'Asisten Lab' => [
             'view dashboard',
-
-            // Oil Losses Module - View Only
             'view oil losses',
+            'edit oil losses',
             'view olwb',
             'view performance oil losses',
             'view laporan oil losses',
@@ -155,8 +173,6 @@ class RoleAndPermissionSeeder extends Seeder
 
         'PCM' => [
             'view dashboard',
-
-            // Oil Losses Module - View Only
             'view oil losses',
             'view olwb',
             'view performance oil losses',

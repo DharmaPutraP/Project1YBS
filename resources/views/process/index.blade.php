@@ -342,11 +342,32 @@
     </x-ui.card>
 
     <x-ui.card title="Data Informasi Proses" class="mt-6">
+        <form method="GET" action="{{ route('process.index') }}" class="mb-4 flex flex-wrap items-end gap-3">
+            <div>
+                <label for="office" class="block text-xs font-medium text-gray-700 mb-1">Filter Office</label>
+                @if (auth()->user()->office)
+                    <input type="text" value="{{ auth()->user()->office }}" disabled
+                        class="w-36 px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-100 text-gray-700">
+                    <input type="hidden" name="office" value="{{ auth()->user()->office }}">
+                @else
+                    <select id="office" name="office" class="w-36 px-3 py-2 border border-gray-300 rounded-md text-sm">
+                        <option value="all" {{ ($officeFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua</option>
+                        @foreach (($officeOptions ?? []) as $officeOption)
+                            <option value="{{ $officeOption }}" {{ ($officeFilter ?? 'all') === $officeOption ? 'selected' : '' }}>
+                                {{ $officeOption }}
+                            </option>
+                        @endforeach
+                    </select>
+                @endif
+            </div>
+        </form>
+
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Tanggal</th>
+                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Office</th>
                         <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Tim</th>
                         <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Aksi</th>
                     </tr>
@@ -355,6 +376,7 @@
                     @forelse ($records as $record)
                         <tr>
                             <td class="px-3 py-2 text-sm text-gray-700">{{ $record['process_date'] }}</td>
+                            <td class="px-3 py-2 text-sm text-gray-700">{{ $record['office'] }}</td>
                             <td class="px-3 py-2 text-sm text-gray-700">{{ $record['input_team'] }}</td>
                             <td class="px-3 py-2 text-sm">
                                 <div class="inline-flex items-center gap-2">
@@ -382,7 +404,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="px-3 py-4 text-center text-sm text-gray-500">Belum ada data proses.</td>
+                            <td colspan="4" class="px-3 py-4 text-center text-sm text-gray-500">Belum ada data proses.</td>
                         </tr>
                     @endforelse
                 </tbody>

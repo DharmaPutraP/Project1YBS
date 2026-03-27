@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\PerformanceSampelBoyExport;
 use App\Models\KernelCalculation;
 use App\Models\KernelDirtMoistCalculation;
+use App\Models\KernelDestoner;
 use App\Models\KernelMesin;
 use App\Models\KernelProsses;
 use App\Models\KernelQwt;
@@ -77,6 +78,7 @@ class ProcessController extends Controller
         ],
     ];
 
+    // YBS (Original) sampling interval
     private const PERFORMANCE_GROUP_INTERVAL_MINUTES = [
         'fibre_cyclone' => 120,
         'ltds' => 120,
@@ -85,6 +87,19 @@ class ProcessController extends Controller
         'outlet_kernel_silo' => 60,
         'press' => 240,
         'eficiency' => 120,
+        'destoner' => 240,
+    ];
+
+    // SUN office: all sampling interval 2 hours
+    private const PERFORMANCE_GROUP_INTERVAL_MINUTES_SUN = [
+        'fibre_cyclone' => 120,
+        'ltds' => 120,
+        'claybath_wet_shell' => 120,
+        'inlet_kernel_silo' => 120,
+        'outlet_kernel_silo' => 120,
+        'press' => 120,
+        'eficiency' => 120,
+        'destoner' => 120,
     ];
 
     private const PERFORMANCE_CODE_GROUPS = [
@@ -95,6 +110,7 @@ class ProcessController extends Controller
         'outlet_kernel_silo' => ['OUT1', 'OUT2', 'OUT3', 'OUT4', 'OUT5'],
         'press' => ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9'],
         'eficiency' => ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'],
+        'destoner' => ['D1', 'D2'],
     ];
 
     private const PERFORMANCE_DETAIL_CODES = [
@@ -133,14 +149,27 @@ class ProcessController extends Controller
         ['code' => 'R5', 'label' => 'R5', 'aliases' => ['R5']],
         ['code' => 'R6', 'label' => 'R6', 'aliases' => ['R6']],
         ['code' => 'R7', 'label' => 'R7', 'aliases' => ['R7']],
+        ['code' => 'D1', 'label' => 'D1', 'aliases' => ['D1']],
+        ['code' => 'D2', 'label' => 'D2', 'aliases' => ['D2']],
     ];
 
-    public function index()
+    public function index(Request $request)
     {
         $teamMembers = $this->getTeamMembersByOffice();
 
+        $userOffice = trim((string) (auth()->user()->office ?? ''));
+        $officeFilter = $userOffice !== ''
+            ? $userOffice
+            : trim((string) $request->input('office', 'all'));
+
+        $officeOptions = ['YBS', 'SUN', 'SJN'];
+        if ($officeFilter !== 'all' && !in_array($officeFilter, $officeOptions, true)) {
+            $officeFilter = $userOffice !== '' ? $userOffice : 'all';
+        }
+
         $records = KernelProsses::query()
             ->withCount('mesin')
+            ->when($officeFilter !== 'all', fn($query) => $query->where('office', $officeFilter))
             ->orderByDesc('process_date')
             ->orderByDesc('id')
             ->limit(100)
@@ -149,6 +178,7 @@ class ProcessController extends Controller
                 return [
                     'id' => $record->id,
                     'process_date' => optional($record->process_date)->format('d/m/Y'),
+                    'office' => (string) ($record->office ?? '-'),
                     'input_team' => (string) ($record->input_team ?? '-'),
                     'mesin_count' => $record->mesin_count,
                 ];
@@ -158,6 +188,8 @@ class ProcessController extends Controller
             'teamMembers' => $teamMembers,
             'records' => $records,
             'machineGroups' => self::MACHINE_GROUPS,
+            'officeFilter' => $officeFilter,
+            'officeOptions' => $officeOptions,
         ]);
     }
 
@@ -464,8 +496,10 @@ class ProcessController extends Controller
             ? [(string) $kernelProsses->input_team]
             : self::TEAM_OPTIONS;
 
+        $office = !empty($kernelProsses->office) ? (string) $kernelProsses->office : 'YBS';
+
         $groupedMachinesByTeam = collect($teamsToShow)
-            ->mapWithKeys(function (string $teamName) use ($allMachines): array {
+            ->mapWithKeys(function (string $teamName) use ($allMachines, $office): array {
                 $teamMachines = $allMachines
                     ->where('team_name', $teamName)
                     ->values();
@@ -490,10 +524,10 @@ class ProcessController extends Controller
 
                 $groupedMachines = $teamMainMachines
                     ->groupBy(fn(KernelMesin $machine): string => (string) $machine->machine_group)
-                    ->map(function ($machines) use ($teamSparesByMachineName) {
-                        return $machines->map(function (KernelMesin $machine) use ($teamSparesByMachineName): array {
+                    ->map(function ($machines) use ($teamSparesByMachineName, $office) {
+                        return $machines->map(function (KernelMesin $machine) use ($teamSparesByMachineName, $office): array {
                             $totalMinutes = $this->resolveMachineTotalMinutes($machine);
-                            $intervalMinutes = $this->resolveMachineIntervalMinutes((string) $machine->machine_name);
+                            $intervalMinutes = $this->resolveMachineIntervalMinutes((string) $machine->machine_name, $office);
 
                             return [
                                 'main' => $machine,
@@ -834,19 +868,25 @@ class ProcessController extends Controller
         $teamDeductionHours = $isTeamOne ? 2 : 1;
         $effectiveHours = max(($productionHours + $spareHours) - $teamDeductionHours, 0);
 
-        $expectedByGroup = $this->buildExpectedSamplesByGroup($teamMachines);
+        // Use actual office from record if available, fallback to selectedOffice filter
+        $office = $selectedOffice === 'all' ? 'YBS' : $selectedOffice;
+        if (!empty($record->office)) {
+            $office = (string) $record->office;
+        }
+
+        $expectedByGroup = $this->buildExpectedSamplesByGroup($teamMachines, $office);
         $machineWindowsByCode = $this->buildMachineWindowsByCode($teamMachines);
 
         $actualByGroup = $this->buildActualSamplesByGroup(
             (string) optional($record->process_date)->format('Y-m-d'),
-            $selectedOffice === 'all' ? '' : $selectedOffice,
+            $office === 'all' ? '' : $office,
             $machineWindowsByCode
         );
 
-        $expectedByCode = $this->buildExpectedSamplesByCode($teamMachines);
+        $expectedByCode = $this->buildExpectedSamplesByCode($teamMachines, $office);
         $actualByCode = $this->buildActualSamplesByCode(
             (string) optional($record->process_date)->format('Y-m-d'),
-            $selectedOffice === 'all' ? '' : $selectedOffice,
+            $office === 'all' ? '' : $office,
             $machineWindowsByCode
         );
 
@@ -868,7 +908,8 @@ class ProcessController extends Controller
 
         $perfActualTotal = 0;
         $perfExpectedTotal = 0;
-        foreach (array_keys(self::PERFORMANCE_GROUP_INTERVAL_MINUTES) as $groupKey) {
+        $intervalKeys = $this->getIntervalMinutesForOffice($office);
+        foreach (array_keys($intervalKeys) as $groupKey) {
             $perfActualTotal += (int) ($actualByGroup[$groupKey] ?? 0);
             $perfExpectedTotal += (int) ($expectedByGroup[$groupKey] ?? 0);
         }
@@ -893,6 +934,7 @@ class ProcessController extends Controller
             'outlet_kernel_silo' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'outlet_kernel_silo'),
             'press' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'press'),
             'eficiency' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'eficiency'),
+            'destoner' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'destoner'),
             'perf_total' => $perfTotal,
             'detail_values' => $detailValues,
             'detail_perf_total' => $detailPerfTotal,
@@ -907,10 +949,11 @@ class ProcessController extends Controller
         return $actual . '/' . $expected;
     }
 
-    private function buildExpectedSamplesByGroup(Collection $machines): array
+    private function buildExpectedSamplesByGroup(Collection $machines, string $office = 'YBS'): array
     {
         $expected = [];
-        foreach (array_keys(self::PERFORMANCE_GROUP_INTERVAL_MINUTES) as $groupKey) {
+        $intervals = $this->getIntervalMinutesForOffice($office);
+        foreach (array_keys($intervals) as $groupKey) {
             $expected[$groupKey] = 0;
         }
 
@@ -950,8 +993,8 @@ class ProcessController extends Controller
             ->groupBy(fn(array $row): string => $row['group'])
             ->map(fn(Collection $rows): int => (int) $rows->sum('minutes'));
 
-        foreach (array_keys(self::PERFORMANCE_GROUP_INTERVAL_MINUTES) as $groupKey) {
-            $intervalMinutes = (int) (self::PERFORMANCE_GROUP_INTERVAL_MINUTES[$groupKey] ?? 0);
+        foreach (array_keys($intervals) as $groupKey) {
+            $intervalMinutes = (int) ($intervals[$groupKey] ?? 0);
             if ($intervalMinutes <= 0) {
                 continue;
             }
@@ -1039,6 +1082,10 @@ class ProcessController extends Controller
             return 'eficiency';
         }
 
+        if (str_starts_with($machineName, 'DESTONER')) {
+            return 'destoner';
+        }
+
         return null;
     }
 
@@ -1053,7 +1100,8 @@ class ProcessController extends Controller
             ->concat($this->fetchTimedCodeRows(KernelCalculation::query(), $date, $office))
             ->concat($this->fetchTimedCodeRows(KernelDirtMoistCalculation::query(), $date, $office))
             ->concat($this->fetchTimedCodeRows(KernelQwt::query(), $date, $office))
-            ->concat($this->fetchTimedCodeRows(KernelRippleMill::query(), $date, $office));
+            ->concat($this->fetchTimedCodeRows(KernelRippleMill::query(), $date, $office))
+            ->concat($this->fetchTimedCodeRows(KernelDestoner::query(), $date, $office));
 
         foreach ($rows as $row) {
             $code = $this->normalizeCode((string) ($row['code'] ?? ''));
@@ -1098,7 +1146,7 @@ class ProcessController extends Controller
         return $actual;
     }
 
-    private function buildExpectedSamplesByCode(Collection $machines): array
+    private function buildExpectedSamplesByCode(Collection $machines, string $office = 'YBS'): array
     {
         $expected = [];
         foreach (self::PERFORMANCE_DETAIL_CODES as $detailCode) {
@@ -1149,7 +1197,7 @@ class ProcessController extends Controller
         }
 
         foreach ($minutesByCode as $detailCode => $totalMinutes) {
-            $intervalMinutes = (int) ($this->resolveCodeIntervalMinutes((string) $detailCode) ?? 0);
+            $intervalMinutes = (int) ($this->resolveCodeIntervalMinutes((string) $detailCode, $office) ?? 0);
             if ($intervalMinutes <= 0) {
                 continue;
             }
@@ -1171,7 +1219,8 @@ class ProcessController extends Controller
             ->concat($this->fetchTimedCodeRows(KernelCalculation::query(), $date, $office))
             ->concat($this->fetchTimedCodeRows(KernelDirtMoistCalculation::query(), $date, $office))
             ->concat($this->fetchTimedCodeRows(KernelQwt::query(), $date, $office))
-            ->concat($this->fetchTimedCodeRows(KernelRippleMill::query(), $date, $office));
+            ->concat($this->fetchTimedCodeRows(KernelRippleMill::query(), $date, $office))
+            ->concat($this->fetchTimedCodeRows(KernelDestoner::query(), $date, $office));
 
         foreach ($rows as $row) {
             $isPengulangan = (bool) ($row['pengulangan'] ?? false);
@@ -1318,24 +1367,32 @@ class ProcessController extends Controller
         return null;
     }
 
-    private function resolveCodeIntervalMinutes(string $code): ?int
+    private function resolveCodeIntervalMinutes(string $code, string $office = 'YBS'): ?int
     {
         $groupKey = $this->resolvePerformanceGroupByCode($code);
         if ($groupKey === null) {
             return null;
         }
 
-        return (int) (self::PERFORMANCE_GROUP_INTERVAL_MINUTES[$groupKey] ?? 0);
+        $intervals = $this->getIntervalMinutesForOffice($office);
+
+        return (int) ($intervals[$groupKey] ?? 0);
     }
 
-    private function resolveMachineIntervalMinutes(string $machineName): int
+    private function resolveMachineIntervalMinutes(string $machineName, string $office = 'YBS'): int
     {
+        if (str_starts_with(strtoupper(trim($machineName)), 'DESTONER')) {
+            return strtoupper(trim($office)) === 'SUN' ? 120 : 240;
+        }
+
         $groupKey = $this->resolvePerformanceGroupByMachineName(strtoupper(trim($machineName)));
         if ($groupKey === null) {
             return 0;
         }
 
-        return (int) (self::PERFORMANCE_GROUP_INTERVAL_MINUTES[$groupKey] ?? 0);
+        $intervals = $this->getIntervalMinutesForOffice($office);
+
+        return (int) ($intervals[$groupKey] ?? 0);
     }
 
     private function minutesFromWindow(int $start, int $end): int
@@ -1594,6 +1651,16 @@ class ProcessController extends Controller
     private function toBool(mixed $value): bool
     {
         return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+    }
+
+    private function getIntervalMinutesForOffice(string $office): array
+    {
+        if ($office === 'SUN') {
+            return self::PERFORMANCE_GROUP_INTERVAL_MINUTES_SUN;
+        }
+
+        // Default to YBS intervals for all other offices
+        return self::PERFORMANCE_GROUP_INTERVAL_MINUTES;
     }
 
     private function getAvailableOfficesForPerformance(): array

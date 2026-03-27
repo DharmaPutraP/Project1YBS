@@ -56,6 +56,7 @@
                         <th class="px-3 py-2 text-left font-semibold text-gray-700">Outlet Kernel Silo</th>
                         <th class="px-3 py-2 text-left font-semibold text-gray-700">Press</th>
                         <th class="px-3 py-2 text-left font-semibold text-gray-700">Eficiency</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Destoner</th>
                         <th class="px-3 py-2 text-left font-semibold text-gray-700">Perf Total</th>
                     </tr>
                 </thead>
@@ -75,11 +76,12 @@
                             <td class="px-3 py-2 text-gray-700">{{ $row['outlet_kernel_silo'] }}</td>
                             <td class="px-3 py-2 text-gray-700">{{ $row['press'] }}</td>
                             <td class="px-3 py-2 text-gray-700">{{ $row['eficiency'] }}</td>
+                            <td class="px-3 py-2 text-gray-700">{{ $row['destoner'] }}</td>
                             <td class="px-3 py-2 font-semibold text-blue-700">{{ $row['perf_total'] }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="16" class="px-3 py-4 text-center text-gray-500">Belum ada data performance untuk tanggal ini.</td>
+                            <td colspan="15" class="px-3 py-4 text-center text-gray-500">Belum ada data performance untuk tanggal ini.</td>
                         </tr>
                     @endforelse
                 </tbody>

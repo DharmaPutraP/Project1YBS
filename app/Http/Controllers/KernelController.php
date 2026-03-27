@@ -1891,8 +1891,14 @@ class KernelController extends Controller
         return $map;
     }
 
-    private function getPengulanganIntervalHours(string $kode): ?int
+    private function getPengulanganIntervalHours(string $kode, ?string $office = null): ?int
     {
+        // For SUN office, all intervals are 2 hours
+        if ($office === 'SUN') {
+            return 2;
+        }
+
+        // For YBS and other offices (original logic)
         if (preg_match('/^(FC|L|R)/', $kode)) {
             return 2;
         }
@@ -1910,7 +1916,7 @@ class KernelController extends Controller
 
     private function validatePengulanganWindow(string $modelClass, string $kode, ?string $office, bool $isPengulangan, string $moduleName): void
     {
-        $intervalHours = $this->getPengulanganIntervalHours($kode);
+        $intervalHours = $this->getPengulanganIntervalHours($kode, $office);
         if (!$intervalHours) {
             throw ValidationException::withMessages([
                 'pengulangan' => "Kode {$kode} belum memiliki aturan interval sampel ulang.",

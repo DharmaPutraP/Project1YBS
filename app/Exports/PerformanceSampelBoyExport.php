@@ -51,6 +51,7 @@ class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMa
             'Outlet Kernel Silo',
             'Press',
             'Eficiency',
+            'Destoner',
             'Perf Total',
         ];
 
@@ -81,6 +82,7 @@ class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMa
             $row['outlet_kernel_silo'] ?? '0/0',
             $row['press'] ?? '0/0',
             $row['eficiency'] ?? '0/0',
+            $row['destoner'] ?? '0/0',
             $row['perf_total'] ?? '-',
         ];
 

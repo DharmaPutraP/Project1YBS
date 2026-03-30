@@ -25,18 +25,22 @@ class KernelProsses extends Model
         'team_1_end_downtime',
         'team_1_downtime',
         'team_1_members',
+        'team_1_other_conditions',
         'team_2_start_time',
         'team_2_end_time',
         'team_2_start_downtime',
         'team_2_end_downtime',
         'team_2_downtime',
         'team_2_members',
+        'team_2_other_conditions',
     ];
 
     protected $casts = [
         'process_date' => 'date',
         'team_1_members' => 'array',
         'team_2_members' => 'array',
+        'team_1_other_conditions' => 'array',
+        'team_2_other_conditions' => 'array',
     ];
 
     public function user(): BelongsTo

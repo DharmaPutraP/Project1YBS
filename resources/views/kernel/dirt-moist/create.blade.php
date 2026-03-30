@@ -277,6 +277,9 @@
                 '<li><strong>Moist:</strong> ' + formatPercent(moistPercent) + '</li>' +
                 '</ul>' +
                 '</div>' +
+                '<div class="rounded-lg border border-orange-200 bg-orange-50 p-3 mb-3">' +
+                '<p class="text-sm font-semibold text-orange-900">Limit Moist Khusus Dirt & Moist: <= 6.00%</p>' +
+                '</div>' +
                 '<div class="rounded-lg border border-indigo-200 bg-indigo-50 p-3">' +
                 '<h4 class="text-sm font-semibold text-indigo-900 mb-2">Hasil Perhitungan Dirt & Moist</h4>' +
                 '<ul class="text-sm text-indigo-900 space-y-1">' +

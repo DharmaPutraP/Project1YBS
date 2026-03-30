@@ -78,7 +78,7 @@ class ProcessController extends Controller
         ],
     ];
 
-    // YBS (Original) sampling interval
+    // YBS: interval sampling per kelompok mesin (tetap harus berturut-turut)
     private const PERFORMANCE_GROUP_INTERVAL_MINUTES = [
         'fibre_cyclone' => 120,
         'ltds' => 120,
@@ -235,8 +235,15 @@ class ProcessController extends Controller
             'spare_machines.*.machine_name' => ['nullable', 'string', 'max:150'],
             'spare_machines.*.start_time' => ['nullable', 'date_format:H:i'],
             'spare_machines.*.end_time' => ['nullable', 'date_format:H:i'],
+
+            'other_conditions' => ['nullable', 'array'],
+            'other_conditions.*.team_name' => ['nullable', 'string', 'in:Tim 1,Tim 2'],
+            'other_conditions.*.reason' => ['nullable', 'string', 'max:255', 'required_with:other_conditions.*.start_time,other_conditions.*.end_time'],
+            'other_conditions.*.start_time' => ['nullable', 'date_format:H:i', 'required_with:other_conditions.*.reason,other_conditions.*.end_time'],
+            'other_conditions.*.end_time' => ['nullable', 'date_format:H:i', 'required_with:other_conditions.*.reason,other_conditions.*.start_time'],
         ]);
 
+        $otherConditionsByTeam = $this->extractOtherConditionsPayload($request, $inputTeam);
         $machinePayload = $this->extractMachinePayload($request, $inputTeam);
 
         $office = auth()->user()->office;
@@ -278,12 +285,14 @@ class ProcessController extends Controller
             'team_1_end_downtime' => $isTeamOneInput ? ($validated['team_1_end_downtime'] ?? null) : null,
             'team_1_downtime' => null,
             'team_1_members' => $isTeamOneInput ? ($validated['team_1_members'] ?? []) : [],
+            'team_1_other_conditions' => $isTeamOneInput ? ($otherConditionsByTeam['Tim 1'] ?? []) : [],
             'team_2_start_time' => $isTeamOneInput ? '00:00' : ($validated['team_2_start_time'] ?? '00:00'),
             'team_2_end_time' => $isTeamOneInput ? '00:00' : ($validated['team_2_end_time'] ?? '00:00'),
             'team_2_start_downtime' => $isTeamOneInput ? null : ($validated['team_2_start_downtime'] ?? null),
             'team_2_end_downtime' => $isTeamOneInput ? null : ($validated['team_2_end_downtime'] ?? null),
             'team_2_downtime' => null,
             'team_2_members' => $isTeamOneInput ? [] : ($validated['team_2_members'] ?? []),
+            'team_2_other_conditions' => $isTeamOneInput ? [] : ($otherConditionsByTeam['Tim 2'] ?? []),
         ]);
 
         if (!empty($machinePayload)) {
@@ -499,7 +508,7 @@ class ProcessController extends Controller
         $office = !empty($kernelProsses->office) ? (string) $kernelProsses->office : 'YBS';
 
         $groupedMachinesByTeam = collect($teamsToShow)
-            ->mapWithKeys(function (string $teamName) use ($allMachines, $office): array {
+            ->mapWithKeys(function (string $teamName) use ($allMachines, $office, $kernelProsses): array {
                 $teamMachines = $allMachines
                     ->where('team_name', $teamName)
                     ->values();
@@ -524,17 +533,26 @@ class ProcessController extends Controller
 
                 $groupedMachines = $teamMainMachines
                     ->groupBy(fn(KernelMesin $machine): string => (string) $machine->machine_group)
-                    ->map(function ($machines) use ($teamSparesByMachineName, $office) {
-                        return $machines->map(function (KernelMesin $machine) use ($teamSparesByMachineName, $office): array {
+                    ->map(function ($machines) use ($teamSparesByMachineName, $office, $teamMachines, $kernelProsses, $teamName) {
+                        return $machines->map(function (KernelMesin $machine) use ($teamSparesByMachineName, $office, $teamMachines, $kernelProsses, $teamName): array {
                             $totalMinutes = $this->resolveMachineTotalMinutes($machine);
                             $intervalMinutes = $this->resolveMachineIntervalMinutes((string) $machine->machine_name, $office);
+                            $machineRows = $teamMachines
+                                ->where('machine_name', $machine->machine_name)
+                                ->values();
+                            $expectedSamples = $this->calculateExpectedSamplesFromRowsWithConditions(
+                                $kernelProsses,
+                                $teamName,
+                                $machineRows,
+                                $intervalMinutes
+                            );
 
                             return [
                                 'main' => $machine,
                                 'spares' => $teamSparesByMachineName->get($machine->machine_name, collect()),
                                 'total_minutes' => $totalMinutes,
                                 'interval_minutes' => $intervalMinutes,
-                                'expected_samples' => $intervalMinutes > 0 ? intdiv($totalMinutes, $intervalMinutes) : 0,
+                                'expected_samples' => $expectedSamples,
                             ];
                         });
                     });
@@ -562,6 +580,7 @@ class ProcessController extends Controller
                         'spare_rows' => $teamSpareRows,
                         'orphans' => $orphanSpares,
                         'expected_samples_total' => $expectedSamplesTotal,
+                        'other_conditions' => $this->getTeamOtherConditions($kernelProsses, $teamName),
                     ],
                 ];
             });
@@ -584,6 +603,28 @@ class ProcessController extends Controller
         $spareRowsByTeam = [
             'Tim 1' => [],
             'Tim 2' => [],
+        ];
+        $otherConditionsByTeam = [
+            'Tim 1' => collect((array) ($kernelProsses->team_1_other_conditions ?? []))
+                ->filter(fn($row): bool => is_array($row))
+                ->map(fn($row): array => [
+                    'team_name' => 'Tim 1',
+                    'reason' => trim((string) ($row['reason'] ?? '')),
+                    'start_time' => trim((string) ($row['start_time'] ?? '')),
+                    'end_time' => trim((string) ($row['end_time'] ?? '')),
+                ])
+                ->values()
+                ->all(),
+            'Tim 2' => collect((array) ($kernelProsses->team_2_other_conditions ?? []))
+                ->filter(fn($row): bool => is_array($row))
+                ->map(fn($row): array => [
+                    'team_name' => 'Tim 2',
+                    'reason' => trim((string) ($row['reason'] ?? '')),
+                    'start_time' => trim((string) ($row['start_time'] ?? '')),
+                    'end_time' => trim((string) ($row['end_time'] ?? '')),
+                ])
+                ->values()
+                ->all(),
         ];
 
         foreach ($kernelProsses->mesin as $machine) {
@@ -622,6 +663,17 @@ class ProcessController extends Controller
                     ]
                 ];
             }
+
+            if (empty($otherConditionsByTeam[$teamName])) {
+                $otherConditionsByTeam[$teamName] = [
+                    [
+                        'team_name' => $teamName,
+                        'reason' => '',
+                        'start_time' => '',
+                        'end_time' => '',
+                    ]
+                ];
+            }
         }
 
         $machineOptions = collect(self::MACHINE_GROUPS)->flatten()->values()->all();
@@ -631,6 +683,7 @@ class ProcessController extends Controller
             'machineGroups' => self::MACHINE_GROUPS,
             'selectedMainMachines' => $selectedMainMachines,
             'spareRowsByTeam' => $spareRowsByTeam,
+            'otherConditionsByTeam' => $otherConditionsByTeam,
             'machineOptions' => $machineOptions,
             'visibleTeam' => $visibleTeam,
         ]);
@@ -651,7 +704,15 @@ class ProcessController extends Controller
             'spare_machines.*.machine_name' => ['nullable', 'string', 'max:150'],
             'spare_machines.*.start_time' => ['nullable', 'date_format:H:i'],
             'spare_machines.*.end_time' => ['nullable', 'date_format:H:i'],
+
+            'other_conditions' => ['nullable', 'array'],
+            'other_conditions.*.team_name' => ['nullable', 'string', 'in:Tim 1,Tim 2'],
+            'other_conditions.*.reason' => ['nullable', 'string', 'max:255', 'required_with:other_conditions.*.start_time,other_conditions.*.end_time'],
+            'other_conditions.*.start_time' => ['nullable', 'date_format:H:i', 'required_with:other_conditions.*.reason,other_conditions.*.end_time'],
+            'other_conditions.*.end_time' => ['nullable', 'date_format:H:i', 'required_with:other_conditions.*.reason,other_conditions.*.start_time'],
         ]);
+
+        $otherConditionsByTeam = $this->extractOtherConditionsPayload($request);
 
         $machinePayload = $this->extractMachinePayload($request);
 
@@ -659,6 +720,19 @@ class ProcessController extends Controller
         if (!empty($machinePayload)) {
             $kernelProsses->mesin()->createMany($machinePayload);
         }
+
+        $team1OtherConditions = $this->requestContainsTeamConditions($request, 'Tim 1')
+            ? ($otherConditionsByTeam['Tim 1'] ?? [])
+            : (array) ($kernelProsses->team_1_other_conditions ?? []);
+
+        $team2OtherConditions = $this->requestContainsTeamConditions($request, 'Tim 2')
+            ? ($otherConditionsByTeam['Tim 2'] ?? [])
+            : (array) ($kernelProsses->team_2_other_conditions ?? []);
+
+        $kernelProsses->update([
+            'team_1_other_conditions' => $team1OtherConditions,
+            'team_2_other_conditions' => $team2OtherConditions,
+        ]);
 
         return redirect()
             ->route('process.index')
@@ -874,7 +948,7 @@ class ProcessController extends Controller
             $office = (string) $record->office;
         }
 
-        $expectedByGroup = $this->buildExpectedSamplesByGroup($teamMachines, $office);
+        $expectedByGroup = $this->buildExpectedSamplesByGroup($record, $teamName, $teamMachines, $office);
         $machineWindowsByCode = $this->buildMachineWindowsByCode($teamMachines);
 
         $actualByGroup = $this->buildActualSamplesByGroup(
@@ -883,7 +957,7 @@ class ProcessController extends Controller
             $machineWindowsByCode
         );
 
-        $expectedByCode = $this->buildExpectedSamplesByCode($teamMachines, $office);
+        $expectedByCode = $this->buildExpectedSamplesByCode($record, $teamName, $teamMachines, $office);
         $actualByCode = $this->buildActualSamplesByCode(
             (string) optional($record->process_date)->format('Y-m-d'),
             $office === 'all' ? '' : $office,
@@ -949,7 +1023,7 @@ class ProcessController extends Controller
         return $actual . '/' . $expected;
     }
 
-    private function buildExpectedSamplesByGroup(Collection $machines, string $office = 'YBS'): array
+    private function buildExpectedSamplesByGroup(KernelProsses $record, string $teamName, Collection $machines, string $office = 'YBS'): array
     {
         $expected = [];
         $intervals = $this->getIntervalMinutesForOffice($office);
@@ -957,50 +1031,26 @@ class ProcessController extends Controller
             $expected[$groupKey] = 0;
         }
 
-        // Use main machine total production hours (already includes spare hours), then divide by interval.
-        $effectiveByGroup = $machines
-            ->map(function ($machine): ?array {
-                if ((bool) ($machine->is_spare_input ?? false)) {
-                    return null;
-                }
+        $machinesByName = $machines
+            ->groupBy(fn($machine) => strtoupper(trim((string) $machine->machine_name)));
 
-                $machineName = strtoupper(trim((string) $machine->machine_name));
-                $groupKey = $this->resolvePerformanceGroupByMachineName($machineName);
+        foreach ($machinesByName as $machineName => $rows) {
+            $groupKey = $this->resolvePerformanceGroupByMachineName((string) $machineName);
+            if ($groupKey === null) {
+                continue;
+            }
 
-                if ($groupKey === null) {
-                    return null;
-                }
-
-                $durationMinutes = $this->hoursToMinutes((float) ($machine->total_produsction_hours ?? 0));
-
-                if ($durationMinutes <= 0) {
-                    $durationMinutes = $this->minutesBetween(
-                        substr((string) $machine->production_start_time, 0, 5),
-                        substr((string) $machine->production_end_time, 0, 5)
-                    );
-                }
-
-                if ($durationMinutes <= 0) {
-                    return null;
-                }
-
-                return [
-                    'group' => $groupKey,
-                    'minutes' => $durationMinutes,
-                ];
-            })
-            ->filter()
-            ->groupBy(fn(array $row): string => $row['group'])
-            ->map(fn(Collection $rows): int => (int) $rows->sum('minutes'));
-
-        foreach (array_keys($intervals) as $groupKey) {
-            $intervalMinutes = (int) ($intervals[$groupKey] ?? 0);
+            $intervalMinutes = $this->resolveMachineIntervalMinutes((string) $machineName, $office);
             if ($intervalMinutes <= 0) {
                 continue;
             }
 
-            $totalMinutes = (int) ($effectiveByGroup[$groupKey] ?? 0);
-            $expected[$groupKey] = intdiv($totalMinutes, $intervalMinutes);
+            $expected[$groupKey] += $this->calculateExpectedSamplesFromRowsWithConditions(
+                $record,
+                $teamName,
+                $rows->values(),
+                $intervalMinutes
+            );
         }
 
         return $expected;
@@ -1146,36 +1196,30 @@ class ProcessController extends Controller
         return $actual;
     }
 
-    private function buildExpectedSamplesByCode(Collection $machines, string $office = 'YBS'): array
+    private function buildExpectedSamplesByCode(KernelProsses $record, string $teamName, Collection $machines, string $office = 'YBS'): array
     {
         $expected = [];
         foreach (self::PERFORMANCE_DETAIL_CODES as $detailCode) {
             $expected[$detailCode['code']] = 0;
         }
 
-        $minutesByCode = [];
-
         $machinesByName = $machines
             ->groupBy(fn($machine) => strtoupper(trim((string) $machine->machine_name)));
 
         foreach ($machinesByName as $machineName => $rows) {
-            $mainRows = $rows->where('is_spare_input', false);
+            $intervalMinutes = $this->resolveMachineIntervalMinutes((string) $machineName, $office);
+            if ($intervalMinutes <= 0) {
+                continue;
+            }
 
-            $mainMinutes = (int) $mainRows->sum(function ($machine) {
-                $durationMinutes = $this->hoursToMinutes((float) ($machine->total_produsction_hours ?? 0));
+            $expectedSamples = $this->calculateExpectedSamplesFromRowsWithConditions(
+                $record,
+                $teamName,
+                $rows->values(),
+                $intervalMinutes
+            );
 
-                if ($durationMinutes <= 0) {
-                    $durationMinutes = $this->minutesBetween(
-                        substr((string) $machine->production_start_time, 0, 5),
-                        substr((string) $machine->production_end_time, 0, 5)
-                    );
-                }
-
-                return max($durationMinutes, 0);
-            });
-
-            $totalMinutes = $mainMinutes;
-            if ($totalMinutes <= 0) {
+            if ($expectedSamples <= 0) {
                 continue;
             }
 
@@ -1192,17 +1236,8 @@ class ProcessController extends Controller
                 }
 
                 $addedCodes[$detailCode] = true;
-                $minutesByCode[$detailCode] = (int) (($minutesByCode[$detailCode] ?? 0) + $totalMinutes);
+                $expected[$detailCode] = (int) (($expected[$detailCode] ?? 0) + $expectedSamples);
             }
-        }
-
-        foreach ($minutesByCode as $detailCode => $totalMinutes) {
-            $intervalMinutes = (int) ($this->resolveCodeIntervalMinutes((string) $detailCode, $office) ?? 0);
-            if ($intervalMinutes <= 0) {
-                continue;
-            }
-
-            $expected[$detailCode] = intdiv((int) $totalMinutes, $intervalMinutes);
         }
 
         return $expected;
@@ -1381,10 +1416,6 @@ class ProcessController extends Controller
 
     private function resolveMachineIntervalMinutes(string $machineName, string $office = 'YBS'): int
     {
-        if (str_starts_with(strtoupper(trim($machineName)), 'DESTONER')) {
-            return strtoupper(trim($office)) === 'SUN' ? 120 : 240;
-        }
-
         $groupKey = $this->resolvePerformanceGroupByMachineName(strtoupper(trim($machineName)));
         if ($groupKey === null) {
             return 0;
@@ -1393,6 +1424,149 @@ class ProcessController extends Controller
         $intervals = $this->getIntervalMinutesForOffice($office);
 
         return (int) ($intervals[$groupKey] ?? 0);
+    }
+
+    private function calculateExpectedSamplesFromRowsWithConditions(
+        KernelProsses $record,
+        string $teamName,
+        Collection $rows,
+        int $intervalMinutes
+    ): int {
+        if ($intervalMinutes <= 0 || $rows->isEmpty()) {
+            return 0;
+        }
+
+        $effectiveSegments = $this->buildEffectiveMachineSegmentsForExpected($record, $teamName, $rows);
+
+        $expected = 0;
+        foreach ($effectiveSegments as $segment) {
+            $length = (int) ($segment['end'] - $segment['start']);
+            if ($length <= 0) {
+                continue;
+            }
+
+            $expected += intdiv($length, $intervalMinutes);
+        }
+
+        return $expected;
+    }
+
+    private function buildEffectiveMachineSegmentsForExpected(KernelProsses $record, string $teamName, Collection $rows): array
+    {
+        $baseSegments = [];
+        foreach ($rows as $row) {
+            $start = substr((string) ($row->production_start_time ?? ''), 0, 5);
+            $end = substr((string) ($row->production_end_time ?? ''), 0, 5);
+
+            $baseSegments = array_merge($baseSegments, $this->expandTimeRangeSegments($start, $end));
+        }
+
+        $baseSegments = $this->normalizeSegments($baseSegments);
+        if (empty($baseSegments)) {
+            return [];
+        }
+
+        $conditionSegments = collect($this->getTeamOtherConditions($record, $teamName))
+            ->map(function (array $condition): array {
+                $start = trim((string) ($condition['start_time'] ?? ''));
+                $end = trim((string) ($condition['end_time'] ?? ''));
+
+                return $this->expandTimeRangeSegments($start, $end);
+            })
+            ->flatten(1)
+            ->values()
+            ->all();
+
+        $conditionSegments = $this->normalizeSegments($conditionSegments);
+
+        return $this->subtractSegments($baseSegments, $conditionSegments);
+    }
+
+    private function normalizeSegments(array $segments): array
+    {
+        $normalized = collect($segments)
+            ->filter(fn($segment): bool => is_array($segment)
+                && isset($segment['start'], $segment['end'])
+                && (int) $segment['end'] > (int) $segment['start'])
+            ->map(fn($segment): array => [
+                'start' => (int) $segment['start'],
+                'end' => (int) $segment['end'],
+            ])
+            ->sortBy('start')
+            ->values()
+            ->all();
+
+        if (empty($normalized)) {
+            return [];
+        }
+
+        $merged = [];
+        foreach ($normalized as $segment) {
+            if (empty($merged)) {
+                $merged[] = $segment;
+                continue;
+            }
+
+            $lastIndex = count($merged) - 1;
+            if ($segment['start'] <= $merged[$lastIndex]['end']) {
+                $merged[$lastIndex]['end'] = max($merged[$lastIndex]['end'], $segment['end']);
+                continue;
+            }
+
+            $merged[] = $segment;
+        }
+
+        return $merged;
+    }
+
+    private function subtractSegments(array $baseSegments, array $cutSegments): array
+    {
+        $base = $this->normalizeSegments($baseSegments);
+        $cuts = $this->normalizeSegments($cutSegments);
+
+        if (empty($base) || empty($cuts)) {
+            return $base;
+        }
+
+        $result = [];
+
+        foreach ($base as $segment) {
+            $parts = [$segment];
+
+            foreach ($cuts as $cut) {
+                if (empty($parts)) {
+                    break;
+                }
+
+                $nextParts = [];
+                foreach ($parts as $part) {
+                    if ($cut['end'] <= $part['start'] || $cut['start'] >= $part['end']) {
+                        $nextParts[] = $part;
+                        continue;
+                    }
+
+                    if ($cut['start'] > $part['start']) {
+                        $nextParts[] = [
+                            'start' => $part['start'],
+                            'end' => $cut['start'],
+                        ];
+                    }
+
+                    if ($cut['end'] < $part['end']) {
+                        $nextParts[] = [
+                            'start' => $cut['end'],
+                            'end' => $part['end'],
+                        ];
+                    }
+                }
+
+                $parts = $nextParts;
+            }
+
+            $result = array_merge($result, $parts);
+        }
+
+        return $this->normalizeSegments($result);
     }
 
     private function minutesFromWindow(int $start, int $end): int
@@ -1415,7 +1589,8 @@ class ProcessController extends Controller
             return null;
         }
 
-        [$hour, $minute] = array_map('intval', explode(':', substr($time, 0, 5)));
+        [$hour] = array_map('intval', explode(':', substr($time, 0, 5)));
+        $minute = 0;
 
         return ($hour * 60) + $minute;
     }
@@ -1440,11 +1615,12 @@ class ProcessController extends Controller
             return 0;
         }
 
-        [$startHour, $startMinute] = array_map('intval', explode(':', substr($start, 0, 5)));
-        [$endHour, $endMinute] = array_map('intval', explode(':', substr($end, 0, 5)));
+        $startTotal = $this->timeToMinutes($start);
+        $endTotal = $this->timeToMinutes($end);
 
-        $startTotal = ($startHour * 60) + $startMinute;
-        $endTotal = ($endHour * 60) + $endMinute;
+        if ($startTotal === null || $endTotal === null) {
+            return 0;
+        }
 
         if ($endTotal < $startTotal) {
             $endTotal += 24 * 60;
@@ -1485,6 +1661,119 @@ class ProcessController extends Controller
         return sprintf('%02d:%02d', $hours, $mins);
     }
 
+    private function calculateOtherConditionDeductionMinutes(string $machineStart, string $machineEnd, array $conditions): int
+    {
+        if (!$this->isValidTime($machineStart) || !$this->isValidTime($machineEnd)) {
+            return 0;
+        }
+
+        $overlapSegments = [];
+
+        foreach ($conditions as $condition) {
+            $startTime = trim((string) ($condition['start_time'] ?? ''));
+            $endTime = trim((string) ($condition['end_time'] ?? ''));
+
+            if (!$this->isValidTime($startTime) || !$this->isValidTime($endTime)) {
+                continue;
+            }
+
+            $overlapSegments = array_merge(
+                $overlapSegments,
+                $this->intersectTimeRanges($machineStart, $machineEnd, $startTime, $endTime)
+            );
+        }
+
+        return $this->sumMergedMinutes($overlapSegments);
+    }
+
+    private function intersectTimeRanges(string $startA, string $endA, string $startB, string $endB): array
+    {
+        $segmentsA = $this->expandTimeRangeSegments($startA, $endA);
+        $segmentsB = $this->expandTimeRangeSegments($startB, $endB);
+        $intersections = [];
+
+        foreach ($segmentsA as $segmentA) {
+            foreach ($segmentsB as $segmentB) {
+                $start = max($segmentA['start'], $segmentB['start']);
+                $end = min($segmentA['end'], $segmentB['end']);
+
+                if ($end > $start) {
+                    $intersections[] = [
+                        'start' => $start,
+                        'end' => $end,
+                    ];
+                }
+            }
+        }
+
+        return $intersections;
+    }
+
+    private function expandTimeRangeSegments(string $start, string $end): array
+    {
+        $startMinute = $this->timeToMinutes($start);
+        $endMinute = $this->timeToMinutes($end);
+
+        if ($startMinute === null || $endMinute === null || $startMinute === $endMinute) {
+            return [];
+        }
+
+        if ($endMinute > $startMinute) {
+            return [[
+                'start' => $startMinute,
+                'end' => $endMinute,
+            ]];
+        }
+
+        return [
+            [
+                'start' => $startMinute,
+                'end' => 24 * 60,
+            ],
+            [
+                'start' => 0,
+                'end' => $endMinute,
+            ],
+        ];
+    }
+
+    private function sumMergedMinutes(array $segments): int
+    {
+        $normalized = collect($segments)
+            ->filter(fn($segment): bool => is_array($segment)
+                && isset($segment['start'], $segment['end'])
+                && (int) $segment['end'] > (int) $segment['start'])
+            ->map(fn($segment): array => [
+                'start' => (int) $segment['start'],
+                'end' => (int) $segment['end'],
+            ])
+            ->sortBy('start')
+            ->values()
+            ->all();
+
+        if (empty($normalized)) {
+            return 0;
+        }
+
+        $merged = [];
+        foreach ($normalized as $segment) {
+            if (empty($merged)) {
+                $merged[] = $segment;
+                continue;
+            }
+
+            $lastIndex = count($merged) - 1;
+            if ($segment['start'] <= $merged[$lastIndex]['end']) {
+                $merged[$lastIndex]['end'] = max($merged[$lastIndex]['end'], $segment['end']);
+                continue;
+            }
+
+            $merged[] = $segment;
+        }
+
+        return (int) collect($merged)->sum(fn($segment): int => $segment['end'] - $segment['start']);
+    }
+
     private function extractMachinePayload(Request $request, ?string $inputTeam = null): array
     {
         $allowedByGroup = collect(self::MACHINE_GROUPS)
@@ -1502,6 +1791,7 @@ class ProcessController extends Controller
 
         $entries = [];
         $errors = [];
+        $otherConditionsByTeam = collect();
 
         foreach ((array) $request->input('machines', []) as $idx => $machine) {
             if (!is_array($machine) || !$this->toBool($machine['selected'] ?? false)) {
@@ -1602,24 +1892,83 @@ class ProcessController extends Controller
             ];
         }
 
+        foreach ((array) $request->input('other_conditions', []) as $idx => $condition) {
+            if (!is_array($condition)) {
+                continue;
+            }
+
+            $teamName = trim((string) ($condition['team_name'] ?? ''));
+            $reason = trim((string) ($condition['reason'] ?? ''));
+            $startTime = trim((string) ($condition['start_time'] ?? ''));
+            $endTime = trim((string) ($condition['end_time'] ?? ''));
+
+            if ($inputTeam !== null && $teamName !== $inputTeam) {
+                continue;
+            }
+
+            if ($reason === '' && $startTime === '' && $endTime === '') {
+                continue;
+            }
+
+            if (!in_array($teamName, self::TEAM_OPTIONS, true)) {
+                $errors["other_conditions.$idx.team_name"] = 'Tim kondisi lainnya wajib dipilih.';
+            }
+
+            if ($reason === '') {
+                $errors["other_conditions.$idx.reason"] = 'Alasan kondisi lainnya wajib diisi.';
+            }
+
+            if (!$this->isValidTime($startTime)) {
+                $errors["other_conditions.$idx.start_time"] = 'Jam mulai kondisi lainnya wajib diisi dengan format HH:MM.';
+            }
+
+            if (!$this->isValidTime($endTime)) {
+                $errors["other_conditions.$idx.end_time"] = 'Jam selesai kondisi lainnya wajib diisi dengan format HH:MM.';
+            }
+
+            if (!isset($errors["other_conditions.$idx.start_time"]) && !isset($errors["other_conditions.$idx.end_time"])) {
+                $otherConditionsByTeam->push([
+                    'team_name' => $teamName,
+                    'reason' => $reason,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
+                ]);
+            }
+        }
+
         if (!empty($errors)) {
             throw ValidationException::withMessages($errors);
         }
 
-        $spareMinutesByMachine = collect($entries)
+        $spareHoursByTeamMachine = collect($entries)
             ->where('is_spare_input', true)
-            ->groupBy('machine_name')
+            ->groupBy(fn(array $entry): string => $entry['team_name'] . '|' . $entry['machine_name'])
             ->map(fn($rows): float => round((float) $rows->sum('row_hours'), 2));
 
+        $otherConditionsByTeam = $otherConditionsByTeam
+            ->groupBy('team_name')
+            ->map(fn(Collection $rows): array => $rows->values()->all());
+
         return collect($entries)
-            ->map(function (array $entry) use ($spareMinutesByMachine): array {
+            ->map(function (array $entry) use ($spareHoursByTeamMachine, $otherConditionsByTeam): array {
                 $rowHours = (float) $entry['row_hours'];
                 $spareHours = 0.0;
                 $totalHours = $rowHours;
 
                 if (!$entry['is_spare_input']) {
-                    $spareHours = (float) $spareMinutesByMachine->get($entry['machine_name'], 0);
-                    $totalHours += $spareHours;
+                    $teamMachineKey = $entry['team_name'] . '|' . $entry['machine_name'];
+                    $teamConditions = (array) $otherConditionsByTeam->get($entry['team_name'], []);
+                    $deductionMinutes = $this->calculateOtherConditionDeductionMinutes(
+                        (string) $entry['production_start_time'],
+                        (string) $entry['production_end_time'],
+                        $teamConditions
+                    );
+
+                    $deductionHours = round($deductionMinutes / 60, 2);
+                    $effectiveRowHours = max(round($rowHours - $deductionHours, 2), 0);
+
+                    $spareHours = (float) $spareHoursByTeamMachine->get($teamMachineKey, 0);
+                    $totalHours = $effectiveRowHours + $spareHours;
                 }
 
                 return [
@@ -1633,6 +1982,92 @@ class ProcessController extends Controller
                     'is_spare_input' => $entry['is_spare_input'],
                 ];
             })
+            ->values()
+            ->all();
+    }
+
+    private function extractOtherConditionsPayload(Request $request, ?string $inputTeam = null): array
+    {
+        $grouped = [
+            'Tim 1' => [],
+            'Tim 2' => [],
+        ];
+
+        foreach ((array) $request->input('other_conditions', []) as $condition) {
+            if (!is_array($condition)) {
+                continue;
+            }
+
+            $teamName = trim((string) ($condition['team_name'] ?? ''));
+            $reason = trim((string) ($condition['reason'] ?? ''));
+            $startTime = trim((string) ($condition['start_time'] ?? ''));
+            $endTime = trim((string) ($condition['end_time'] ?? ''));
+
+            if ($inputTeam !== null && $teamName !== $inputTeam) {
+                continue;
+            }
+
+            if ($reason === '' && $startTime === '' && $endTime === '') {
+                continue;
+            }
+
+            if (!in_array($teamName, self::TEAM_OPTIONS, true)) {
+                continue;
+            }
+
+            if ($reason === '' || !$this->isValidTime($startTime) || !$this->isValidTime($endTime)) {
+                continue;
+            }
+
+            $grouped[$teamName][] = [
+                'reason' => $reason,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+            ];
+        }
+
+        return $grouped;
+    }
+
+    private function requestContainsTeamConditions(Request $request, string $teamName): bool
+    {
+        foreach ((array) $request->input('other_conditions', []) as $condition) {
+            if (!is_array($condition)) {
+                continue;
+            }
+
+            if (trim((string) ($condition['team_name'] ?? '')) === $teamName) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function getTeamOtherConditions(KernelProsses $record, string $teamName): array
+    {
+        $rows = $teamName === 'Tim 1'
+            ? (array) ($record->team_1_other_conditions ?? [])
+            : (array) ($record->team_2_other_conditions ?? []);
+
+        return collect($rows)
+            ->filter(fn($row): bool => is_array($row))
+            ->map(function (array $row): array {
+                $start = trim((string) ($row['start_time'] ?? ''));
+                $end = trim((string) ($row['end_time'] ?? ''));
+                $minutes = ($this->isValidTime($start) && $this->isValidTime($end))
+                    ? $this->minutesBetween($start, $end)
+                    : 0;
+
+                return [
+                    'reason' => trim((string) ($row['reason'] ?? '')),
+                    'start_time' => $start,
+                    'end_time' => $end,
+                    'duration_minutes' => $minutes,
+                    'duration_hours' => round($minutes / 60, 2),
+                ];
+            })
+            ->filter(fn(array $row): bool => $row['reason'] !== '' && $row['start_time'] !== '' && $row['end_time'] !== '')
             ->values()
             ->all();
     }

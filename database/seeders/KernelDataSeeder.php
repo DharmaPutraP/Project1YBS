@@ -33,11 +33,11 @@ class KernelDataSeeder extends Seeder
             ['kode' => 'IN5',  'nama_sample' => 'INLET KERNEL SILO 5',           'limit_operator' => 'le', 'limit_value' => 7.000],
 
             // ── Outlet Kernel Silo ─────────────────────────────────────────────
-            ['kode' => 'OUT1', 'nama_sample' => 'OUTLET KERNEL SILO 1 TO BUNKER','limit_operator' => 'le', 'limit_value' => 7.000],
-            ['kode' => 'OUT2', 'nama_sample' => 'OUTLET KERNEL SILO 2 TO BUNKER','limit_operator' => 'le', 'limit_value' => 7.000],
-            ['kode' => 'OUT3', 'nama_sample' => 'OUTLET KERNEL SILO 3 TO BUNKER','limit_operator' => 'le', 'limit_value' => 7.000],
-            ['kode' => 'OUT4', 'nama_sample' => 'OUTLET KERNEL SILO 4 TO BUNKER','limit_operator' => 'le', 'limit_value' => 7.000],
-            ['kode' => 'OUT5', 'nama_sample' => 'OUTLET KERNEL SILO 5 TO BUNKER','limit_operator' => 'le', 'limit_value' => 7.000],
+            ['kode' => 'OUT1', 'nama_sample' => 'OUTLET KERNEL SILO 1 TO BUNKER','limit_operator' => 'le', 'limit_value' => 6.000],
+            ['kode' => 'OUT2', 'nama_sample' => 'OUTLET KERNEL SILO 2 TO BUNKER','limit_operator' => 'le', 'limit_value' => 6.000],
+            ['kode' => 'OUT3', 'nama_sample' => 'OUTLET KERNEL SILO 3 TO BUNKER','limit_operator' => 'le', 'limit_value' => 6.000],
+            ['kode' => 'OUT4', 'nama_sample' => 'OUTLET KERNEL SILO 4 TO BUNKER','limit_operator' => 'le', 'limit_value' => 6.000],
+            ['kode' => 'OUT5', 'nama_sample' => 'OUTLET KERNEL SILO 5 TO BUNKER','limit_operator' => 'le', 'limit_value' => 6.000],
 
             // ── Press ──────────────────────────────────────────────────────────
             ['kode' => 'P1',   'nama_sample' => 'PRESS 1',                       'limit_operator' => 'le', 'limit_value' => 15.000],

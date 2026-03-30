@@ -1873,18 +1873,15 @@ class KernelController extends Controller
         $map = [];
 
         foreach (array_keys($kodeOptions) as $kode) {
-            $isOutlet = str_starts_with($kode, 'OUT');
             $map[$kode] = [
                 'dirty' => [
                     'operator' => 'le',
                     'value' => 7.00,
                 ],
-                'moist' => $isOutlet
-                    ? [
-                        'operator' => 'le',
-                        'value' => 6.00,
-                    ]
-                    : null,
+                'moist' => [
+                    'operator' => 'le',
+                    'value' => 6.00,
+                ],
             ];
         }
 

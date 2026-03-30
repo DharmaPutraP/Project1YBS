@@ -49,7 +49,9 @@
                                                         @php
                                                             $machine = $item['main'];
                                                             $spares = $item['spares'];
-                                                            $totalHours = number_format(((int) ($item['total_minutes'] ?? 0)) / 60, 2, ',', '.');
+                                                            $totalMinutes = (int) ($item['total_minutes'] ?? 0);
+                                                            $totalHoursPart = intdiv($totalMinutes, 60);
+                                                            $totalMinutesPart = $totalMinutes % 60;
                                                             $intervalMinutes = (int) ($item['interval_minutes'] ?? 0);
                                                             $expectedSamples = (int) ($item['expected_samples'] ?? 0);
                                                         @endphp
@@ -57,7 +59,7 @@
                                                             <td class="px-3 py-2 text-gray-700">{{ $machine->machine_name }}</td>
                                                             <td class="px-3 py-2 text-gray-700">{{ substr((string) $machine->production_start_time, 0, 5) }}</td>
                                                             <td class="px-3 py-2 text-gray-700">{{ substr((string) $machine->production_end_time, 0, 5) }}</td>
-                                                            <td class="px-3 py-2 font-semibold text-gray-800">{{ $totalHours }} jam</td>
+                                                            <td class="px-3 py-2 font-semibold text-gray-800">{{ $totalHoursPart }} jam {{ $totalMinutesPart }} menit</td>
                                                             <td class="px-3 py-2 text-gray-700">{{ $intervalMinutes > 0 ? (($intervalMinutes / 60) . ' jam sekali') : '-' }}</td>
                                                             <td class="px-3 py-2 font-semibold text-gray-800">{{ $expectedSamples }} sampel</td>
                                                             <td class="px-3 py-2 font-semibold text-gray-700">Tidak</td>
@@ -74,7 +76,7 @@
 
                                 @if (($teamData['spare_rows'] ?? collect())->isNotEmpty())
                                     <div>
-                                        <h3 class="mb-2 text-sm font-semibold text-gray-800">Data Spare Input</h3>
+                                        <h3 class="mb-2 text-sm font-semibold text-gray-800">Mesin hidup setelah breakdown</h3>
                                         <div class="overflow-x-auto rounded-lg border border-gray-200">
                                             <table class="min-w-full divide-y divide-gray-200 text-sm">
                                                 <thead class="bg-gray-50">
@@ -90,14 +92,49 @@
                                                     @foreach (($teamData['spare_rows'] ?? collect()) as $orphan)
                                                         @php
                                                             $spare = $orphan['machine'];
-                                                            $spareHours = number_format(((int) ($orphan['total_minutes'] ?? 0)) / 60, 2, ',', '.');
+                                                            $spareMinutes = (int) ($orphan['total_minutes'] ?? 0);
+                                                            $spareHoursPart = intdiv($spareMinutes, 60);
+                                                            $spareMinutesPart = $spareMinutes % 60;
                                                         @endphp
                                                         <tr>
                                                             <td class="px-3 py-2 text-gray-700">{{ $spare->machine_name }}</td>
                                                             <td class="px-3 py-2 text-gray-700">{{ substr((string) $spare->production_start_time, 0, 5) }}</td>
                                                             <td class="px-3 py-2 text-gray-700">{{ substr((string) $spare->production_end_time, 0, 5) }}</td>
-                                                            <td class="px-3 py-2 font-semibold text-gray-800">{{ $spareHours }} jam</td>
+                                                            <td class="px-3 py-2 font-semibold text-gray-800">{{ $spareHoursPart }} jam {{ $spareMinutesPart }} menit</td>
                                                             <td class="px-3 py-2 font-semibold text-amber-700">Iya</td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if (!empty($teamData['other_conditions'] ?? []))
+                                    <div>
+                                        <h3 class="mb-2 text-sm font-semibold text-gray-800">Kondisi Lainnya</h3>
+                                        <div class="overflow-x-auto rounded-lg border border-violet-200">
+                                            <table class="min-w-full divide-y divide-violet-200 text-sm">
+                                                <thead class="bg-violet-50">
+                                                    <tr>
+                                                        <th class="px-3 py-2 text-left font-semibold text-violet-900">Alasan</th>
+                                                        <th class="px-3 py-2 text-left font-semibold text-violet-900">Jam Mulai</th>
+                                                        <th class="px-3 py-2 text-left font-semibold text-violet-900">Jam Selesai</th>
+                                                        <th class="px-3 py-2 text-left font-semibold text-violet-900">Durasi</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-violet-100 bg-white">
+                                                    @foreach (($teamData['other_conditions'] ?? []) as $condition)
+                                                        @php
+                                                            $conditionMinutes = (int) ($condition['duration_minutes'] ?? 0);
+                                                            $conditionHoursPart = intdiv($conditionMinutes, 60);
+                                                            $conditionMinutesPart = $conditionMinutes % 60;
+                                                        @endphp
+                                                        <tr>
+                                                            <td class="px-3 py-2 text-gray-700">{{ $condition['reason'] ?? '-' }}</td>
+                                                            <td class="px-3 py-2 text-gray-700">{{ $condition['start_time'] ?? '-' }}</td>
+                                                            <td class="px-3 py-2 text-gray-700">{{ $condition['end_time'] ?? '-' }}</td>
+                                                            <td class="px-3 py-2 font-semibold text-gray-800">{{ $conditionHoursPart }} jam {{ $conditionMinutesPart }} menit</td>
                                                         </tr>
                                                     @endforeach
                                                 </tbody>

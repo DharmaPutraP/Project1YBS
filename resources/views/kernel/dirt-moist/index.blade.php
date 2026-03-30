@@ -206,7 +206,7 @@
                                     @if($moistLimitValue !== null)
                                         {{ $moistLimitOperator === 'le' ? '≤' : '>' }} {{ number_format($moistLimitValue, 2) }}%
                                     @else
-                                        -
+                                        ≤ 6.00%
                                     @endif
                                 </td>
                                 @canany(['edit kernel losses', 'delete kernel losses'])

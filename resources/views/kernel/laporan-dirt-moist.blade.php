@@ -226,7 +226,7 @@
                                 @if($moistLimitValue !== null)
                                     {{ $moistLimitOperator === 'le' ? '<=' : '>' }} {{ number_format($moistLimitValue, 4) }}%
                                 @else
-                                    -
+                                    <= 6.0000%
                                 @endif
                             </td>
                         </tr>

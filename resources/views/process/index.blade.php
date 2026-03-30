@@ -1,8 +1,11 @@
 <x-layouts.app title="Informasi Proses">
     @php
         $oldSpareRows = old('spare_machines', []);
+        $oldOtherConditions = old('other_conditions', []);
         $spareRowsTeam1 = collect($oldSpareRows)->filter(fn ($row) => ($row['team_name'] ?? 'Tim 1') === 'Tim 1')->all();
         $spareRowsTeam2 = collect($oldSpareRows)->filter(fn ($row) => ($row['team_name'] ?? '') === 'Tim 2')->all();
+        $otherConditionsTeam1 = collect($oldOtherConditions)->filter(fn ($row) => ($row['team_name'] ?? 'Tim 1') === 'Tim 1')->all();
+        $otherConditionsTeam2 = collect($oldOtherConditions)->filter(fn ($row) => ($row['team_name'] ?? '') === 'Tim 2')->all();
 
         if (empty($spareRowsTeam1)) {
             $spareRowsTeam1 = [['team_name' => 'Tim 1', 'machine_name' => '', 'start_time' => '', 'end_time' => '']];
@@ -10,6 +13,14 @@
 
         if (empty($spareRowsTeam2)) {
             $spareRowsTeam2 = [['team_name' => 'Tim 2', 'machine_name' => '', 'start_time' => '', 'end_time' => '']];
+        }
+
+        if (empty($otherConditionsTeam1)) {
+            $otherConditionsTeam1 = [['team_name' => 'Tim 1', 'reason' => '', 'start_time' => '', 'end_time' => '']];
+        }
+
+        if (empty($otherConditionsTeam2)) {
+            $otherConditionsTeam2 = [['team_name' => 'Tim 2', 'reason' => '', 'start_time' => '', 'end_time' => '']];
         }
 
         $machineOptions = collect($machineGroups)->flatten()->values()->all();
@@ -150,7 +161,7 @@
 
                         <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
                             <div class="flex items-center justify-between gap-3">
-                                <h4 class="text-sm font-semibold text-amber-900">Spare Input Mesin Tim 1</h4>
+                                <h4 class="text-sm font-semibold text-amber-900">Jam mesin hidup setelah breakdown Tim 1</h4>
                                 <button type="button" class="add-spare-machine-row inline-flex items-center rounded-md border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100"
                                     data-team="Tim 1" data-target="spare-machine-wrapper-team1">
                                     Tambah Baris
@@ -175,6 +186,34 @@
                                         <input type="time" name="spare_machines[{{ $spareKey }}][end_time]" value="{{ $spare['end_time'] ?? '' }}"
                                             class="px-3 py-2 border border-gray-300 rounded-md text-sm @error('spare_machines.' . $spareKey . '.end_time') border-red-400 bg-red-50 @enderror">
                                         <button type="button" class="remove-spare-machine-row inline-flex items-center justify-center rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100">Hapus Baris</button>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="rounded-lg border border-violet-200 bg-violet-50 p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <h4 class="text-sm font-semibold text-violet-900">Kondisi Lainnya Tim 1</h4>
+                                <button type="button" class="add-other-condition-row inline-flex items-center rounded-md border border-violet-300 bg-white px-3 py-1 text-xs font-medium text-violet-700 hover:bg-violet-100"
+                                    data-team="Tim 1" data-target="other-condition-wrapper-team1">
+                                    Tambah Baris
+                                </button>
+                            </div>
+                            <div id="other-condition-wrapper-team1" class="other-condition-wrapper mt-3 space-y-2" data-team="Tim 1">
+                                @foreach ($otherConditionsTeam1 as $idx => $condition)
+                                    @php
+                                        $conditionKey = 't1_' . $idx;
+                                    @endphp
+                                    <div class="other-condition-row grid grid-cols-1 md:grid-cols-4 gap-2">
+                                        <input type="hidden" name="other_conditions[{{ $conditionKey }}][team_name]" value="Tim 1">
+                                        <input type="text" name="other_conditions[{{ $conditionKey }}][reason]" value="{{ $condition['reason'] ?? '' }}"
+                                            placeholder="Alasan"
+                                            class="px-3 py-2 border border-gray-300 rounded-md text-sm @error('other_conditions.' . $conditionKey . '.reason') border-red-400 bg-red-50 @enderror">
+                                        <input type="time" name="other_conditions[{{ $conditionKey }}][start_time]" value="{{ $condition['start_time'] ?? '' }}"
+                                            class="px-3 py-2 border border-gray-300 rounded-md text-sm @error('other_conditions.' . $conditionKey . '.start_time') border-red-400 bg-red-50 @enderror">
+                                        <input type="time" name="other_conditions[{{ $conditionKey }}][end_time]" value="{{ $condition['end_time'] ?? '' }}"
+                                            class="px-3 py-2 border border-gray-300 rounded-md text-sm @error('other_conditions.' . $conditionKey . '.end_time') border-red-400 bg-red-50 @enderror">
+                                        <button type="button" class="remove-other-condition-row inline-flex items-center justify-center rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100">Hapus Baris</button>
                                     </div>
                                 @endforeach
                             </div>
@@ -298,7 +337,7 @@
 
                         <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
                             <div class="flex items-center justify-between gap-3">
-                                <h4 class="text-sm font-semibold text-amber-900">Spare Input Mesin Tim 2</h4>
+                                <h4 class="text-sm font-semibold text-amber-900">Jam mesin hidup setelah breakdown Tim 2</h4>
                                 <button type="button" class="add-spare-machine-row inline-flex items-center rounded-md border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100"
                                     data-team="Tim 2" data-target="spare-machine-wrapper-team2">
                                     Tambah Baris
@@ -323,6 +362,34 @@
                                         <input type="time" name="spare_machines[{{ $spareKey }}][end_time]" value="{{ $spare['end_time'] ?? '' }}"
                                             class="px-3 py-2 border border-gray-300 rounded-md text-sm @error('spare_machines.' . $spareKey . '.end_time') border-red-400 bg-red-50 @enderror">
                                         <button type="button" class="remove-spare-machine-row inline-flex items-center justify-center rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100">Hapus Baris</button>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="rounded-lg border border-violet-200 bg-violet-50 p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <h4 class="text-sm font-semibold text-violet-900">Kondisi Lainnya Tim 2</h4>
+                                <button type="button" class="add-other-condition-row inline-flex items-center rounded-md border border-violet-300 bg-white px-3 py-1 text-xs font-medium text-violet-700 hover:bg-violet-100"
+                                    data-team="Tim 2" data-target="other-condition-wrapper-team2">
+                                    Tambah Baris
+                                </button>
+                            </div>
+                            <div id="other-condition-wrapper-team2" class="other-condition-wrapper mt-3 space-y-2" data-team="Tim 2">
+                                @foreach ($otherConditionsTeam2 as $idx => $condition)
+                                    @php
+                                        $conditionKey = 't2_' . $idx;
+                                    @endphp
+                                    <div class="other-condition-row grid grid-cols-1 md:grid-cols-4 gap-2">
+                                        <input type="hidden" name="other_conditions[{{ $conditionKey }}][team_name]" value="Tim 2">
+                                        <input type="text" name="other_conditions[{{ $conditionKey }}][reason]" value="{{ $condition['reason'] ?? '' }}"
+                                            placeholder="Alasan"
+                                            class="px-3 py-2 border border-gray-300 rounded-md text-sm @error('other_conditions.' . $conditionKey . '.reason') border-red-400 bg-red-50 @enderror">
+                                        <input type="time" name="other_conditions[{{ $conditionKey }}][start_time]" value="{{ $condition['start_time'] ?? '' }}"
+                                            class="px-3 py-2 border border-gray-300 rounded-md text-sm @error('other_conditions.' . $conditionKey . '.start_time') border-red-400 bg-red-50 @enderror">
+                                        <input type="time" name="other_conditions[{{ $conditionKey }}][end_time]" value="{{ $condition['end_time'] ?? '' }}"
+                                            class="px-3 py-2 border border-gray-300 rounded-md text-sm @error('other_conditions.' . $conditionKey . '.end_time') border-red-400 bg-red-50 @enderror">
+                                        <button type="button" class="remove-other-condition-row inline-flex items-center justify-center rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100">Hapus Baris</button>
                                     </div>
                                 @endforeach
                             </div>
@@ -420,6 +487,8 @@
             const machineGroupToggles = Array.from(document.querySelectorAll('.machine-group-toggle'));
             const addSpareMachineButtons = Array.from(document.querySelectorAll('.add-spare-machine-row'));
             const spareWrappers = Array.from(document.querySelectorAll('.spare-machine-wrapper'));
+            const addOtherConditionButtons = Array.from(document.querySelectorAll('.add-other-condition-row'));
+            const otherConditionWrappers = Array.from(document.querySelectorAll('.other-condition-wrapper'));
             const submitTeamButtons = Array.from(document.querySelectorAll('.submit-team-button'));
             const processForm = document.getElementById('process-form');
             const inputTeamField = document.getElementById('input_team_field');
@@ -493,6 +562,27 @@
                 spareWrapper.appendChild(row);
             }
 
+            function appendOtherConditionRow(targetId, teamName) {
+                const otherWrapper = document.getElementById(targetId);
+
+                if (!otherWrapper) {
+                    return;
+                }
+
+                const nextIndex = `row_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                const row = document.createElement('div');
+                row.className = 'other-condition-row grid grid-cols-1 md:grid-cols-4 gap-2';
+
+                row.innerHTML = `
+                    <input type="hidden" name="other_conditions[${nextIndex}][team_name]" value="${teamName}">
+                    <input type="text" name="other_conditions[${nextIndex}][reason]" placeholder="Alasan" class="px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    <input type="time" name="other_conditions[${nextIndex}][start_time]" class="px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    <input type="time" name="other_conditions[${nextIndex}][end_time]" class="px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    <button type="button" class="remove-other-condition-row inline-flex items-center justify-center rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100">Hapus Baris</button>
+                `;
+                otherWrapper.appendChild(row);
+            }
+
             [...team1Checks, ...team2Checks].forEach(input => {
                 input.addEventListener('change', syncTeams);
             });
@@ -504,6 +594,12 @@
             addSpareMachineButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     appendSpareMachineRow(button.getAttribute('data-target'), button.getAttribute('data-team'));
+                });
+            });
+
+            addOtherConditionButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    appendOtherConditionRow(button.getAttribute('data-target'), button.getAttribute('data-team'));
                 });
             });
 
@@ -532,7 +628,7 @@
 
                     const rows = spareWrapper.querySelectorAll('.spare-machine-row');
                     if (rows.length <= 1) {
-                        const fields = rows[0].querySelectorAll('select, input');
+                        const fields = rows[0].querySelectorAll('select, input:not([type="hidden"])');
                         fields.forEach(field => {
                             field.value = '';
                         });
@@ -540,6 +636,27 @@
                     }
 
                     removeButton.closest('.spare-machine-row')?.remove();
+                });
+            });
+
+            otherConditionWrappers.forEach(otherWrapper => {
+                otherWrapper.addEventListener('click', function (event) {
+                    const removeButton = event.target.closest('.remove-other-condition-row');
+
+                    if (!removeButton) {
+                        return;
+                    }
+
+                    const rows = otherWrapper.querySelectorAll('.other-condition-row');
+                    if (rows.length <= 1) {
+                        const fields = rows[0].querySelectorAll('input:not([type="hidden"]), textarea');
+                        fields.forEach(field => {
+                            field.value = '';
+                        });
+                        return;
+                    }
+
+                    removeButton.closest('.other-condition-row')?.remove();
                 });
             });
 

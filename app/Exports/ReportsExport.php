@@ -2,45 +2,43 @@
 
 namespace App\Exports;
 
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Illuminate\Database\Query\Builder;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Color;
 use Carbon\Carbon;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class ReportsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths
+class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithEvents
 {
-    protected $data;
+    protected Builder $query;
     protected $startDate;
     protected $endDate;
     protected $kode;
 
-    public function __construct($data, $startDate, $endDate, $kode = null)
+    public function __construct(Builder $query, $startDate, $endDate, $kode = null)
     {
-        $this->data = $data;
+        $this->query = $query;
         $this->startDate = $startDate;
         $this->endDate = $endDate;
         $this->kode = $kode;
     }
 
     /**
-     * Return data collection
+     * Return data query
      */
-    public function collection()
+    public function query(): Builder
     {
-        return collect($this->data);
+        return $this->query;
     }
+
     public function registerEvents(): array
     {
         return [
@@ -280,7 +278,7 @@ class ReportsExport implements FromCollection, WithHeadings, WithMapping, WithSt
         // Apply number formatting with negative numbers in parentheses
         // Format: 0.00;(0.00) means positive shown as 0.00, negative as (0.00)
         $dataStartRow = 5;
-        $dataEndRow = 4 + count($this->collection());
+        $dataEndRow = $sheet->getHighestRow();
 
         if ($dataEndRow >= $dataStartRow) {
             // 4 decimal places: columns K-P (cawan_kosong, cawan_sample_basah, cawan_sample_kering, sampel_setelah_oven, labu_kosong, oil_labu)

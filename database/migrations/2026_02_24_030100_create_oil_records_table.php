@@ -18,6 +18,7 @@ return new class extends Migration {
 
             // ── User ─────────────────────────────────────────────────────────────
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->enum('office', ['YBS', 'SUN', 'SJN'])->comment('Office/PT (auto dari user login, NOT NULL)');
 
             // ── Data Non-Angka (bisa banyak per hari) ───────────────────────
             $table->foreignId('oil_master_id')->nullable()->constrained('oil_master_data')->onDelete('set null');
@@ -36,6 +37,9 @@ return new class extends Migration {
             $table->index('kode');
             $table->index('created_at');
             $table->index('user_id');
+            $table->index('office', 'idx_oil_records_office');
+            $table->index(['office', 'created_at'], 'idx_oil_records_office_date');
+            $table->index(['kode', 'created_at'], 'idx_oil_records_kode_date');
         });
     }
 

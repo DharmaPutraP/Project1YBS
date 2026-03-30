@@ -82,10 +82,12 @@ class OilController extends Controller
         // Get statistics based on FILTERED queries (before pagination)
         $totalCalculations = (clone $calculationsQuery)->count();
         $totalRecords = (clone $recordsQuery)->count();
+        $todayStart = Carbon::today()->startOfDay()->format('Y-m-d H:i:s');
+        $todayEnd = Carbon::today()->endOfDay()->format('Y-m-d H:i:s');
 
         // Statistics query
-        $todayCalculations = OilCalculation::whereDate('created_at', today());
-        $todayRecords = OilRecord::whereDate('created_at', today());
+        $todayCalculations = OilCalculation::whereBetween('created_at', [$todayStart, $todayEnd]);
+        $todayRecords = OilRecord::whereBetween('created_at', [$todayStart, $todayEnd]);
 
         // Apply office filter to today's statistics
         if ($officeFilter !== 'all') {
@@ -364,9 +366,11 @@ class OilController extends Controller
             // Update or create related OilRecord (non-numeric data) if provided
             if ($validated['kode'] && $validated['jenis']) {
                 $recordDate = $oilCalculation->created_at->format('Y-m-d');
+                $recordDateStart = $recordDate . ' 00:00:00';
+                $recordDateEnd = $recordDate . ' 23:59:59';
 
                 $relatedRecord = OilRecord::where('kode', $oilCalculation->kode)
-                    ->whereDate('created_at', $recordDate)
+                    ->whereBetween('created_at', [$recordDateStart, $recordDateEnd])
                     ->first();
 
                 if ($relatedRecord) {
@@ -1155,7 +1159,10 @@ class OilController extends Controller
         $bobotConfigs = BobotConfig::all()->keyBy('jenis');
 
         // Get all calculations for this date with master data eager loaded to prevent N+1
-        $calculations = OilCalculation::whereDate('created_at', $date)
+        $dateStart = Carbon::parse($date)->startOfDay()->format('Y-m-d H:i:s');
+        $dateEnd = Carbon::parse($date)->endOfDay()->format('Y-m-d H:i:s');
+
+        $calculations = OilCalculation::whereBetween('created_at', [$dateStart, $dateEnd])
             ->with(['masterData:id,kode,jenis'])
             ->get();
 

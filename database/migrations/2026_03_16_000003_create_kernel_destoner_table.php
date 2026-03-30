@@ -4,17 +4,19 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('kernel_destoner', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->enum('office', ['YBS', 'SUN', 'SJN'])->nullable();
+            $table->dateTime('rounded_time')->nullable();
             $table->string('kode', 20);
             $table->string('jenis', 50)->nullable();
             $table->string('operator', 255);
             $table->string('sampel_boy', 255);
+            $table->boolean('pengulangan')->default(false);
             $table->decimal('berat_sampel', 10, 4)->comment('gram');
             $table->decimal('time', 10, 4)->comment('detik');
             $table->decimal('berat_nut', 10, 4);
@@ -31,6 +33,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
+            $table->index('office', 'idx_kernel_destoner_office');
             $table->index(['kode', 'created_at']);
         });
     }

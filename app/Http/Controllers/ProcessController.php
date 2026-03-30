@@ -20,6 +20,8 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ProcessController extends Controller
 {
+    private array $timedCodeRowsCache = [];
+
     private const TEAM_OPTIONS = ['Tim 1', 'Tim 2'];
 
     private const MACHINE_GROUPS = [
@@ -360,6 +362,7 @@ class ProcessController extends Controller
         $rows = [];
 
         foreach ($records as $record) {
+            /** @var KernelProsses $record */
             $team1Machines = $record->mesin->where('team_name', 'Tim 1')->values();
             $team2Machines = $record->mesin->where('team_name', 'Tim 2')->values();
 
@@ -436,6 +439,7 @@ class ProcessController extends Controller
 
         $rows = [];
         foreach ($records as $record) {
+            /** @var KernelProsses $record */
             $team1Machines = $record->mesin->where('team_name', 'Tim 1')->values();
             $team2Machines = $record->mesin->where('team_name', 'Tim 2')->values();
 
@@ -951,18 +955,15 @@ class ProcessController extends Controller
         $expectedByGroup = $this->buildExpectedSamplesByGroup($record, $teamName, $teamMachines, $office);
         $machineWindowsByCode = $this->buildMachineWindowsByCode($teamMachines);
 
-        $actualByGroup = $this->buildActualSamplesByGroup(
+        $actualBundle = $this->buildActualSamplesBundle(
             (string) optional($record->process_date)->format('Y-m-d'),
             $office === 'all' ? '' : $office,
             $machineWindowsByCode
         );
+        $actualByGroup = $actualBundle['group'];
 
         $expectedByCode = $this->buildExpectedSamplesByCode($record, $teamName, $teamMachines, $office);
-        $actualByCode = $this->buildActualSamplesByCode(
-            (string) optional($record->process_date)->format('Y-m-d'),
-            $office === 'all' ? '' : $office,
-            $machineWindowsByCode
-        );
+        $actualByCode = $actualBundle['code'];
 
         $detailValues = [];
         $detailActualTotal = 0;
@@ -1058,10 +1059,13 @@ class ProcessController extends Controller
 
     private function calculateTeamSpareHours(KernelProsses $record, string $teamName): int
     {
-        $spareMinutes = $record->mesin()
+        $machines = $record->relationLoaded('mesin')
+            ? $record->mesin
+            : $record->mesin()->get();
+
+        $spareMinutes = $machines
             ->where('team_name', $teamName)
             ->where('is_spare_input', false)
-            ->get()
             ->sum(fn(KernelMesin $machine): int => $this->hoursToMinutes((float) ($machine->is_spare ?? 0)));
 
         return intdiv((int) $spareMinutes, 60);
@@ -1141,59 +1145,7 @@ class ProcessController extends Controller
 
     private function buildActualSamplesByGroup(string $date, string $office, array $machineWindowsByCode): array
     {
-        $actual = [];
-        foreach (array_keys(self::PERFORMANCE_GROUP_INTERVAL_MINUTES) as $groupKey) {
-            $actual[$groupKey] = 0;
-        }
-
-        $rows = collect()
-            ->concat($this->fetchTimedCodeRows(KernelCalculation::query(), $date, $office))
-            ->concat($this->fetchTimedCodeRows(KernelDirtMoistCalculation::query(), $date, $office))
-            ->concat($this->fetchTimedCodeRows(KernelQwt::query(), $date, $office))
-            ->concat($this->fetchTimedCodeRows(KernelRippleMill::query(), $date, $office))
-            ->concat($this->fetchTimedCodeRows(KernelDestoner::query(), $date, $office));
-
-        foreach ($rows as $row) {
-            $code = $this->normalizeCode((string) ($row['code'] ?? ''));
-            $minutes = $this->timeToMinutes((string) ($row['time'] ?? ''));
-            $isPengulangan = (bool) ($row['pengulangan'] ?? false);
-
-            if ($isPengulangan) {
-                continue;
-            }
-
-            if ($code === '' || $minutes === null) {
-                continue;
-            }
-
-            $windows = $machineWindowsByCode[$code] ?? [];
-            if (empty($windows)) {
-                continue;
-            }
-
-            $matched = false;
-            foreach ($windows as $window) {
-                if ($this->isMinutesWithinRange($minutes, (int) $window['start'], (int) $window['end'])) {
-                    $matched = true;
-                    break;
-                }
-            }
-
-            if (!$matched) {
-                // Fallback: if machine code exists for this team on the same date,
-                // still count the input to tolerate operational time-entry shifts.
-                $matched = true;
-            }
-
-            $groupKey = $this->resolvePerformanceGroupByCode($code);
-            if ($groupKey === null) {
-                continue;
-            }
-
-            $actual[$groupKey]++;
-        }
-
-        return $actual;
+        return $this->buildActualSamplesBundle($date, $office, $machineWindowsByCode)['group'];
     }
 
     private function buildExpectedSamplesByCode(KernelProsses $record, string $teamName, Collection $machines, string $office = 'YBS'): array
@@ -1245,17 +1197,22 @@ class ProcessController extends Controller
 
     private function buildActualSamplesByCode(string $date, string $office, array $machineWindowsByCode): array
     {
-        $actual = [];
-        foreach (self::PERFORMANCE_DETAIL_CODES as $detailCode) {
-            $actual[$detailCode['code']] = 0;
+        return $this->buildActualSamplesBundle($date, $office, $machineWindowsByCode)['code'];
+    }
+
+    private function buildActualSamplesBundle(string $date, string $office, array $machineWindowsByCode): array
+    {
+        $groupActual = [];
+        foreach (array_keys(self::PERFORMANCE_GROUP_INTERVAL_MINUTES) as $groupKey) {
+            $groupActual[$groupKey] = 0;
         }
 
-        $rows = collect()
-            ->concat($this->fetchTimedCodeRows(KernelCalculation::query(), $date, $office))
-            ->concat($this->fetchTimedCodeRows(KernelDirtMoistCalculation::query(), $date, $office))
-            ->concat($this->fetchTimedCodeRows(KernelQwt::query(), $date, $office))
-            ->concat($this->fetchTimedCodeRows(KernelRippleMill::query(), $date, $office))
-            ->concat($this->fetchTimedCodeRows(KernelDestoner::query(), $date, $office));
+        $codeActual = [];
+        foreach (self::PERFORMANCE_DETAIL_CODES as $detailCode) {
+            $codeActual[$detailCode['code']] = 0;
+        }
+
+        $rows = $this->getTimedCodeRowsCached($date, $office);
 
         foreach ($rows as $row) {
             $isPengulangan = (bool) ($row['pengulangan'] ?? false);
@@ -1264,10 +1221,9 @@ class ProcessController extends Controller
             }
 
             $rawCode = $this->normalizeCode((string) ($row['code'] ?? ''));
-            $normalizedCode = $this->normalizeDetailCode($rawCode);
             $minutes = $this->timeToMinutes((string) ($row['time'] ?? ''));
 
-            if ($normalizedCode === null || $minutes === null) {
+            if ($rawCode === '' || $minutes === null) {
                 continue;
             }
 
@@ -1288,18 +1244,52 @@ class ProcessController extends Controller
                 $matched = true;
             }
 
-            $actual[$normalizedCode]++;
+            $groupKey = $this->resolvePerformanceGroupByCode($rawCode);
+            if ($groupKey !== null) {
+                $groupActual[$groupKey]++;
+            }
+
+            $normalizedCode = $this->normalizeDetailCode($rawCode);
+            if ($normalizedCode !== null) {
+                $codeActual[$normalizedCode]++;
+            }
         }
 
-        return $actual;
+        return [
+            'group' => $groupActual,
+            'code' => $codeActual,
+        ];
+    }
+
+    private function getTimedCodeRowsCached(string $date, string $office): Collection
+    {
+        $key = $date . '|' . strtoupper(trim($office));
+
+        if (!isset($this->timedCodeRowsCache[$key])) {
+            $this->timedCodeRowsCache[$key] = collect()
+                ->concat($this->fetchTimedCodeRows(KernelCalculation::query(), $date, $office))
+                ->concat($this->fetchTimedCodeRows(KernelDirtMoistCalculation::query(), $date, $office))
+                ->concat($this->fetchTimedCodeRows(KernelQwt::query(), $date, $office))
+                ->concat($this->fetchTimedCodeRows(KernelRippleMill::query(), $date, $office))
+                ->concat($this->fetchTimedCodeRows(KernelDestoner::query(), $date, $office))
+                ->values();
+        }
+
+        return $this->timedCodeRowsCache[$key];
     }
 
     private function fetchTimedCodeRows($query, string $date, string $office): Collection
     {
+        $startDateTime = $date . ' 00:00:00';
+        $endDateTime = $date . ' 23:59:59';
+
         $rows = $query
-            ->where(function ($builder) use ($date) {
-                $builder->whereDate('rounded_time', $date)
-                    ->orWhereDate('created_at', $date);
+            ->where(function ($builder) use ($startDateTime, $endDateTime) {
+                $builder->whereBetween('rounded_time', [$startDateTime, $endDateTime])
+                    ->orWhere(function ($fallback) use ($startDateTime, $endDateTime) {
+                        $fallback->whereNull('rounded_time')
+                            ->whereBetween('created_at', [$startDateTime, $endDateTime]);
+                    });
             })
             ->when($office !== '', fn($builder) => $builder->where('office', $office))
             ->get(['kode', 'rounded_time', 'created_at', 'pengulangan']);
@@ -1719,10 +1709,12 @@ class ProcessController extends Controller
         }
 
         if ($endMinute > $startMinute) {
-            return [[
-                'start' => $startMinute,
-                'end' => $endMinute,
-            ]];
+            return [
+                [
+                    'start' => $startMinute,
+                    'end' => $endMinute,
+                ]
+            ];
         }
 
         return [

@@ -53,10 +53,12 @@ class KernelController extends Controller
         }
 
         $totalCalculations = (clone $calculationsQuery)->count();
+        $todayStart = Carbon::today()->startOfDay()->format('Y-m-d H:i:s');
+        $todayEnd = Carbon::today()->endOfDay()->format('Y-m-d H:i:s');
 
         $statistics = [
             'total_records' => $totalCalculations,
-            'records_today' => KernelCalculation::whereDate('created_at', today())
+            'records_today' => KernelCalculation::whereBetween('created_at', [$todayStart, $todayEnd])
                 ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
                 ->count(),
             'calculations_count' => $totalCalculations,
@@ -303,10 +305,12 @@ class KernelController extends Controller
         }
 
         $totalRows = (clone $query)->count();
+        $todayStart = Carbon::today()->startOfDay()->format('Y-m-d H:i:s');
+        $todayEnd = Carbon::today()->endOfDay()->format('Y-m-d H:i:s');
 
         $statistics = [
             'total_records' => $totalRows,
-            'records_today' => KernelDirtMoistCalculation::whereDate('created_at', today())
+            'records_today' => KernelDirtMoistCalculation::whereBetween('created_at', [$todayStart, $todayEnd])
                 ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
                 ->count(),
             'calculations_count' => $totalRows,
@@ -531,10 +535,12 @@ class KernelController extends Controller
         }
 
         $totalRows = (clone $query)->count();
+        $todayStart = Carbon::today()->startOfDay()->format('Y-m-d H:i:s');
+        $todayEnd = Carbon::today()->endOfDay()->format('Y-m-d H:i:s');
 
         $statistics = [
             'total_records' => $totalRows,
-            'records_today' => KernelQwt::whereDate('created_at', today())
+            'records_today' => KernelQwt::whereBetween('created_at', [$todayStart, $todayEnd])
                 ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
                 ->count(),
             'calculations_count' => $totalRows,
@@ -837,10 +843,12 @@ class KernelController extends Controller
         }
 
         $totalRows = (clone $query)->count();
+        $todayStart = Carbon::today()->startOfDay()->format('Y-m-d H:i:s');
+        $todayEnd = Carbon::today()->endOfDay()->format('Y-m-d H:i:s');
 
         $statistics = [
             'total_records' => $totalRows,
-            'records_today' => KernelRippleMill::whereDate('created_at', today())
+            'records_today' => KernelRippleMill::whereBetween('created_at', [$todayStart, $todayEnd])
                 ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
                 ->count(),
             'calculations_count' => $totalRows,
@@ -1069,10 +1077,12 @@ class KernelController extends Controller
         }
 
         $totalRows = (clone $query)->count();
+        $todayStart = Carbon::today()->startOfDay()->format('Y-m-d H:i:s');
+        $todayEnd = Carbon::today()->endOfDay()->format('Y-m-d H:i:s');
 
         $statistics = [
             'total_records' => $totalRows,
-            'records_today' => KernelDestoner::whereDate('created_at', today())
+            'records_today' => KernelDestoner::whereBetween('created_at', [$todayStart, $todayEnd])
                 ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
                 ->count(),
             'calculations_count' => $totalRows,
@@ -1622,6 +1632,7 @@ class KernelController extends Controller
         // Build individual records (flat, one row per calculation)
         $individualRecords = [];
         foreach ($calculations as $calc) {
+            /** @var object $calc */
             $valuePercent = (float) ($calc->kernel_losses ?? 0) * 100;
             $config = $this->mapKodeToKernelConfig($calc->kode, $bobotConfigs);
             $bobot = $config ? $this->calculateKernelBobot($valuePercent, $config, $calc->kode) : null;
@@ -1640,6 +1651,7 @@ class KernelController extends Controller
 
         $grouped = [];
         foreach ($calculations as $calc) {
+            /** @var object $calc */
             $date = $calc->created_at->format('Y-m-d');
             $kode = $calc->kode;
             if (!isset($grouped[$date][$kode])) {

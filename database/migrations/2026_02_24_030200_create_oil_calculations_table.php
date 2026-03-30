@@ -19,6 +19,7 @@ return new class extends Migration {
 
             // ── User & Kode (UNIQUE per hari per kode via validation) ────────
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->enum('office', ['YBS', 'SUN', 'SJN'])->comment('Office/PT (auto dari user login, NOT NULL)');
             $table->foreignId('oil_master_id')->nullable()->constrained('oil_master_data')->onDelete('set null');
             $table->string('kode')->comment('Kode sample (setiap kode hanya 1x per hari)');
 
@@ -56,6 +57,9 @@ return new class extends Migration {
             // karena menggunakan DATE(created_at) yang tidak bisa diindex langsung
             $table->index('kode');
             $table->index('created_at');
+            $table->index('office', 'idx_oil_calculations_office');
+            $table->index(['office', 'kode', 'created_at'], 'idx_oil_calculations_office_kode_date');
+            $table->index(['kode', 'created_at'], 'idx_oil_calculations_kode_date');
         });
     }
 

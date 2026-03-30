@@ -37,8 +37,8 @@ return new class extends Migration {
             $table->timestamps();
 
             // ── Indexes ──────────────────────────────────────────────────────
-            $table->index('kode');
-            $table->index('is_active');
+            $table->index('kode', 'idx_oil_master_data_kode');
+            $table->index('is_active', 'idx_oil_master_data_is_active');
         });
     }
 

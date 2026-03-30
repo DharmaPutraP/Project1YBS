@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Pagination\LengthAwarePaginator;
 use App\Models\OilMasterData;
 use App\Models\BobotConfig;
 use App\Exports\ReportsExport;
@@ -193,24 +192,27 @@ class ReportController extends Controller
          * 4️⃣ UNION + SORT
          * ======================================================
          */
-        $allReports = $calculationWithRecord
+        $unionQuery = $calculationWithRecord
             ->unionAll($calculationOnly)
-            ->unionAll($recordOnly)
-            ->orderByRaw('DATE(created_at) ASC')
-            ->orderBy('kode', 'ASC')
-            ->orderBy('priority', 'ASC')
-            ->orderBy('created_at', 'ASC')
-            ->get()
-            ->toArray();
+            ->unionAll($recordOnly);
 
         /**
          * ======================================================
          * 5️⃣ FORMAT NUMBERS & PAGINATION
          * ======================================================
          */
-        // Format negative numbers before pagination to reduce Blade complexity
-        foreach ($allReports as &$report) {
-            // Format all numeric fields with proper negative handling
+        $perPage = 25;
+
+        $reports = DB::query()
+            ->fromSub($unionQuery, 'reports')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('kode', 'asc')
+            ->orderBy('priority', 'asc')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        // Keep formatted fields compatible with existing Blade templates.
+        $reports->getCollection()->transform(function ($report) {
             $report->cawan_kosong_fmt = $this->formatNumber($report->cawan_kosong, 4);
             $report->berat_basah_fmt = $this->formatNumber($report->berat_basah, 4);
             $report->total_cawan_basah_fmt = $this->formatNumber($report->total_cawan_basah, 4);
@@ -222,30 +224,23 @@ class ReportController extends Controller
             $report->moist_fmt = $this->formatNumber($report->moist, 2);
             $report->dmwm_fmt = $this->formatNumber($report->dmwm, 2);
             $report->olwb_fmt = $this->formatNumber($report->olwb, 2);
-            $report->limitOLWB_fmt = ($report->limitOLWB === null || $report->limitOLWB == 0) ? '-' : $this->formatNumber($report->limitOLWB, 2);
+            $report->limitOLWB_fmt = ($report->limitOLWB === null || $report->limitOLWB == 0)
+                ? '-'
+                : $this->formatNumber($report->limitOLWB, 2);
             $report->oldb_fmt = $this->formatNumber($report->oldb, 2);
-            $report->limitOLDB_fmt = ($report->limitOLDB === null || $report->limitOLDB == 0) ? '-' : $this->formatNumber($report->limitOLDB, 2);
+            $report->limitOLDB_fmt = ($report->limitOLDB === null || $report->limitOLDB == 0)
+                ? '-'
+                : $this->formatNumber($report->limitOLDB, 2);
             $report->oil_losses_fmt = $this->formatNumber($report->oil_losses, 2);
-            $report->limitOL_fmt = ($report->limitOL === null || $report->limitOL == 0) ? '-' : $this->formatNumber($report->limitOL, 2);
-            $report->persen4_fmt = ($report->persen4 === null || $report->persen4 == 0) ? '-' : $this->formatNumber($report->persen4, 2);
-        }
+            $report->limitOL_fmt = ($report->limitOL === null || $report->limitOL == 0)
+                ? '-'
+                : $this->formatNumber($report->limitOL, 2);
+            $report->persen4_fmt = ($report->persen4 === null || $report->persen4 == 0)
+                ? '-'
+                : $this->formatNumber($report->persen4, 2);
 
-        $perPage = 25; // Reduced from 50 to improve performance
-        $page = $request->get('page', 1);
-        $total = count($allReports);
-
-        $items = array_slice($allReports, ($page - 1) * $perPage, $perPage);
-
-        $reports = new LengthAwarePaginator(
-            $items,
-            $total,
-            $perPage,
-            $page,
-            [
-                'path' => $request->url(),
-                'query' => $request->query(),
-            ]
-        );
+            return $report;
+        });
 
         /**
          * ======================================================
@@ -468,14 +463,15 @@ class ReportController extends Controller
                 DB::raw('NULL as persen4'),
             ]);
 
-        $allReports = $calculationWithRecord
+        $unionQuery = $calculationWithRecord
             ->unionAll($calculationOnly)
-            ->unionAll($recordOnly)
-            ->orderByRaw('DATE(created_at) ASC')
-            ->orderBy('kode', 'ASC')
-            ->orderBy('priority', 'ASC')
-            ->orderBy('created_at', 'ASC')
-            ->get();
+            ->unionAll($recordOnly);
+
+        $exportQuery = DB::query()
+            ->fromSub($unionQuery, 'reports')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('kode', 'asc')
+            ->orderBy('priority', 'asc');
 
         $filename = 'Laporan_Oil_Losses_' .
             Carbon::parse($startDate)->format('Ymd') . '_' .
@@ -488,7 +484,7 @@ class ReportController extends Controller
         $filename .= '.xlsx';
 
         return Excel::download(
-            new ReportsExport($allReports, $startDate, $endDate, $kode),
+            new ReportsExport($exportQuery, $startDate, $endDate, $kode),
             $filename
         );
     }

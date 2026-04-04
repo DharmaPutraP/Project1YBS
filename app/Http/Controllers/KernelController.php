@@ -1173,15 +1173,14 @@ class KernelController extends Controller
         $beratNut = (float) $validated['berat_nut'];
         $beratKernel = (float) $validated['berat_kernel'];
 
-        $konversiKg = round($beratSampel / 1000, 6);
-        $rasioJamKg = round($konversiKg * 3600 / $time, 6);
+        $konversiKg = $beratSampel / 1000;
+        $rasioJamKg = $konversiKg * 3600 / $time;
         // Destoner percentages are reported on half-sample basis.
-        $persenNut = round(($beratNut / $beratSampel) * 50, 6);
-        $persenKernel = round(($beratKernel / $beratSampel) * 100, 6);
-        $totalLossesKernel = round($persenKernel + $persenNut, 6);
-        $lossKernelJam = round(($totalLossesKernel * $rasioJamKg) / 100, 6);
-        $lossKernelTbs = round($lossKernelJam / 300, 8);
-
+        $persenNut = ($beratNut / $beratSampel) * 50;
+        $persenKernel = ($beratKernel / $beratSampel) * 100;
+        $totalLossesKernel = $persenKernel + $persenNut;
+        $lossKernelJam = ($totalLossesKernel * $rasioJamKg) / 100;
+        $lossKernelTbs = $lossKernelJam / 600;
         $limitMap = $this->getDestonerLimitMap();
         $kode = $validated['kode'];
 

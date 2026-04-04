@@ -80,7 +80,7 @@
                         </label>
                         @if(!empty($operatorOptions))
                             <select name="operator" id="operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
-                                           @error('operator') border-red-400 bg-red-50 @enderror">
+                                                           @error('operator') border-red-400 bg-red-50 @enderror">
                                 <option value="">-- Pilih Operator --</option>
                                 @foreach($operatorOptions as $operatorName)
                                     <option value="{{ $operatorName }}" {{ old('operator') == $operatorName ? 'selected' : '' }}>
@@ -89,13 +89,15 @@
                                 @endforeach
                             </select>
                             <p class="mt-1 text-xs text-gray-500">Daftar operator mengikuti office
-                                {{ Auth::user()->office ?? '-' }}.</p>
+                                {{ Auth::user()->office ?? '-' }}.
+                            </p>
                         @else
                             <input type="text" name="operator" id="operator" value="{{ old('operator') }}"
                                 placeholder="Nama operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
-                                           @error('operator') border-red-400 bg-red-50 @enderror">
+                                                           @error('operator') border-red-400 bg-red-50 @enderror">
                             <p class="mt-1 text-xs text-gray-500">Dropdown operator belum tersedia untuk office
-                                {{ Auth::user()->office ?? '-' }}.</p>
+                                {{ Auth::user()->office ?? '-' }}.
+                            </p>
                         @endif
                         @error('operator')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -277,7 +279,7 @@
             const persenKernel = beratSampel > 0 ? (beratKernel / beratSampel) * 100 : 0;
             const totalLossesKernel = persenKernel + persenNut;
             const lossKernelJam = (totalLossesKernel * rasioJamKg) / 100;
-            const lossKernelTbs = lossKernelJam / 300;
+            const lossKernelTbs = lossKernelJam / 600;
 
             const limitConfig = kernelLimitMap?.[kodeValue] ?? null;
             const limitStatus = evaluateLimit(lossKernelTbs, limitConfig);

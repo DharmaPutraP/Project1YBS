@@ -49,11 +49,11 @@ class OilMasterData extends Model
     {
         return static::active()
             ->orderBy('kode')
-            ->get(['kode', 'pivot'])
+            ->get(['kode', 'pivot', 'description'])
             ->mapWithKeys(function ($item) {
-                $label = $item->pivot
-                    ? "{$item->kode} - {$item->pivot}"
-                    : $item->kode;
+                $label = $item->description
+                    ? "{$item->kode} - {$item->description}"
+                    : ($item->pivot ? "{$item->kode} - {$item->pivot}" : $item->kode);
 
                 return [$item->kode => $label];
             });
@@ -64,13 +64,15 @@ class OilMasterData extends Model
      */
     public static function getKodeDisplay(string $kode, ?string $pivot = null): string
     {
-        $resolvedPivot = $pivot;
+        $masterData = static::where('kode', $kode)->first(['pivot', 'description']);
 
-        if (!$resolvedPivot) {
-            $resolvedPivot = static::where('kode', $kode)->value('pivot');
+        $resolvedLabel = $masterData?->description ?: $pivot;
+
+        if (!$resolvedLabel) {
+            $resolvedLabel = $masterData?->pivot;
         }
 
-        return $resolvedPivot ? "{$kode} - {$resolvedPivot}" : $kode;
+        return $resolvedLabel ? "{$kode} - {$resolvedLabel}" : $kode;
     }
 
     /**

@@ -15,7 +15,7 @@ return [
             'Setia Ardi ',
             'Rohmania Budi Nantoko'
         ],
-        'YBS' => ['WEWEN SAPUTRA', 'MUHAMMAD SAFII', 'SAS FEGO RIKANDOKA', 'FIKRI HIDAYAT', 'ARIF RAHMAN', 'GABE HAMORAON',],
+        'YBS' => ['Arif Rahman', 'Asral', 'WEWEN SAPUTRA', 'MUHAMMAD SAFII', 'SAS FEGO RIKANDOKA', 'FIKRI HIDAYAT', 'ARIF RAHMAN', 'GABE HAMORAON', 'Fitrah Prabowo', 'Raynaldy', 'Rizki Ardian Sinaga', 'Sas Fego Rikandoka', 'Taufiq'],
         'SJN' => [],
     ],
     'kernel' => [

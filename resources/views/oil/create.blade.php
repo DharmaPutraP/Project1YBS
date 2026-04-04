@@ -122,7 +122,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Pivot. Pivot hanya untuk informasi.</p>
+                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Description. Description hanya untuk informasi.</p>
                         @error('kode')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -226,7 +226,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Pivot. Pivot hanya untuk informasi.</p>
+                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Description. Description hanya untuk informasi.</p>
                         @error('kode_mode2')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror

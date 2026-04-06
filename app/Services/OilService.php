@@ -113,7 +113,7 @@ class OilService
         $record = OilRecord::create([
             'user_id' => $userId,
             'office' => $userOffice,  // Multi-tenancy: office dari user
-            'lab_master_id' => $masterData->id,
+            'oil_master_id' => $masterData->id,
             'kode' => $masterData->kode,
             'column_name' => $masterData->column_name,
             'pivot' => $masterData->pivot,
@@ -152,15 +152,39 @@ class OilService
         }
 
         $kode = $data['kode_mode2'];
+        $phase = in_array(($data['phase'] ?? 'complete'), ['initial', 'final', 'complete'], true)
+            ? $data['phase']
+            : 'complete';
 
-        // FASE 2: Cek apakah kombinasi (office + tanggal hari ini + kode) sudah ada
-        // Multi-tenancy: YBS bisa input kode A, SUN bisa input kode A yang berbeda
-        $existing = OilCalculation::whereDate('created_at', today())
-            ->where('office', $userOffice)
+        $initialData = [
+            'cawan_kosong' => $data['cawan_kosong'] ?? null,
+            'berat_basah' => $data['berat_basah'] ?? null,
+            'cawan_sample_kering' => $data['cawan_sample_kering'] ?? null,
+        ];
+
+        $finalData = [
+            'labu_kosong' => $data['labu_kosong'] ?? null,
+            'oil_labu' => $data['oil_labu'] ?? null,
+        ];
+
+        $existingOpenBatch = OilCalculation::where('office', $userOffice)
             ->where('kode', $kode)
+            ->where('status', 'partial')
+            ->latest('id')
             ->first();
 
-        if ($existing) {
+        $existingCompletedBatch = OilCalculation::where('office', $userOffice)
+            ->where('kode', $kode)
+            ->where('status', 'complete')
+            ->whereDate('created_at', today())
+            ->latest('id')
+            ->first();
+
+        if ($phase === 'initial' && $existingCompletedBatch && !$existingOpenBatch) {
+            throw new Exception("Kode '{$kode}' untuk office {$userOffice} hari ini sudah selesai diproses. Gunakan kode lain atau buka data yang sudah ada untuk koreksi.");
+        }
+
+        if ($phase === 'complete' && $existingCompletedBatch && !$existingOpenBatch) {
             throw new Exception("Kode '{$kode}' untuk office {$userOffice} hari ini sudah ada. Setiap kode hanya boleh diinput sekali per hari per office.");
         }
 
@@ -173,22 +197,83 @@ class OilService
             throw new Exception("Kode '{$kode}' tidak ditemukan di master data.");
         }
 
-        // FASE 4: Hitung semua nilai menggunakan parseNum
-        $calculations = $this->calculateAllValues($data, $masterData);
+        $basePayload = [
+            'user_id' => $existingOpenBatch?->user_id ?? $userId,
+            'office' => $userOffice,
+            'oil_master_id' => $masterData->id,
+            'kode' => $masterData->kode,
+            'initial_user_id' => $existingOpenBatch?->initial_user_id ?? ($phase === 'initial' || $phase === 'complete' ? $userId : null),
+            'final_user_id' => $existingOpenBatch?->final_user_id ?? ($phase === 'final' || $phase === 'complete' ? $userId : null),
+        ];
 
-        // FASE 5: Simpan ke lab_calculations
-        $calculation = OilCalculation::create(
-            array_merge($calculations, [
-                'user_id' => $userId,
-                'office' => $userOffice,  // Multi-tenancy: office dari user
-                'lab_master_id' => $masterData->id,
-                'kode' => $masterData->kode,
-            ])
-        );
+        if ($phase === 'initial') {
+            $payload = array_merge($basePayload, [
+                'phase' => 'initial',
+                'status' => 'partial',
+            ], $this->normalizeInitialPayload($initialData));
+
+            $calculation = $existingOpenBatch
+                ? tap($existingOpenBatch)->update($payload)
+                : OilCalculation::create($payload);
+
+            return [
+                'type' => 'numeric',
+                'calculation' => $existingOpenBatch?->fresh() ?? $calculation,
+                'phase' => 'initial',
+                'status' => 'partial',
+                'message' => "Data awal (Mode 2) untuk kode {$kode} berhasil disimpan sebagai draft.",
+            ];
+        }
+
+        if ($phase === 'final') {
+            if (!$existingOpenBatch) {
+                throw new Exception("Kode '{$kode}' belum memiliki data awal yang aktif. Simpan tahap awal terlebih dahulu sebelum input tahap akhir.");
+            }
+
+            $mergedData = array_merge($existingOpenBatch->only([
+                'cawan_kosong',
+                'berat_basah',
+                'cawan_sample_kering',
+                'labu_kosong',
+                'oil_labu',
+            ]), $finalData);
+
+            if ($mergedData['cawan_kosong'] === null || $mergedData['berat_basah'] === null || $mergedData['cawan_sample_kering'] === null) {
+                throw new Exception("Data awal untuk kode '{$kode}' belum lengkap. Lengkapi tahap awal terlebih dahulu.");
+            }
+
+            $calculations = $this->calculateAllValues(array_merge($mergedData, $finalData), $masterData);
+            $payload = array_merge($basePayload, $calculations, $this->normalizeInitialPayload($mergedData), $this->normalizeFinalPayload($finalData), [
+                'phase' => 'final',
+                'status' => 'complete',
+            ]);
+
+            $existingOpenBatch->update($payload);
+
+            return [
+                'type' => 'numeric',
+                'calculation' => $existingOpenBatch->fresh(),
+                'phase' => 'final',
+                'status' => 'complete',
+                'message' => "Data akhir (Mode 2) untuk kode {$kode} berhasil dilengkapi.",
+            ];
+        }
+
+        $calculations = $this->calculateAllValues(array_merge($initialData, $finalData), $masterData);
+        $payload = array_merge($basePayload, $calculations, $this->normalizeInitialPayload($initialData), $this->normalizeFinalPayload($finalData), [
+            'phase' => 'complete',
+            'status' => 'complete',
+        ]);
+
+        $calculation = $existingOpenBatch
+            ? tap($existingOpenBatch)->update($payload)
+            : OilCalculation::create($payload);
 
         return [
             'type' => 'numeric',
-            'calculation' => $calculation,
+            'calculation' => $existingOpenBatch?->fresh() ?? $calculation,
+            'phase' => 'complete',
+            'status' => 'complete',
             'message' => "Data perhitungan (Mode 2) untuk kode {$kode} berhasil disimpan.",
         ];
     }
@@ -294,5 +379,38 @@ class OilService
         // Try to clean the string
         $cleaned = preg_replace('/[^0-9.-]/', '', (string) $value);
         return is_numeric($cleaned) ? (float) $cleaned : 0.0;
+    }
+
+    /**
+     * Normalize early-phase payload for storage.
+     */
+    private function normalizeInitialPayload(array $data): array
+    {
+        return [
+            'cawan_kosong' => array_key_exists('cawan_kosong', $data) && $data['cawan_kosong'] !== null && $data['cawan_kosong'] !== ''
+                ? $this->parseNum($data['cawan_kosong'])
+                : null,
+            'berat_basah' => array_key_exists('berat_basah', $data) && $data['berat_basah'] !== null && $data['berat_basah'] !== ''
+                ? $this->parseNum($data['berat_basah'])
+                : null,
+            'cawan_sample_kering' => array_key_exists('cawan_sample_kering', $data) && $data['cawan_sample_kering'] !== null && $data['cawan_sample_kering'] !== ''
+                ? $this->parseNum($data['cawan_sample_kering'])
+                : null,
+        ];
+    }
+
+    /**
+     * Normalize late-phase payload for storage.
+     */
+    private function normalizeFinalPayload(array $data): array
+    {
+        return [
+            'labu_kosong' => array_key_exists('labu_kosong', $data) && $data['labu_kosong'] !== null && $data['labu_kosong'] !== ''
+                ? $this->parseNum($data['labu_kosong'])
+                : null,
+            'oil_labu' => array_key_exists('oil_labu', $data) && $data['oil_labu'] !== null && $data['oil_labu'] !== ''
+                ? $this->parseNum($data['oil_labu'])
+                : null,
+        ];
     }
 }

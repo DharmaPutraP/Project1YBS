@@ -131,7 +131,7 @@
                         </label>
                         @if(!empty($operatorOptions))
                             <select name="operator" id="operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500
-                                           @error('operator') border-red-400 bg-red-50 @enderror">
+                                                   @error('operator') border-red-400 bg-red-50 @enderror">
                                 <option value="">-- Pilih Operator --</option>
                                 @foreach($operatorOptions as $operatorName)
                                     <option value="{{ $operatorName }}" {{ old('operator') == $operatorName ? 'selected' : '' }}>
@@ -140,13 +140,15 @@
                                 @endforeach
                             </select>
                             <p class="mt-1 text-xs text-gray-500">Daftar operator mengikuti office
-                                {{ Auth::user()->office ?? '-' }}.</p>
+                                {{ Auth::user()->office ?? '-' }}.
+                            </p>
                         @else
                             <input type="text" name="operator" id="operator" value="{{ old('operator') }}"
                                 placeholder="Nama operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500
-                                       @error('operator') border-red-400 bg-red-50 @enderror">
+                                               @error('operator') border-red-400 bg-red-50 @enderror">
                             <p class="mt-1 text-xs text-gray-500">Dropdown operator belum tersedia untuk office
-                                {{ Auth::user()->office ?? '-' }}.</p>
+                                {{ Auth::user()->office ?? '-' }}.
+                            </p>
                         @endif
                         @error('operator')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -197,10 +199,9 @@
                         <div>
                             <label for="nut_utuh_kernel" class="block text-sm font-medium text-gray-700 mb-2">
                                 Kernel <span class="text-red-500">*</span>
-                                <span class="text-gray-400 text-xs">(gram)</span>
                             </label>
                             <input type="number" step="0.0001" name="nut_utuh_kernel" id="nut_utuh_kernel"
-                                value="{{ old('nut_utuh_kernel') }}" placeholder="0.0000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                value="{{ old('nut_utuh_kernel') }}" placeholder="0.0000" readonly class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 cursor-not-allowed transition focus:outline-none focus:ring-2 focus:ring-indigo-500
                                    @error('nut_utuh_kernel') border-red-400 bg-red-50 @enderror">
                             @error('nut_utuh_kernel')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -228,10 +229,9 @@
                         <div>
                             <label for="nut_pecah_kernel" class="block text-sm font-medium text-gray-700 mb-2">
                                 Kernel <span class="text-red-500">*</span>
-                                <span class="text-gray-400 text-xs">(gram)</span>
                             </label>
                             <input type="number" step="0.0001" name="nut_pecah_kernel" id="nut_pecah_kernel"
-                                value="{{ old('nut_pecah_kernel') }}" placeholder="0.0000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                value="{{ old('nut_pecah_kernel') }}" placeholder="0.0000" readonly class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 cursor-not-allowed transition focus:outline-none focus:ring-2 focus:ring-indigo-500
                                    @error('nut_pecah_kernel') border-red-400 bg-red-50 @enderror">
                             @error('nut_pecah_kernel')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -343,9 +343,30 @@
                 setTimeout(function () {
                     $('.select2-kode').val(null).trigger('change');
                     $('.select2-jenis').val('TBS').trigger('change');
+                    syncKernelFromNut();
                     $('#validation-error').remove();
                 }, 10);
             });
+
+            function setHalfValue(sourceId, targetId) {
+                const sourceRaw = $(`#${sourceId}`).val();
+                const source = parseFloat(sourceRaw);
+
+                if (sourceRaw === '' || !Number.isFinite(source)) {
+                    $(`#${targetId}`).val('');
+                    return;
+                }
+
+                $(`#${targetId}`).val((source / 2).toFixed(4));
+            }
+
+            function syncKernelFromNut() {
+                setHalfValue('nut_utuh_nut', 'nut_utuh_kernel');
+                setHalfValue('nut_pecah_nut', 'nut_pecah_kernel');
+            }
+
+            $('#nut_utuh_nut, #nut_pecah_nut').on('input change', syncKernelFromNut);
+            syncKernelFromNut();
 
             // Validation
             $('#kernelForm').on('submit', function (e) {

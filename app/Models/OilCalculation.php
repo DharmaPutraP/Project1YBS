@@ -18,6 +18,10 @@ class OilCalculation extends Model
         'office',       // Office/PT (YBS, SUN, SJN)
         'oil_master_id',
         'kode',
+        'phase',
+        'status',
+        'initial_user_id',
+        'final_user_id',
         'cawan_kosong',
         'berat_basah',
         'cawan_sample_kering',
@@ -39,6 +43,8 @@ class OilCalculation extends Model
     ];
 
     protected $casts = [
+        'phase' => 'string',
+        'status' => 'string',
         'cawan_kosong' => 'decimal:6',
         'berat_basah' => 'decimal:6',
         'cawan_sample_kering' => 'decimal:6',
@@ -73,6 +79,22 @@ class OilCalculation extends Model
     public function masterData(): BelongsTo
     {
         return $this->belongsTo(OilMasterData::class, 'oil_master_id');
+    }
+
+    /**
+     * Get the user who started this calculation.
+     */
+    public function initialUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'initial_user_id');
+    }
+
+    /**
+     * Get the user who completed this calculation.
+     */
+    public function finalUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'final_user_id');
     }
 
     /**

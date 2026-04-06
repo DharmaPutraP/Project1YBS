@@ -303,9 +303,19 @@ class OfflineManager {
             if (data.jenis) details.push(`Jenis: ${data.jenis}`);
             
             // Mode 2 data  
+            if (data.phase) {
+                const phaseLabel = {
+                    initial: 'Tahap Awal',
+                    final: 'Tahap Akhir',
+                    complete: 'Lengkap'
+                }[data.phase] || data.phase;
+                details.push(`Tahap: ${phaseLabel}`);
+            }
             if (data.kode_mode2) details.push(`Kode: ${data.kode_mode2}`);
             if (data.cawan_kosong) details.push(`Cawan Kosong: ${data.cawan_kosong}`);
             if (data.berat_basah) details.push(`Berat Basah: ${data.berat_basah}`);
+            if (data.labu_kosong) details.push(`Labu Kosong: ${data.labu_kosong}`);
+            if (data.oil_labu) details.push(`Oil + Labu: ${data.oil_labu}`);
             
             const detailsHtml = details.length > 0 
                 ? `<div class="text-xs text-gray-500 mt-1">${details.slice(0, 3).join(' • ')}</div>`

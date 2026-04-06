@@ -193,7 +193,7 @@
                 </div>
             </div>
 
-            {{-- MODE 2: Angka (Hanya 1x per Kode per Day) --}}
+            {{-- MODE 2: Angka (Phase-Based) --}}
             <div id="mode2Section" class="border-2 border-green-200 bg-green-50 rounded-lg p-5">
                 <div class="flex items-center mb-4">
                     <div
@@ -201,15 +201,42 @@
                         2
                     </div>
                     <h3 class="text-lg font-semibold text-gray-800">
-                        Mode Angka <span class="text-sm text-gray-600 font-normal">(Hanya 1x per kode per hari)</span>
+                        Mode Angka <span class="text-sm text-gray-600 font-normal">(bisa tahap awal, tahap akhir, atau lengkap)</span>
                     </h3>
                 </div>
 
                 <div class="space-y-4">
                     <div class="text-sm text-green-800 bg-green-100 border border-green-300 rounded-lg p-3">
                         <p>
-                            ℹ️ <strong>Perhatian:</strong> Setiap kode hanya bisa diinput sekali per hari. Jika kode sudah ada di tanggal yang sama, data akan ditolak.
+                            ℹ️ <strong>Perhatian:</strong> Pilih <strong>Tahap Awal</strong> untuk cawan/berat basah, <strong>Tahap Akhir</strong> untuk labu dan oil + labu, atau <strong>Lengkap</strong> bila diisi sekaligus.
                         </p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tahap Input</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <label class="flex items-center gap-3 p-3 rounded-lg border border-green-200 bg-white cursor-pointer">
+                                <input type="radio" name="phase" value="initial" {{ old('phase', 'initial') === 'initial' ? 'checked' : '' }}>
+                                <div>
+                                    <div class="font-medium text-gray-800">Tahap Awal</div>
+                                    <div class="text-xs text-gray-500">Cawan kosong, berat basah, cawan + sample kering</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 rounded-lg border border-green-200 bg-white cursor-pointer">
+                                <input type="radio" name="phase" value="final" {{ old('phase') === 'final' ? 'checked' : '' }}>
+                                <div>
+                                    <div class="font-medium text-gray-800">Tahap Akhir</div>
+                                    <div class="text-xs text-gray-500">Labu kosong, oil + labu</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 rounded-lg border border-green-200 bg-white cursor-pointer">
+                                <input type="radio" name="phase" value="complete" {{ old('phase') === 'complete' ? 'checked' : '' }}>
+                                <div>
+                                    <div class="font-medium text-gray-800">Lengkap</div>
+                                    <div class="text-xs text-gray-500">Semua field diisi sekaligus</div>
+                                </div>
+                            </label>
+                        </div>
                     </div>
 
                     {{-- Kode Selection for Mode 2 --}}
@@ -232,69 +259,73 @@
                         @enderror
                     </div>
 
-                    {{-- Row 1: Cawan Kosong, Berat Sampel Basah, Cawan Sample Kering --}}
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="cawan_kosong" class="block text-sm font-medium text-gray-700 mb-2">
-                                Cawan Kosong
-                            </label>
-                            <input type="number" step="0.000001" name="cawan_kosong" id="cawan_kosong"
-                                value="{{ old('cawan_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                       @error('cawan_kosong') border-red-400 bg-red-50 @enderror">
-                            @error('cawan_kosong')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
+                    <div id="initialPhaseFields">
+                        <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap Awal</div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="cawan_kosong" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Cawan Kosong
+                                </label>
+                                <input type="number" step="0.000001" name="cawan_kosong" id="cawan_kosong"
+                                    value="{{ old('cawan_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
+                                           @error('cawan_kosong') border-red-400 bg-red-50 @enderror">
+                                @error('cawan_kosong')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <div>
-                            <label for="berat_basah" class="block text-sm font-medium text-gray-700 mb-2">
-                                Berat Sampel Basah
-                            </label>
-                            <input type="number" step="0.000001" name="berat_basah" id="berat_basah"
-                                value="{{ old('berat_basah') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                       @error('berat_basah') border-red-400 bg-red-50 @enderror">
-                            @error('berat_basah')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
+                            <div>
+                                <label for="berat_basah" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Berat Sampel Basah
+                                </label>
+                                <input type="number" step="0.000001" name="berat_basah" id="berat_basah"
+                                    value="{{ old('berat_basah') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
+                                           @error('berat_basah') border-red-400 bg-red-50 @enderror">
+                                @error('berat_basah')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <div>
-                            <label for="cawan_sample_kering" class="block text-sm font-medium text-gray-700 mb-2">
-                                Cawan + Sample Kering
-                            </label>
-                            <input type="number" step="0.000001" name="cawan_sample_kering" id="cawan_sample_kering"
-                                value="{{ old('cawan_sample_kering') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                       @error('cawan_sample_kering') border-red-400 bg-red-50 @enderror">
-                            @error('cawan_sample_kering')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div>
+                                <label for="cawan_sample_kering" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Cawan + Sample Kering
+                                </label>
+                                <input type="number" step="0.000001" name="cawan_sample_kering" id="cawan_sample_kering"
+                                    value="{{ old('cawan_sample_kering') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
+                                           @error('cawan_sample_kering') border-red-400 bg-red-50 @enderror">
+                                @error('cawan_sample_kering')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
                     </div>
 
-                    {{-- Row 2: Labu Kosong, Oil Labu --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="labu_kosong" class="block text-sm font-medium text-gray-700 mb-2">
-                                Labu Kosong
-                            </label>
-                            <input type="number" step="0.000001" name="labu_kosong" id="labu_kosong"
-                                value="{{ old('labu_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                       @error('labu_kosong') border-red-400 bg-red-50 @enderror">
-                            @error('labu_kosong')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
+                    <div id="finalPhaseFields">
+                        <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap Akhir</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="labu_kosong" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Labu Kosong
+                                </label>
+                                <input type="number" step="0.000001" name="labu_kosong" id="labu_kosong"
+                                    value="{{ old('labu_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
+                                           @error('labu_kosong') border-red-400 bg-red-50 @enderror">
+                                @error('labu_kosong')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <div>
-                            <label for="oil_labu" class="block text-sm font-medium text-gray-700 mb-2">
-                                Oil + Labu
-                            </label>
-                            <input type="number" step="0.000001" name="oil_labu" id="oil_labu" value="{{ old('oil_labu') }}"
-                                placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                       @error('oil_labu') border-red-400 bg-red-50 @enderror">
-                            @error('oil_labu')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div>
+                                <label for="oil_labu" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Oil + Labu
+                                </label>
+                                <input type="number" step="0.000001" name="oil_labu" id="oil_labu" value="{{ old('oil_labu') }}"
+                                    placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
+                                           @error('oil_labu') border-red-400 bg-red-50 @enderror">
+                                @error('oil_labu')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -401,10 +432,35 @@
             updateClock();
             setInterval(updateClock, 1000);
 
+            function getPhase() {
+                return $('input[name="phase"]:checked').val() || 'initial';
+            }
+
+            function togglePhaseFields() {
+                const phase = getPhase();
+                const initialFields = $('#initialPhaseFields').find('input');
+                const finalFields = $('#finalPhaseFields').find('input');
+
+                if (phase === 'initial') {
+                    initialFields.prop('disabled', false);
+                    finalFields.prop('disabled', true);
+                } else if (phase === 'final') {
+                    initialFields.prop('disabled', true);
+                    finalFields.prop('disabled', false);
+                } else {
+                    initialFields.prop('disabled', false);
+                    finalFields.prop('disabled', false);
+                }
+            }
+
+            $('input[name="phase"]').on('change', togglePhaseFields);
+            togglePhaseFields();
+
             // Form validation: Jika 1 field di mode diisi, semua field di mode tersebut WAJIB diisi
             $('#labForm').on('submit', function(e) {
                 let hasError = false;
                 let errorMessages = [];
+                const phase = getPhase();
 
                 // Mode 1 validation
                 // HANYA cek field yang user bisa edit: kode dan operator
@@ -449,7 +505,13 @@
                     'oil_labu': 'Oil + Labu'
                 };
 
-                const mode2Values = Object.keys(mode2Fields).map(field => {
+                const phaseFields = phase === 'initial'
+                    ? ['kode_mode2', 'cawan_kosong', 'berat_basah', 'cawan_sample_kering']
+                    : phase === 'final'
+                        ? ['kode_mode2', 'labu_kosong', 'oil_labu']
+                        : Object.keys(mode2Fields);
+
+                const mode2Values = phaseFields.map(field => {
                     const value = $(`#${field}`).val();
                     return value && value.trim() !== '';
                 });
@@ -457,7 +519,7 @@
                 const mode2HasAnyValue = mode2Values.some(v => v === true);
 
                 if (mode2HasAnyValue) {
-                    Object.keys(mode2Fields).forEach(field => {
+                    phaseFields.forEach(field => {
                         const value = $(`#${field}`).val();
                         if (!value || value.trim() === '') {
                             errorMessages.push(`${mode2Fields[field]} wajib diisi (Mode Angka)`);

@@ -159,6 +159,7 @@ class OilController extends Controller
         // HANYA cek field yang user input manual (kode & operator)
         // Jenis dan Sampel Boy diabaikan karena punya default value
         $mode1UserFields = ['kode', 'operator'];
+        $phase = $request->input('phase', 'complete');
         $mode2Fields = ['kode_mode2', 'cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'];
 
         // Cek apakah ada field Mode 1 yang user isi manual (kode atau operator)
@@ -167,8 +168,35 @@ class OilController extends Controller
         // Cek apakah ada field Mode 2 yang diisi
         $mode2HasAnyValue = collect($mode2Fields)->contains(fn($field) => $request->filled($field));
 
+        $mode2Rules = match ($phase) {
+            'initial' => [
+                'kode_mode2' => $mode2HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
+                'cawan_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+                'berat_basah' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+                'cawan_sample_kering' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+                'labu_kosong' => 'nullable|numeric|min:0',
+                'oil_labu' => 'nullable|numeric|min:0',
+            ],
+            'final' => [
+                'kode_mode2' => $mode2HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
+                'cawan_kosong' => 'nullable|numeric|min:0',
+                'berat_basah' => 'nullable|numeric|min:0',
+                'cawan_sample_kering' => 'nullable|numeric|min:0',
+                'labu_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+                'oil_labu' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+            ],
+            default => [
+                'kode_mode2' => $mode2HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
+                'cawan_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+                'berat_basah' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+                'cawan_sample_kering' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+                'labu_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+                'oil_labu' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+            ],
+        };
+
         // Validate fields
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             // Mode 1 fields - kode & operator required jika salah satunya diisi
             'kode' => $mode1HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
             'operator' => $mode1HasAnyValue ? 'required|string|max:255' : 'nullable|string|max:255',
@@ -176,15 +204,8 @@ class OilController extends Controller
             'jenis' => 'nullable|string',
             'sampel_boy' => 'nullable|string|max:255',
             'parameter_lain' => 'nullable|string|max:500',
-
-            // Mode 2 fields - required jika salah satu field mode 2 diisi
-            'kode_mode2' => $mode2HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
-            'cawan_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-            'berat_basah' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-            'cawan_sample_kering' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-            'labu_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-            'oil_labu' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-        ], [
+            'phase' => 'nullable|in:initial,final,complete',
+        ], $mode2Rules), [
             // Mode 1 error messages
             'kode.required' => 'Kode wajib diisi jika Anda mengisi Operator',
             'kode.exists' => 'Kode tidak valid atau tidak ditemukan di master data',
@@ -629,7 +650,7 @@ class OilController extends Controller
             });
 
         // Get oil calculations data within date range
-        $calculationsQuery = OilCalculation::whereBetween('created_at', [
+        $calculationsQuery = OilCalculation::where('status', 'complete')->whereBetween('created_at', [
             $startDate . ' 00:00:00',
             $endDate . ' 23:59:59'
         ]);
@@ -694,7 +715,7 @@ class OilController extends Controller
             });
 
         // Get oil calculations data within date range
-        $calculationsQuery = OilCalculation::whereBetween('created_at', [
+        $calculationsQuery = OilCalculation::where('status', 'complete')->whereBetween('created_at', [
             $startDate . ' 00:00:00',
             $endDate . ' 23:59:59'
         ]);
@@ -770,6 +791,7 @@ class OilController extends Controller
 
         // Get all dates in range that have calculations
         $datesQuery = OilCalculation::selectRaw('DATE(created_at) as date')
+            ->where('status', 'complete')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
         // Apply office filter jika bukan 'all'
@@ -783,6 +805,7 @@ class OilController extends Controller
 
         // OPTIMIZATION: Load ALL calculations in ONE query instead of query per date
         $allCalculationsQuery = OilCalculation::selectRaw('*, DATE(created_at) as calc_date')
+            ->where('status', 'complete')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
         if ($officeFilter !== 'all') {
@@ -964,6 +987,7 @@ class OilController extends Controller
 
         // Get all dates in range that have calculations
         $datesQuery = OilCalculation::selectRaw('DATE(created_at) as date')
+            ->where('status', 'complete')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
         // Apply office filter jika bukan 'all'
@@ -977,6 +1001,7 @@ class OilController extends Controller
 
         // OPTIMIZATION: Load ALL calculations in ONE query instead of query per date
         $allCalculationsForExport = OilCalculation::selectRaw('*, DATE(created_at) as calc_date')
+            ->where('status', 'complete')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
         if ($officeFilter !== 'all') {
@@ -1162,7 +1187,7 @@ class OilController extends Controller
         $dateStart = Carbon::parse($date)->startOfDay()->format('Y-m-d H:i:s');
         $dateEnd = Carbon::parse($date)->endOfDay()->format('Y-m-d H:i:s');
 
-        $calculations = OilCalculation::whereBetween('created_at', [$dateStart, $dateEnd])
+        $calculations = OilCalculation::where('status', 'complete')->whereBetween('created_at', [$dateStart, $dateEnd])
             ->with(['masterData:id,kode,jenis'])
             ->get();
 
@@ -1228,6 +1253,8 @@ class OilController extends Controller
             ->get(['kode', 'pivot'])
             ->keyBy('kode');
 
+        $mode2Calculation?->loadMissing(['initialUser', 'finalUser', 'user']);
+
         return [
             'message' => $message,
             'generated_at' => now()->format('d/m/Y H:i:s'),
@@ -1263,6 +1290,8 @@ class OilController extends Controller
         $masterData = $masterDataByKode->get($calculation->kode);
 
         return [
+            'phase' => $calculation->phase,
+            'status' => $calculation->status,
             'tanggal_input' => $calculation->created_at->format('d/m/Y H:i:s'),
             'kode_label' => OilMasterData::getKodeDisplay($calculation->kode, $masterData?->pivot),
             'kode' => $calculation->kode,
@@ -1280,6 +1309,8 @@ class OilController extends Controller
             'limitOLDB' => $calculation->limitOLDB,
             'limitOL' => $calculation->limitOL,
             'input_by' => $calculation->user?->name,
+            'initial_input_by' => $calculation->initialUser?->name,
+            'final_input_by' => $calculation->finalUser?->name,
             'office' => $calculation->office,
         ];
     }

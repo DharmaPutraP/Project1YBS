@@ -180,6 +180,16 @@ function saveOffline(formElement) {
         $(formElement).find('.select2-jenis').val('TBS').trigger('change');
     }
 
+    const initialPhase = formElement.querySelector('input[name="phase"][value="initial"]');
+    if (initialPhase) {
+        initialPhase.checked = true;
+    }
+
+    const currentPhase = formElement.querySelector('input[name="phase"]:checked');
+    if (currentPhase) {
+        currentPhase.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
     // Trigger any custom reset events if needed
     const resetEvent = new Event('formReset', { bubbles: true });
     formElement.dispatchEvent(resetEvent);

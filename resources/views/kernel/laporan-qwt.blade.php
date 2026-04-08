@@ -177,6 +177,11 @@
                     @forelse($rows as $row)
                         @php
                             $master = $masterData[$row->kode] ?? null;
+                            $displayAt = $row->rounded_time ?? $row->created_at;
+                            $productionDate = $displayAt->copy();
+                            if ((int) $productionDate->format('H') < 7) {
+                                $productionDate->subDay();
+                            }
                             $bnTnValue = (float) ($row->bn_tn ?? 0);
                             $moistValue = (float) ($row->moisture ?? 0);
                             $bnTnLimitOperator = $row->bn_tn_limit_operator ?? 'le';
@@ -190,11 +195,11 @@
                             <td class="sticky left-0 z-[20] bg-white border px-3 py-2 text-center">
                                 {{ ($rows->currentPage() - 1) * $rows->perPage() + $loop->iteration }}</td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[50px] z-[10] bg-white whitespace-nowrap">
-                                {{ $row->created_at->format('F Y') }}</td>
+                                {{ $productionDate->format('F Y') }}</td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[160px] z-[10] bg-white whitespace-nowrap">
-                                {{ $row->created_at->format('d-m-Y') }}</td>
+                                {{ $productionDate->format('d-m-Y') }}</td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[270px] z-[10] bg-white whitespace-nowrap">
-                                {{ $row->created_at->format('H:i:s') }}</td>
+                                {{ $displayAt->format('H:i:s') }}</td>
                             <td
                                 class="border px-3 py-2 lg:sticky lg:left-[360px] z-[10] bg-white font-semibold text-blue-800 whitespace-nowrap">
                                 {{ $row->kode }}</td>

@@ -291,6 +291,7 @@
                                 @foreach ($kernelCalculations as $calc)
                                     @php
                                         $master = $masterData[$calc->kode] ?? null;
+                                        $displayAt = $calc->rounded_time ?? $calc->created_at;
                                         $lossPercent = ($calc->kernel_losses ?? 0) * 100;
                                         $isExceeded = $master ? $master->isExceeded($lossPercent) : null;
                                         $lossBadge = $isExceeded === null
@@ -299,7 +300,7 @@
                                     @endphp
                                     <tr class="hover:bg-blue-50">
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $calc->created_at->format('d/m/Y H:i') }}
+                                            {{ $displayAt->format('d/m/Y H:i') }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                             {{ $calc->rounded_time ? $calc->rounded_time->format('H:i') : $calc->created_at->format('H:i') }}

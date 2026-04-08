@@ -169,6 +169,11 @@
                     @forelse($calculations as $calc)
                         @php
                             $master = $masterData[$calc->kode] ?? null;
+                            $displayAt = $calc->rounded_time ?? $calc->created_at;
+                            $productionDate = $displayAt->copy();
+                            if ((int) $productionDate->format('H') < 7) {
+                                $productionDate->subDay();
+                            }
                             $lossPercent = (float) ($calc->kernel_losses ?? 0) * 100;
                             $isExceeded = $master ? $master->isExceeded($lossPercent) : null;
                             $lossBadge = $isExceeded === null
@@ -179,11 +184,11 @@
                             <td class="sticky left-0 z-[20] bg-white border px-3 py-2 text-center">
                                 {{ ($calculations->currentPage() - 1) * $calculations->perPage() + $loop->iteration }}</td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[50px] z-[10] bg-white whitespace-nowrap">
-                                {{ $calc->created_at->format('F Y') }}</td>
+                                {{ $productionDate->format('F Y') }}</td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[160px] z-[10] bg-white whitespace-nowrap">
-                                {{ $calc->created_at->format('d-m-Y') }}</td>
+                                {{ $productionDate->format('d-m-Y') }}</td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[270px] z-[10] bg-white whitespace-nowrap">
-                                {{ $calc->created_at->format('H:i:s') }}</td>
+                                {{ $displayAt->format('H:i:s') }}</td>
                             <td
                                 class="border px-3 py-2 lg:sticky lg:left-[360px] z-[10] bg-white font-semibold text-blue-800 whitespace-nowrap">
                                 {{ $calc->kode }}</td>

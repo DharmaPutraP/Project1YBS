@@ -11,8 +11,10 @@ use App\Exports\KernelRekapExport;
 use App\Exports\KernelRippleMillExport;
 use App\Models\KernelBobotConfig;
 use App\Models\KernelCalculation;
+use App\Models\KernelMesin;
 use App\Models\KernelDirtMoistCalculation;
 use App\Models\KernelMasterData;
+use App\Models\KernelProsses;
 use App\Models\KernelQwt;
 use App\Models\KernelDestoner;
 use App\Models\KernelRippleMill;
@@ -37,9 +39,10 @@ class KernelController extends Controller
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $officeFilter = $this->resolveOfficeFilter($request);
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $calculationsQuery = KernelCalculation::with('user')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereBetween('created_at', $range)
             ->orderBy('created_at', 'desc');
 
         $this->applyOfficeFilter($calculationsQuery, $officeFilter);
@@ -89,6 +92,7 @@ class KernelController extends Controller
         }
 
         $kodeOptions = $this->getKernelLossesKodeOptions();
+        $kodeFormGroups = $this->getKernelLossesFormGroups($kodeOptions);
         $jenisOptions = KernelRecord::getJenisOptions();
 
         $kernelLimitMap = KernelMasterData::where('is_active', true)
@@ -105,7 +109,7 @@ class KernelController extends Controller
 
         $operatorOptions = $this->getOperatorOptionsByOffice($this->getUserOffice(), 'kernel');
 
-        return view('kernel.create', compact('kodeOptions', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
+        return view('kernel.create', compact('kodeOptions', 'kodeFormGroups', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
     }
 
     public function store(Request $request)
@@ -124,96 +128,195 @@ class KernelController extends Controller
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
+        $kodeOptions = $this->getKernelLossesKodeOptions();
+
         $validated = $request->validate([
-            'kode' => ['required', 'string', Rule::in(array_keys($this->getKernelLossesKodeOptions()))],
-            'jenis' => 'required|string',
-            'operator' => $this->getOperatorValidationRules($userOffice, true, 'kernel'),
-            'sampel_boy' => 'required|string|max:255',
-            'pengulangan' => 'nullable|boolean',
-            'parameter_lain' => 'nullable|string|max:500',
-            'berat_sampel' => 'required|numeric|min:0',
-            'nut_utuh_nut' => 'required|numeric|min:0',
-            'nut_utuh_kernel' => 'required|numeric|min:0',
-            'nut_pecah_nut' => 'required|numeric|min:0',
-            'nut_pecah_kernel' => 'required|numeric|min:0',
-            'kernel_utuh' => 'required|numeric|min:0',
-            'kernel_pecah' => 'required|numeric|min:0',
+            'kegiatan_dispek' => 'nullable|boolean',
+            'rounded_time' => 'nullable|date_format:H:i',
+            'rows' => 'required|array',
+            'rows.*.kode' => ['required', 'string', Rule::in(array_keys($kodeOptions))],
+            'rows.*.jenis' => 'nullable|string',
+            'rows.*.operator' => $this->getOperatorValidationRules($userOffice, false, 'kernel'),
+            'rows.*.pengulangan' => 'nullable|boolean',
+            'rows.*.berat_sampel' => 'nullable|numeric|gt:0',
+            'rows.*.nut_utuh_nut' => 'nullable|numeric|min:0',
+            'rows.*.nut_utuh_kernel' => 'nullable|numeric|min:0',
+            'rows.*.nut_pecah_nut' => 'nullable|numeric|min:0',
+            'rows.*.nut_pecah_kernel' => 'nullable|numeric|min:0',
+            'rows.*.kernel_utuh' => 'nullable|numeric|min:0',
+            'rows.*.kernel_pecah' => 'nullable|numeric|min:0',
         ], [
-            'kode.required' => 'Kode wajib dipilih.',
-            'kode.in' => 'Kode tidak valid untuk input Kernel Losses.',
-            'jenis.required' => 'Jenis wajib dipilih.',
-            'operator.required' => 'Operator wajib diisi.',
             'operator.in' => 'Operator tidak sesuai dengan daftar office.',
-            'sampel_boy.required' => 'Sampel Boy wajib diisi.',
-            'berat_sampel.required' => 'Berat Sampel wajib diisi.',
-            'nut_utuh_nut.required' => 'Nut Utuh - Nut wajib diisi.',
-            'nut_utuh_kernel.required' => 'Nut Utuh - Kernel wajib diisi.',
-            'nut_pecah_nut.required' => 'Nut Pecah - Nut wajib diisi.',
-            'nut_pecah_kernel.required' => 'Nut Pecah - Kernel wajib diisi.',
-            'kernel_utuh.required' => 'Kernel Utuh wajib diisi.',
-            'kernel_pecah.required' => 'Kernel Pecah wajib diisi.',
+            'rounded_time.date_format' => 'Format jam pengambilan harus HH:MM.',
+            'rows.required' => 'Data sampel belum tersedia.',
+            'rows.*.kode.required' => 'Kode tidak boleh kosong.',
+            'rows.*.kode.in' => 'Kode tidak valid untuk input Kernel Losses.',
+            'rows.*.berat_sampel.gt' => 'Berat Sampel harus lebih dari 0.',
         ]);
 
-        $isPengulangan = (bool) $request->boolean('pengulangan');
-        $this->validatePengulanganWindow(
-            KernelCalculation::class,
-            $validated['kode'],
-            $userOffice,
-            $isPengulangan,
-            'Kernel Losses'
-        );
+        $isKegiatanDispek = (bool) $request->boolean('kegiatan_dispek');
+        if ($isKegiatanDispek && empty($validated['rounded_time'])) {
+            throw ValidationException::withMessages([
+                'rounded_time' => 'Jam pengambilan wajib diisi jika kegiatan dispatch dicentang.',
+            ]);
+        }
 
-        // Save calculation record (all ratios stored as percentages ×100)
-        $beratSampel = $validated['berat_sampel'];
-        $ktsNutUtuh = $beratSampel > 0 ? round(($validated['nut_utuh_kernel'] / $beratSampel) * 100, 6) : 0;
-        $ktsNutPecah = $beratSampel > 0 ? round(($validated['nut_pecah_kernel'] / $beratSampel) * 100, 6) : 0;
-        $kernelUtuhToSampel = $beratSampel > 0 ? round(($validated['kernel_utuh'] / $beratSampel) * 100, 6) : 0;
-        $kernelPecahToSampel = $beratSampel > 0 ? round(($validated['kernel_pecah'] / $beratSampel) * 100, 6) : 0;
-        $kernelLosses = ($ktsNutUtuh + $ktsNutPecah + $kernelUtuhToSampel + $kernelPecahToSampel) / 100;
+        $roundedTime = $isKegiatanDispek
+            ? $this->resolveInputRoundedTime($validated['rounded_time'])
+            : $this->getRoundedTime();
+        $numericFields = [
+            'berat_sampel',
+            'nut_utuh_nut',
+            'nut_utuh_kernel',
+            'nut_pecah_nut',
+            'nut_pecah_kernel',
+            'kernel_utuh',
+            'kernel_pecah',
+        ];
 
-        $kernelCalculation = KernelCalculation::create([
-            'user_id' => Auth::id(),
-            'office' => $userOffice,
-            'rounded_time' => $this->getRoundedTime(),
-            'kode' => $validated['kode'],
-            'jenis' => $validated['jenis'],
-            'operator' => $validated['operator'],
-            'sampel_boy' => $validated['sampel_boy'],
-            'pengulangan' => $isPengulangan,
-            'berat_sampel' => $beratSampel,
-            'nut_utuh_nut' => $validated['nut_utuh_nut'],
-            'nut_utuh_kernel' => $validated['nut_utuh_kernel'],
-            'nut_pecah_nut' => $validated['nut_pecah_nut'],
-            'nut_pecah_kernel' => $validated['nut_pecah_kernel'],
-            'kernel_utuh' => $validated['kernel_utuh'],
-            'kernel_pecah' => $validated['kernel_pecah'],
-            'kernel_to_sampel_nut_utuh' => $ktsNutUtuh,
-            'kernel_to_sampel_nut_pecah' => $ktsNutPecah,
-            'kernel_utuh_to_sampel' => $kernelUtuhToSampel,
-            'kernel_pecah_to_sampel' => $kernelPecahToSampel,
-            'kernel_losses' => $kernelLosses,
-        ]);
+        $rowsToSave = [];
+        foreach (($validated['rows'] ?? []) as $row) {
+            $hasInput = false;
+            foreach ($numericFields as $field) {
+                if ($this->hasAnyValue($row[$field] ?? null)) {
+                    $hasInput = true;
+                    break;
+                }
+            }
 
-        $this->logCreate(
-            $kernelCalculation,
-            "Input data kernel losses untuk kode {$kernelCalculation->kode}",
-            ['module' => 'kernel_losses', 'office' => $userOffice]
-        );
+            if (!$hasInput) {
+                continue;
+            }
 
-        $message = 'Data Kernel Losses berhasil disimpan.';
-        $proofData = $this->buildKernelLossesProofData($kernelCalculation, $message);
+            $rowsToSave[] = $row;
+        }
+
+        if (empty($rowsToSave)) {
+            throw ValidationException::withMessages([
+                'rows' => 'Silakan isi minimal satu form data kernel losses.',
+            ]);
+        }
+
+        $rowErrors = [];
+        $savedRows = [];
+
+        foreach ($rowsToSave as $row) {
+            $kode = (string) ($row['kode'] ?? '');
+            $isPengulangan = (bool) ($row['pengulangan'] ?? false);
+
+            try {
+                $this->validatePengulanganWindow(
+                    KernelCalculation::class,
+                    $kode,
+                    $userOffice,
+                    $isPengulangan,
+                    'Kernel Losses',
+                    $roundedTime
+                );
+
+                $this->validateMachineWindowForKernelInput(
+                    $kode,
+                    $userOffice,
+                    $roundedTime,
+                    'Kernel Losses'
+                );
+            } catch (ValidationException $e) {
+                $firstMessage = collect($e->errors())->flatten()->first();
+                $rowErrors['rows.' . $kode . '.kode'] = $firstMessage ?: "Validasi untuk kode {$kode} gagal.";
+                continue;
+            }
+
+            $beratSampel = isset($row['berat_sampel']) ? (float) $row['berat_sampel'] : null;
+            $nutUtuhKernel = isset($row['nut_utuh_kernel']) ? (float) $row['nut_utuh_kernel'] : null;
+            $nutPecahKernel = isset($row['nut_pecah_kernel']) ? (float) $row['nut_pecah_kernel'] : null;
+            $kernelUtuh = isset($row['kernel_utuh']) ? (float) $row['kernel_utuh'] : null;
+            $kernelPecah = isset($row['kernel_pecah']) ? (float) $row['kernel_pecah'] : null;
+
+            $canCalculate = $beratSampel !== null
+                && $beratSampel > 0
+                && $nutUtuhKernel !== null
+                && $nutPecahKernel !== null
+                && $kernelUtuh !== null
+                && $kernelPecah !== null;
+
+            $ktsNutUtuh = $canCalculate ? round(($nutUtuhKernel / $beratSampel) * 100, 6) : null;
+            $ktsNutPecah = $canCalculate ? round(($nutPecahKernel / $beratSampel) * 100, 6) : null;
+            $kernelUtuhToSampel = $canCalculate ? round(($kernelUtuh / $beratSampel) * 100, 6) : null;
+            $kernelPecahToSampel = $canCalculate ? round(($kernelPecah / $beratSampel) * 100, 6) : null;
+            $kernelLosses = $canCalculate
+                ? ($ktsNutUtuh + $ktsNutPecah + $kernelUtuhToSampel + $kernelPecahToSampel) / 100
+                : null;
+
+            $kernelCalculationPayload = [
+                'user_id' => Auth::id(),
+                'office' => $userOffice,
+                'rounded_time' => $roundedTime,
+                'kode' => $kode,
+                'jenis' => $row['jenis'] ?? null,
+                'operator' => $row['operator'] ?? null,
+                'sampel_boy' => Auth::user()->name,
+                'berat_sampel' => $beratSampel,
+                'nut_utuh_nut' => $row['nut_utuh_nut'] ?? null,
+                'nut_utuh_kernel' => $nutUtuhKernel,
+                'nut_pecah_nut' => $row['nut_pecah_nut'] ?? null,
+                'nut_pecah_kernel' => $nutPecahKernel,
+                'kernel_utuh' => $kernelUtuh,
+                'kernel_pecah' => $kernelPecah,
+                'kernel_to_sampel_nut_utuh' => $ktsNutUtuh,
+                'kernel_to_sampel_nut_pecah' => $ktsNutPecah,
+                'kernel_utuh_to_sampel' => $kernelUtuhToSampel,
+                'kernel_pecah_to_sampel' => $kernelPecahToSampel,
+                'kernel_losses' => $kernelLosses,
+            ];
+            $kernelCalculation = KernelCalculation::create(
+                $this->prepareCreatePayload($kernelCalculationPayload, KernelCalculation::class, $isPengulangan)
+            );
+
+            $savedRows[] = $kernelCalculation;
+
+            $this->logCreate(
+                $kernelCalculation,
+                "Input data kernel losses untuk kode {$kernelCalculation->kode}",
+                ['module' => 'kernel_losses', 'office' => $userOffice]
+            );
+        }
+
+        if (!empty($rowErrors)) {
+            throw ValidationException::withMessages($rowErrors);
+        }
+
+        if (empty($savedRows)) {
+            throw ValidationException::withMessages([
+                'rows' => 'Tidak ada data yang berhasil disimpan.',
+            ]);
+        }
+
+        $message = count($savedRows) === 1
+            ? '1 data Kernel Losses berhasil disimpan.'
+            : count($savedRows) . ' data Kernel Losses berhasil disimpan.';
+
+        $proofData = $this->buildKernelLossesProofData($savedRows[0], $message);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
         }
 
-        if ($request->input('_action') === 'save_and_add') {
-            return redirect()->route('kernel.create')->with('success', $message);
-        }
-
         return redirect()->route('kernel.index')
             ->with('success', $message)
             ->with('success_proof', $proofData);
+    }
+
+    private function hasAnyValue(mixed $value): bool
+    {
+        if ($value === null) {
+            return false;
+        }
+
+        if (is_string($value)) {
+            return trim($value) !== '';
+        }
+
+        return true;
     }
 
     public function edit(KernelCalculation $kernelCalculation)
@@ -289,9 +392,10 @@ class KernelController extends Controller
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $officeFilter = $this->resolveOfficeFilter($request);
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $query = KernelDirtMoistCalculation::with('user')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereBetween('created_at', $range)
             ->orderBy('created_at', 'desc');
 
         $this->applyOfficeFilter($query, $officeFilter);
@@ -340,11 +444,12 @@ class KernelController extends Controller
         }
 
         $kodeOptions = $this->getDirtMoistKodeOptions();
+        $kodeFormGroups = $this->getDirtMoistFormGroups($kodeOptions);
         $jenisOptions = KernelRecord::getJenisOptions();
         $kernelLimitMap = $this->getDirtMoistLimitMap();
         $operatorOptions = $this->getOperatorOptionsByOffice($this->getUserOffice(), 'dirt_moist');
 
-        return view('kernel.dirt-moist.create', compact('kodeOptions', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
+        return view('kernel.dirt-moist.create', compact('kodeOptions', 'kodeFormGroups', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
     }
 
     public function dirtMoistStore(Request $request)
@@ -363,78 +468,159 @@ class KernelController extends Controller
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
+        $kodeOptions = $this->getDirtMoistKodeOptions();
+
         $validated = $request->validate([
-            'kode' => 'required|string',
-            'jenis' => 'required|string',
-            'operator' => $this->getOperatorValidationRules($userOffice, true, 'dirt_moist'),
-            'sampel_boy' => 'nullable|string|max:255',
-            'pengulangan' => 'nullable|boolean',
-            'berat_sampel' => 'required|numeric|gt:0',
-            'berat_dirty' => 'required|numeric|min:0',
-            'moist_percent' => 'required|numeric|min:0',
+            'kegiatan_dispek' => 'nullable|boolean',
+            'rounded_time' => 'nullable|date_format:H:i',
+            'rows' => 'required|array',
+            'rows.*.kode' => ['required', 'string', Rule::in(array_keys($kodeOptions))],
+            'rows.*.jenis' => 'nullable|string',
+            'rows.*.operator' => $this->getOperatorValidationRules($userOffice, false, 'dirt_moist'),
+            'rows.*.pengulangan' => 'nullable|boolean',
+            'rows.*.berat_sampel' => 'nullable|numeric|gt:0',
+            'rows.*.berat_dirty' => 'nullable|numeric|min:0',
+            'rows.*.moist_percent' => 'nullable|numeric|min:0',
         ], [
-            'kode.required' => 'Kode wajib dipilih.',
-            'jenis.required' => 'Jenis wajib dipilih.',
-            'operator.required' => 'Operator wajib diisi.',
-            'operator.in' => 'Operator tidak sesuai dengan daftar office.',
-            'berat_sampel.required' => 'Berat sampel wajib diisi.',
-            'berat_sampel.gt' => 'Berat sampel harus lebih dari 0.',
-            'berat_dirty.required' => 'Berat dirty wajib diisi.',
-            'moist_percent.required' => 'Moist wajib diisi.',
+            'rows.required' => 'Data sampel belum tersedia.',
+            'rows.*.kode.required' => 'Kode tidak boleh kosong.',
+            'rows.*.kode.in' => 'Kode Dirt & Moist tidak valid.',
+            'rows.*.operator.in' => 'Operator tidak sesuai dengan daftar office.',
+            'rounded_time.date_format' => 'Format jam pengambilan harus HH:MM.',
+            'rows.*.berat_sampel.gt' => 'Berat sampel harus lebih dari 0.',
         ]);
 
-        $isPengulangan = (bool) $request->boolean('pengulangan');
-        $this->validatePengulanganWindow(
-            KernelDirtMoistCalculation::class,
-            $validated['kode'],
-            $userOffice,
-            $isPengulangan,
-            'Dirt & Moist'
-        );
+        $isKegiatanDispek = (bool) $request->boolean('kegiatan_dispek');
+        if ($isKegiatanDispek && empty($validated['rounded_time'])) {
+            throw ValidationException::withMessages([
+                'rounded_time' => 'Jam pengambilan wajib diisi jika kegiatan dispatch dicentang.',
+            ]);
+        }
 
-        $dirtyToSampel = round(($validated['berat_dirty'] / $validated['berat_sampel']) * 100, 6);
+        $roundedTime = $isKegiatanDispek
+            ? $this->resolveInputRoundedTime($validated['rounded_time'])
+            : $this->getRoundedTime();
+        $requiredFields = ['berat_sampel', 'berat_dirty', 'moist_percent'];
+        $rowsToSave = [];
+
+        foreach (($validated['rows'] ?? []) as $row) {
+            $hasInput = false;
+            foreach ($requiredFields as $field) {
+                if ($this->hasAnyValue($row[$field] ?? null)) {
+                    $hasInput = true;
+                    break;
+                }
+            }
+
+            if ($hasInput) {
+                $rowsToSave[] = $row;
+            }
+        }
+
+        if (empty($rowsToSave)) {
+            throw ValidationException::withMessages([
+                'rows' => 'Silakan isi minimal satu form Dirt & Moist.',
+            ]);
+        }
 
         $limitMap = $this->getDirtMoistLimitMap();
-        $limitConfig = $limitMap[$validated['kode']] ?? ['dirty' => null, 'moist' => null];
-        $dirtyLimitOperator = data_get($limitConfig, 'dirty.operator');
-        $dirtyLimitValue = data_get($limitConfig, 'dirty.value');
-        $moistLimitOperator = data_get($limitConfig, 'moist.operator');
-        $moistLimitValue = data_get($limitConfig, 'moist.value');
+        $rowErrors = [];
+        $savedRows = [];
 
-        $dirtMoistCalculation = KernelDirtMoistCalculation::create([
-            'user_id' => Auth::id(),
-            'office' => $userOffice,
-            'rounded_time' => $this->getRoundedTime(),
-            'kode' => $validated['kode'],
-            'jenis' => $validated['jenis'],
-            'operator' => $validated['operator'],
-            'sampel_boy' => $validated['sampel_boy'] ?? Auth::user()->name,
-            'pengulangan' => $isPengulangan,
-            'berat_sampel' => $validated['berat_sampel'],
-            'berat_dirty' => $validated['berat_dirty'],
-            'dirty_to_sampel' => $dirtyToSampel,
-            'moist_percent' => $validated['moist_percent'],
-            'dirty_limit_operator' => $dirtyLimitOperator,
-            'dirty_limit_value' => $dirtyLimitValue,
-            'moist_limit_operator' => $moistLimitOperator,
-            'moist_limit_value' => $moistLimitValue,
-        ]);
+        foreach ($rowsToSave as $row) {
+            $kode = (string) ($row['kode'] ?? '');
 
-        $this->logCreate(
-            $dirtMoistCalculation,
-            "Input data dirt & moist untuk kode {$dirtMoistCalculation->kode}",
-            ['module' => 'dirt_moist', 'office' => $userOffice]
-        );
+            foreach ($requiredFields as $field) {
+                if (!$this->hasAnyValue($row[$field] ?? null)) {
+                    $rowErrors['rows.' . $kode . '.' . $field] = "Field {$field} wajib diisi untuk kode {$kode}.";
+                }
+            }
 
-        $message = 'Data dirt & moist berhasil disimpan.';
-        $proofData = $this->buildDirtMoistProofData($dirtMoistCalculation, $message);
+            if (array_key_exists('rows.' . $kode . '.berat_sampel', $rowErrors)
+                || array_key_exists('rows.' . $kode . '.berat_dirty', $rowErrors)
+                || array_key_exists('rows.' . $kode . '.moist_percent', $rowErrors)) {
+                continue;
+            }
+
+            $isPengulangan = (bool) ($row['pengulangan'] ?? false);
+
+            try {
+                $this->validatePengulanganWindow(
+                    KernelDirtMoistCalculation::class,
+                    $kode,
+                    $userOffice,
+                    $isPengulangan,
+                    'Dirt & Moist',
+                    $roundedTime
+                );
+
+                $this->validateMachineWindowForKernelInput(
+                    $kode,
+                    $userOffice,
+                    $roundedTime,
+                    'Dirt & Moist'
+                );
+            } catch (ValidationException $e) {
+                $firstMessage = collect($e->errors())->flatten()->first();
+                $rowErrors['rows.' . $kode . '.kode'] = $firstMessage ?: "Validasi untuk kode {$kode} gagal.";
+                continue;
+            }
+
+            $beratSampel = (float) $row['berat_sampel'];
+            $beratDirty = (float) $row['berat_dirty'];
+            $moistPercent = (float) $row['moist_percent'];
+            $dirtyToSampel = round(($beratDirty / $beratSampel) * 100, 6);
+
+            $limitConfig = $limitMap[$kode] ?? ['dirty' => null, 'moist' => null];
+
+            $dirtMoistPayload = [
+                'user_id' => Auth::id(),
+                'office' => $userOffice,
+                'rounded_time' => $roundedTime,
+                'kode' => $kode,
+                'jenis' => $row['jenis'] ?? null,
+                'operator' => $row['operator'] ?? null,
+                'sampel_boy' => Auth::user()->name,
+                'berat_sampel' => $beratSampel,
+                'berat_dirty' => $beratDirty,
+                'dirty_to_sampel' => $dirtyToSampel,
+                'moist_percent' => $moistPercent,
+                'dirty_limit_operator' => data_get($limitConfig, 'dirty.operator'),
+                'dirty_limit_value' => data_get($limitConfig, 'dirty.value'),
+                'moist_limit_operator' => data_get($limitConfig, 'moist.operator'),
+                'moist_limit_value' => data_get($limitConfig, 'moist.value'),
+            ];
+            $dirtMoistCalculation = KernelDirtMoistCalculation::create(
+                $this->prepareCreatePayload($dirtMoistPayload, KernelDirtMoistCalculation::class, $isPengulangan)
+            );
+
+            $savedRows[] = $dirtMoistCalculation;
+
+            $this->logCreate(
+                $dirtMoistCalculation,
+                "Input data dirt & moist untuk kode {$dirtMoistCalculation->kode}",
+                ['module' => 'dirt_moist', 'office' => $userOffice]
+            );
+        }
+
+        if (!empty($rowErrors)) {
+            throw ValidationException::withMessages($rowErrors);
+        }
+
+        if (empty($savedRows)) {
+            throw ValidationException::withMessages([
+                'rows' => 'Tidak ada data Dirt & Moist yang berhasil disimpan.',
+            ]);
+        }
+
+        $message = count($savedRows) === 1
+            ? '1 data dirt & moist berhasil disimpan.'
+            : count($savedRows) . ' data dirt & moist berhasil disimpan.';
+
+        $proofData = $this->buildDirtMoistProofData($savedRows[0], $message);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
-        }
-
-        if ($request->input('_action') === 'save_and_add') {
-            return redirect()->route('kernel.dirt-moist.create')->with('success', $message);
         }
 
         return redirect()->route('kernel.dirt-moist.index')
@@ -519,9 +705,10 @@ class KernelController extends Controller
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $officeFilter = $this->resolveOfficeFilter($request);
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $query = KernelQwt::with('user')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereBetween('created_at', $range)
             ->orderBy('created_at', 'desc');
 
         $this->applyOfficeFilter($query, $officeFilter);
@@ -570,11 +757,12 @@ class KernelController extends Controller
         }
 
         $kodeOptions = $this->getQwtKodeOptions();
+        $kodeFormGroups = $this->getQwtFormGroups($kodeOptions);
         $jenisOptions = KernelRecord::getJenisOptions();
         $kernelLimitMap = $this->getQwtLimitMap();
         $operatorOptions = $this->getOperatorOptionsByOffice($this->getUserOffice(), 'qwt');
 
-        return view('kernel.qwt.create', compact('kodeOptions', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
+        return view('kernel.qwt.create', compact('kodeOptions', 'kodeFormGroups', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
     }
 
     public function qwtStore(Request $request)
@@ -593,119 +781,207 @@ class KernelController extends Controller
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
+        $kodeOptions = $this->getQwtKodeOptions();
+
         $validated = $request->validate([
-            'kode' => 'required|string',
-            'jenis' => 'required|string',
-            'operator' => $this->getOperatorValidationRules($userOffice, true, 'qwt'),
-            'sampel_boy' => 'required|string|max:255',
-            'pengulangan' => 'nullable|boolean',
-            'sampel_setelah_kuarter' => 'required|numeric|gt:0',
-            'berat_nut_utuh' => 'required|numeric|min:0',
-            'berat_nut_pecah' => 'required|numeric|min:0',
-            'berat_kernel_utuh' => 'required|numeric|min:0',
-            'berat_kernel_pecah' => 'required|numeric|min:0',
-            'berat_cangkang' => 'required|numeric|min:0',
-            'berat_batu' => 'required|numeric|min:0',
-            'moisture' => 'required|numeric|min:0',
-            'ampere_screw' => 'required|numeric|min:0',
-            'tekanan_hydraulic' => 'required|numeric|min:0',
-            'kecepatan_screw' => 'required|numeric|min:0',
+            'kegiatan_dispek' => 'nullable|boolean',
+            'rounded_time' => 'nullable|date_format:H:i',
+            'rows' => 'required|array',
+            'rows.*.kode' => ['required', 'string', Rule::in(array_keys($kodeOptions))],
+            'rows.*.jenis' => 'nullable|string',
+            'rows.*.operator' => $this->getOperatorValidationRules($userOffice, false, 'qwt'),
+            'rows.*.pengulangan' => 'nullable|boolean',
+            'rows.*.sampel_setelah_kuarter' => 'nullable|numeric|gt:0',
+            'rows.*.berat_nut_utuh' => 'nullable|numeric|min:0',
+            'rows.*.berat_nut_pecah' => 'nullable|numeric|min:0',
+            'rows.*.berat_kernel_utuh' => 'nullable|numeric|min:0',
+            'rows.*.berat_kernel_pecah' => 'nullable|numeric|min:0',
+            'rows.*.berat_cangkang' => 'nullable|numeric|min:0',
+            'rows.*.berat_batu' => 'nullable|numeric|min:0',
+            'rows.*.moisture' => 'nullable|numeric|min:0',
+            'rows.*.ampere_screw' => 'nullable|numeric|min:0',
+            'rows.*.tekanan_hydraulic' => 'nullable|numeric|min:0',
+            'rows.*.kecepatan_screw' => 'nullable|numeric|min:0',
         ], [
-            'kode.required' => 'Kode wajib dipilih.',
-            'jenis.required' => 'Jenis wajib dipilih.',
-            'operator.required' => 'Operator wajib diisi.',
-            'operator.in' => 'Operator tidak sesuai dengan daftar office.',
-            'sampel_boy.required' => 'Sampel Boy wajib diisi.',
-            'sampel_setelah_kuarter.required' => 'Sampel setelah kuarter wajib diisi.',
-            'sampel_setelah_kuarter.gt' => 'Sampel setelah kuarter harus lebih dari 0.',
-            'berat_nut_utuh.required' => 'Berat nut utuh wajib diisi.',
-            'berat_nut_pecah.required' => 'Berat nut pecah wajib diisi.',
-            'berat_kernel_utuh.required' => 'Berat kernel utuh wajib diisi.',
-            'berat_kernel_pecah.required' => 'Berat kernel pecah wajib diisi.',
-            'berat_cangkang.required' => 'Berat cangkang wajib diisi.',
-            'berat_batu.required' => 'Berat batu wajib diisi.',
-            'moisture.required' => 'Moisture wajib diisi.',
-            'ampere_screw.required' => 'Ampere screw wajib diisi.',
-            'tekanan_hydraulic.required' => 'Tekanan hydraulic wajib diisi.',
-            'kecepatan_screw.required' => 'Kecepatan screw wajib diisi.',
+            'rows.required' => 'Data sampel belum tersedia.',
+            'rows.*.kode.required' => 'Kode tidak boleh kosong.',
+            'rows.*.kode.in' => 'Kode QWT tidak valid.',
+            'rows.*.operator.in' => 'Operator tidak sesuai dengan daftar office.',
+            'rounded_time.date_format' => 'Format jam pengambilan harus HH:MM.',
+            'rows.*.sampel_setelah_kuarter.gt' => 'Sampel setelah kuarter harus lebih dari 0.',
         ]);
 
-        $isPengulangan = (bool) $request->boolean('pengulangan');
-        $this->validatePengulanganWindow(
-            KernelQwt::class,
-            $validated['kode'],
-            $userOffice,
-            $isPengulangan,
-            'QWT Fibre Press'
-        );
+        $isKegiatanDispek = (bool) $request->boolean('kegiatan_dispek');
+        if ($isKegiatanDispek && empty($validated['rounded_time'])) {
+            throw ValidationException::withMessages([
+                'rounded_time' => 'Jam pengambilan wajib diisi jika kegiatan dispatch dicentang.',
+            ]);
+        }
 
-        $totalBeratNut = round(
-            $validated['berat_nut_utuh']
-            + $validated['berat_nut_pecah']
-            + $validated['berat_kernel_utuh']
-            + $validated['berat_kernel_pecah']
-            + $validated['berat_cangkang'],
-            6
-        );
+        $roundedTime = $isKegiatanDispek
+            ? $this->resolveInputRoundedTime($validated['rounded_time'])
+            : $this->getRoundedTime();
+        $requiredFields = [
+            'sampel_setelah_kuarter',
+            'berat_nut_utuh',
+            'berat_nut_pecah',
+            'berat_kernel_utuh',
+            'berat_kernel_pecah',
+            'berat_cangkang',
+            'berat_batu',
+            'moisture',
+            'ampere_screw',
+            'tekanan_hydraulic',
+            'kecepatan_screw',
+        ];
 
-        $beratFiber = round($validated['sampel_setelah_kuarter'] - $totalBeratNut, 6);
-        $beratBrokenNut = round(
-            $validated['berat_nut_pecah']
-            + $validated['berat_kernel_utuh']
-            + $validated['berat_kernel_pecah']
-            + $validated['berat_cangkang'],
-            6
-        );
-        $bnTn = $totalBeratNut > 0 ? round(($beratBrokenNut / $totalBeratNut) * 100, 6) : 0;
+        $rowsToSave = [];
+        foreach (($validated['rows'] ?? []) as $row) {
+            $hasInput = false;
+            foreach ($requiredFields as $field) {
+                if ($this->hasAnyValue($row[$field] ?? null)) {
+                    $hasInput = true;
+                    break;
+                }
+            }
+
+            if ($hasInput) {
+                $rowsToSave[] = $row;
+            }
+        }
+
+        if (empty($rowsToSave)) {
+            throw ValidationException::withMessages([
+                'rows' => 'Silakan isi minimal satu form QWT Fibre Press.',
+            ]);
+        }
 
         $limitMap = $this->getQwtLimitMap();
-        $kode = $validated['kode'];
+        $rowErrors = [];
+        $savedRows = [];
 
-        $kernelQwt = KernelQwt::create([
-            'user_id' => Auth::id(),
-            'office' => $userOffice,
-            'rounded_time' => $this->getRoundedTime(),
-            'kode' => $kode,
-            'jenis' => $validated['jenis'],
-            'operator' => $validated['operator'],
-            'sampel_boy' => $validated['sampel_boy'],
-            'pengulangan' => $isPengulangan,
-            'sampel_setelah_kuarter' => $validated['sampel_setelah_kuarter'],
-            'berat_nut_utuh' => $validated['berat_nut_utuh'],
-            'berat_nut_pecah' => $validated['berat_nut_pecah'],
-            'berat_kernel_utuh' => $validated['berat_kernel_utuh'],
-            'berat_kernel_pecah' => $validated['berat_kernel_pecah'],
-            'berat_cangkang' => $validated['berat_cangkang'],
-            'berat_batu' => $validated['berat_batu'],
-            'berat_fiber' => $beratFiber,
-            'berat_broken_nut' => $beratBrokenNut,
-            'total_berat_nut' => $totalBeratNut,
-            'bn_tn' => $bnTn,
-            'moisture' => $validated['moisture'],
-            'ampere_screw' => $validated['ampere_screw'],
-            'tekanan_hydraulic' => $validated['tekanan_hydraulic'],
-            'kecepatan_screw' => $validated['kecepatan_screw'],
-            'bn_tn_limit_operator' => data_get($limitMap, $kode . '.bn_tn.operator', 'le'),
-            'bn_tn_limit_value' => data_get($limitMap, $kode . '.bn_tn.value'),
-            'moist_limit_operator' => data_get($limitMap, $kode . '.moist.operator', 'le'),
-            'moist_limit_value' => data_get($limitMap, $kode . '.moist.value'),
-        ]);
+        foreach ($rowsToSave as $row) {
+            $kode = (string) ($row['kode'] ?? '');
 
-        $this->logCreate(
-            $kernelQwt,
-            "Input data QWT Fibre Press untuk kode {$kernelQwt->kode}",
-            ['module' => 'qwt', 'office' => $userOffice]
-        );
+            foreach ($requiredFields as $field) {
+                if (!$this->hasAnyValue($row[$field] ?? null)) {
+                    $rowErrors['rows.' . $kode . '.' . $field] = "Field {$field} wajib diisi untuk kode {$kode}.";
+                }
+            }
 
-        $message = 'Data QWT Fibre Press berhasil disimpan.';
-        $proofData = $this->buildQwtProofData($kernelQwt, $message);
+            $requiredErrorCount = collect($requiredFields)
+                ->filter(fn($field) => array_key_exists('rows.' . $kode . '.' . $field, $rowErrors))
+                ->count();
+            if ($requiredErrorCount > 0) {
+                continue;
+            }
+
+            $isPengulangan = (bool) ($row['pengulangan'] ?? false);
+
+            try {
+                $this->validatePengulanganWindow(
+                    KernelQwt::class,
+                    $kode,
+                    $userOffice,
+                    $isPengulangan,
+                    'QWT Fibre Press',
+                    $roundedTime
+                );
+
+                $this->validateMachineWindowForKernelInput(
+                    $kode,
+                    $userOffice,
+                    $roundedTime,
+                    'QWT Fibre Press'
+                );
+            } catch (ValidationException $e) {
+                $firstMessage = collect($e->errors())->flatten()->first();
+                $rowErrors['rows.' . $kode . '.kode'] = $firstMessage ?: "Validasi untuk kode {$kode} gagal.";
+                continue;
+            }
+
+            $sampelSetelahKuarter = (float) $row['sampel_setelah_kuarter'];
+            $beratNutUtuh = (float) $row['berat_nut_utuh'];
+            $beratNutPecah = (float) $row['berat_nut_pecah'];
+            $beratKernelUtuh = (float) $row['berat_kernel_utuh'];
+            $beratKernelPecah = (float) $row['berat_kernel_pecah'];
+            $beratCangkang = (float) $row['berat_cangkang'];
+            $beratBatu = (float) $row['berat_batu'];
+            $moisture = (float) $row['moisture'];
+            $ampereScrew = (float) $row['ampere_screw'];
+            $tekananHydraulic = (float) $row['tekanan_hydraulic'];
+            $kecepatanScrew = (float) $row['kecepatan_screw'];
+
+            $totalBeratNut = round(
+                $beratNutUtuh + $beratNutPecah + $beratKernelUtuh + $beratKernelPecah + $beratCangkang,
+                6
+            );
+            $beratFiber = round($sampelSetelahKuarter - $totalBeratNut, 6);
+            $beratBrokenNut = round(
+                $beratNutPecah + $beratKernelUtuh + $beratKernelPecah + $beratCangkang,
+                6
+            );
+            $bnTn = $totalBeratNut > 0 ? round(($beratBrokenNut / $totalBeratNut) * 100, 6) : 0;
+
+            $kernelQwtPayload = [
+                'user_id' => Auth::id(),
+                'office' => $userOffice,
+                'rounded_time' => $roundedTime,
+                'kode' => $kode,
+                'jenis' => $row['jenis'] ?? null,
+                'operator' => $row['operator'] ?? null,
+                'sampel_boy' => Auth::user()->name,
+                'sampel_setelah_kuarter' => $sampelSetelahKuarter,
+                'berat_nut_utuh' => $beratNutUtuh,
+                'berat_nut_pecah' => $beratNutPecah,
+                'berat_kernel_utuh' => $beratKernelUtuh,
+                'berat_kernel_pecah' => $beratKernelPecah,
+                'berat_cangkang' => $beratCangkang,
+                'berat_batu' => $beratBatu,
+                'berat_fiber' => $beratFiber,
+                'berat_broken_nut' => $beratBrokenNut,
+                'total_berat_nut' => $totalBeratNut,
+                'bn_tn' => $bnTn,
+                'moisture' => $moisture,
+                'ampere_screw' => $ampereScrew,
+                'tekanan_hydraulic' => $tekananHydraulic,
+                'kecepatan_screw' => $kecepatanScrew,
+                'bn_tn_limit_operator' => data_get($limitMap, $kode . '.bn_tn.operator', 'le'),
+                'bn_tn_limit_value' => data_get($limitMap, $kode . '.bn_tn.value'),
+                'moist_limit_operator' => data_get($limitMap, $kode . '.moist.operator', 'le'),
+                'moist_limit_value' => data_get($limitMap, $kode . '.moist.value'),
+            ];
+            $kernelQwt = KernelQwt::create(
+                $this->prepareCreatePayload($kernelQwtPayload, KernelQwt::class, $isPengulangan)
+            );
+
+            $savedRows[] = $kernelQwt;
+
+            $this->logCreate(
+                $kernelQwt,
+                "Input data QWT Fibre Press untuk kode {$kernelQwt->kode}",
+                ['module' => 'qwt', 'office' => $userOffice]
+            );
+        }
+
+        if (!empty($rowErrors)) {
+            throw ValidationException::withMessages($rowErrors);
+        }
+
+        if (empty($savedRows)) {
+            throw ValidationException::withMessages([
+                'rows' => 'Tidak ada data QWT Fibre Press yang berhasil disimpan.',
+            ]);
+        }
+
+        $message = count($savedRows) === 1
+            ? '1 data QWT Fibre Press berhasil disimpan.'
+            : count($savedRows) . ' data QWT Fibre Press berhasil disimpan.';
+
+        $proofData = $this->buildQwtProofData($savedRows[0], $message);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
-        }
-
-        if ($request->input('_action') === 'save_and_add') {
-            return redirect()->route('kernel.qwt.create')->with('success', $message);
         }
 
         return redirect()->route('kernel.qwt.index')
@@ -827,9 +1103,10 @@ class KernelController extends Controller
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $officeFilter = $this->resolveOfficeFilter($request);
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $query = KernelRippleMill::with('user')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereBetween('created_at', $range)
             ->orderBy('created_at', 'desc');
 
         $this->applyOfficeFilter($query, $officeFilter);
@@ -878,11 +1155,12 @@ class KernelController extends Controller
         }
 
         $kodeOptions = $this->getRippleMillKodeOptions();
+        $kodeFormGroups = $this->getRippleMillFormGroups($kodeOptions);
         $jenisOptions = KernelRecord::getJenisOptions();
         $kernelLimitMap = $this->getRippleMillLimitMap();
         $operatorOptions = $this->getOperatorOptionsByOffice($this->getUserOffice(), 'ripple_mill');
 
-        return view('kernel.ripple-mill.create', compact('kodeOptions', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
+        return view('kernel.ripple-mill.create', compact('kodeOptions', 'kodeFormGroups', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
     }
 
     public function rippleMillStore(Request $request)
@@ -901,78 +1179,161 @@ class KernelController extends Controller
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
+        $kodeOptions = $this->getRippleMillKodeOptions();
+
         $validated = $request->validate([
-            'kode' => 'required|string',
-            'jenis' => 'required|string',
-            'operator' => $this->getOperatorValidationRules($userOffice, true, 'ripple_mill'),
-            'sampel_boy' => 'required|string|max:255',
-            'pengulangan' => 'nullable|boolean',
-            'berat_sampel' => 'required|numeric|gt:0',
-            'berat_nut_utuh' => 'required|numeric|min:0',
-            'berat_nut_pecah' => 'required|numeric|min:0',
+            'kegiatan_dispek' => 'nullable|boolean',
+            'rounded_time' => 'nullable|date_format:H:i',
+            'rows' => 'required|array',
+            'rows.*.kode' => ['required', 'string', Rule::in(array_keys($kodeOptions))],
+            'rows.*.jenis' => 'nullable|string',
+            'rows.*.operator' => $this->getOperatorValidationRules($userOffice, false, 'ripple_mill'),
+            'rows.*.pengulangan' => 'nullable|boolean',
+            'rows.*.berat_sampel' => 'nullable|numeric|gt:0',
+            'rows.*.berat_nut_utuh' => 'nullable|numeric|min:0',
+            'rows.*.berat_nut_pecah' => 'nullable|numeric|min:0',
         ], [
-            'kode.required' => 'Kode wajib dipilih.',
-            'jenis.required' => 'Jenis wajib dipilih.',
-            'operator.required' => 'Operator wajib diisi.',
-            'operator.in' => 'Operator tidak sesuai dengan daftar office.',
-            'sampel_boy.required' => 'Sampel Boy wajib diisi.',
-            'berat_sampel.required' => 'Berat Sample wajib diisi.',
-            'berat_sampel.gt' => 'Berat Sample harus lebih dari 0.',
-            'berat_nut_utuh.required' => 'Berat nut utuh wajib diisi.',
-            'berat_nut_pecah.required' => 'Berat nut pecah wajib diisi.',
+            'rows.required' => 'Data sampel belum tersedia.',
+            'rows.*.kode.required' => 'Kode tidak boleh kosong.',
+            'rows.*.kode.in' => 'Kode Ripple Mill tidak valid.',
+            'rows.*.operator.in' => 'Operator tidak sesuai dengan daftar office.',
+            'rounded_time.date_format' => 'Format jam pengambilan harus HH:MM.',
+            'rows.*.berat_sampel.gt' => 'Berat Sample harus lebih dari 0.',
         ]);
 
-        $isPengulangan = (bool) $request->boolean('pengulangan');
-        $this->validatePengulanganWindow(
-            KernelRippleMill::class,
-            $validated['kode'],
-            $userOffice,
-            $isPengulangan,
-            'Ripple Mill'
-        );
+        $isKegiatanDispek = (bool) $request->boolean('kegiatan_dispek');
+        if ($isKegiatanDispek && empty($validated['rounded_time'])) {
+            throw ValidationException::withMessages([
+                'rounded_time' => 'Jam pengambilan wajib diisi jika kegiatan dispatch dicentang.',
+            ]);
+        }
 
-        $beratSampel = (float) $validated['berat_sampel'];
-        $sampleNutUtuh = round(((float) $validated['berat_nut_utuh'] / $beratSampel) * 100, 6);
-        $sampleNutPecah = round(((float) $validated['berat_nut_pecah'] / $beratSampel) * 100, 6);
-        $efficiency = round(100 - $sampleNutPecah - $sampleNutUtuh, 6);
+        $roundedTime = $isKegiatanDispek
+            ? $this->resolveInputRoundedTime($validated['rounded_time'])
+            : $this->getRoundedTime();
+        $requiredFields = ['berat_sampel', 'berat_nut_utuh', 'berat_nut_pecah'];
+        $rowsToSave = [];
+
+        foreach (($validated['rows'] ?? []) as $row) {
+            $hasInput = false;
+            foreach ($requiredFields as $field) {
+                if ($this->hasAnyValue($row[$field] ?? null)) {
+                    $hasInput = true;
+                    break;
+                }
+            }
+
+            if ($hasInput) {
+                $rowsToSave[] = $row;
+            }
+        }
+
+        if (empty($rowsToSave)) {
+            throw ValidationException::withMessages([
+                'rows' => 'Silakan isi minimal satu form Ripple Mill.',
+            ]);
+        }
 
         $limitMap = $this->getRippleMillLimitMap();
-        $kode = $validated['kode'];
+        $rowErrors = [];
+        $savedRows = [];
 
-        $kernelRippleMill = KernelRippleMill::create([
-            'user_id' => Auth::id(),
-            'office' => $userOffice,
-            'rounded_time' => $this->getRoundedTime(),
-            'kode' => $kode,
-            'jenis' => $validated['jenis'],
-            'operator' => $validated['operator'],
-            'sampel_boy' => $validated['sampel_boy'],
-            'pengulangan' => $isPengulangan,
-            'berat_sampel' => $beratSampel,
-            'berat_nut_utuh' => $validated['berat_nut_utuh'],
-            'berat_nut_pecah' => $validated['berat_nut_pecah'],
-            'sample_nut_utuh' => $sampleNutUtuh,
-            'sample_nut_pecah' => $sampleNutPecah,
-            'efficiency' => $efficiency,
-            'limit_operator' => data_get($limitMap, $kode . '.operator', 'gt'),
-            'limit_value' => data_get($limitMap, $kode . '.value'),
-        ]);
+        foreach ($rowsToSave as $row) {
+            $kode = (string) ($row['kode'] ?? '');
 
-        $this->logCreate(
-            $kernelRippleMill,
-            "Input data Ripple Mill untuk kode {$kernelRippleMill->kode}",
-            ['module' => 'ripple_mill', 'office' => $userOffice]
-        );
+            foreach ($requiredFields as $field) {
+                if (!$this->hasAnyValue($row[$field] ?? null)) {
+                    $rowErrors['rows.' . $kode . '.' . $field] = "Field {$field} wajib diisi untuk kode {$kode}.";
+                }
+            }
 
-        $message = 'Data Ripple Mill berhasil disimpan.';
-        $proofData = $this->buildRippleMillProofData($kernelRippleMill, $message);
+            $requiredErrorCount = collect($requiredFields)
+                ->filter(fn($field) => array_key_exists('rows.' . $kode . '.' . $field, $rowErrors))
+                ->count();
+            if ($requiredErrorCount > 0) {
+                continue;
+            }
+
+            $isPengulangan = (bool) ($row['pengulangan'] ?? false);
+
+            try {
+                $this->validatePengulanganWindow(
+                    KernelRippleMill::class,
+                    $kode,
+                    $userOffice,
+                    $isPengulangan,
+                    'Ripple Mill',
+                    $roundedTime
+                );
+
+                $this->validateMachineWindowForKernelInput(
+                    $kode,
+                    $userOffice,
+                    $roundedTime,
+                    'Ripple Mill'
+                );
+            } catch (ValidationException $e) {
+                $firstMessage = collect($e->errors())->flatten()->first();
+                $rowErrors['rows.' . $kode . '.kode'] = $firstMessage ?: "Validasi untuk kode {$kode} gagal.";
+                continue;
+            }
+
+            $beratSampel = (float) $row['berat_sampel'];
+            $beratNutUtuh = (float) $row['berat_nut_utuh'];
+            $beratNutPecah = (float) $row['berat_nut_pecah'];
+
+            $sampleNutUtuh = round(($beratNutUtuh / $beratSampel) * 100, 6);
+            $sampleNutPecah = round(($beratNutPecah / $beratSampel) * 100, 6);
+            $efficiency = round(100 - $sampleNutPecah - $sampleNutUtuh, 6);
+
+            $rippleMillPayload = [
+                'user_id' => Auth::id(),
+                'office' => $userOffice,
+                'rounded_time' => $roundedTime,
+                'kode' => $kode,
+                'jenis' => $row['jenis'] ?? null,
+                'operator' => $row['operator'] ?? null,
+                'sampel_boy' => Auth::user()->name,
+                'berat_sampel' => $beratSampel,
+                'berat_nut_utuh' => $beratNutUtuh,
+                'berat_nut_pecah' => $beratNutPecah,
+                'sample_nut_utuh' => $sampleNutUtuh,
+                'sample_nut_pecah' => $sampleNutPecah,
+                'efficiency' => $efficiency,
+                'limit_operator' => data_get($limitMap, $kode . '.operator', 'gt'),
+                'limit_value' => data_get($limitMap, $kode . '.value'),
+            ];
+            $kernelRippleMill = KernelRippleMill::create(
+                $this->prepareCreatePayload($rippleMillPayload, KernelRippleMill::class, $isPengulangan)
+            );
+
+            $savedRows[] = $kernelRippleMill;
+
+            $this->logCreate(
+                $kernelRippleMill,
+                "Input data Ripple Mill untuk kode {$kernelRippleMill->kode}",
+                ['module' => 'ripple_mill', 'office' => $userOffice]
+            );
+        }
+
+        if (!empty($rowErrors)) {
+            throw ValidationException::withMessages($rowErrors);
+        }
+
+        if (empty($savedRows)) {
+            throw ValidationException::withMessages([
+                'rows' => 'Tidak ada data Ripple Mill yang berhasil disimpan.',
+            ]);
+        }
+
+        $message = count($savedRows) === 1
+            ? '1 data Ripple Mill berhasil disimpan.'
+            : count($savedRows) . ' data Ripple Mill berhasil disimpan.';
+
+        $proofData = $this->buildRippleMillProofData($savedRows[0], $message);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
-        }
-
-        if ($request->input('_action') === 'save_and_add') {
-            return redirect()->route('kernel.ripple-mill.create')->with('success', $message);
         }
 
         return redirect()->route('kernel.ripple-mill.index')
@@ -1061,9 +1422,10 @@ class KernelController extends Controller
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $officeFilter = $this->resolveOfficeFilter($request);
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $query = KernelDestoner::with('user')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereBetween('created_at', $range)
             ->orderBy('created_at', 'desc');
 
         $this->applyOfficeFilter($query, $officeFilter);
@@ -1112,11 +1474,12 @@ class KernelController extends Controller
         }
 
         $kodeOptions = $this->getDestonerKodeOptions();
+        $kodeFormGroups = $this->getDestonerFormGroups($kodeOptions);
         $jenisOptions = KernelRecord::getJenisOptions();
         $kernelLimitMap = $this->getDestonerLimitMap();
         $operatorOptions = $this->getOperatorOptionsByOffice($this->getUserOffice(), 'destoner');
 
-        return view('kernel.destoner.create', compact('kodeOptions', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
+        return view('kernel.destoner.create', compact('kodeOptions', 'kodeFormGroups', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
     }
 
     public function destonerStore(Request $request)
@@ -1135,94 +1498,173 @@ class KernelController extends Controller
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
+        $kodeOptions = $this->getDestonerKodeOptions();
+
         $validated = $request->validate([
-            'kode' => 'required|string',
-            'jenis' => 'required|string',
-            'operator' => $this->getOperatorValidationRules($userOffice, true, 'destoner'),
-            'sampel_boy' => 'required|string|max:255',
-            'pengulangan' => 'nullable|boolean',
-            'berat_sampel' => 'required|numeric|gt:0',
-            'time' => 'required|numeric|gt:0',
-            'berat_nut' => 'required|numeric|min:0',
-            'berat_kernel' => 'required|numeric|min:0',
+            'kegiatan_dispek' => 'nullable|boolean',
+            'rounded_time' => 'nullable|date_format:H:i',
+            'rows' => 'required|array',
+            'rows.*.kode' => ['required', 'string', Rule::in(array_keys($kodeOptions))],
+            'rows.*.jenis' => 'nullable|string',
+            'rows.*.operator' => $this->getOperatorValidationRules($userOffice, false, 'destoner'),
+            'rows.*.pengulangan' => 'nullable|boolean',
+            'rows.*.berat_sampel' => 'nullable|numeric|gt:0',
+            'rows.*.time' => 'nullable|numeric|gt:0',
+            'rows.*.berat_nut' => 'nullable|numeric|min:0',
+            'rows.*.berat_kernel' => 'nullable|numeric|min:0',
         ], [
-            'kode.required' => 'Kode wajib dipilih.',
-            'jenis.required' => 'Jenis wajib dipilih.',
-            'operator.required' => 'Operator wajib diisi.',
-            'operator.in' => 'Operator tidak sesuai dengan daftar office.',
-            'sampel_boy.required' => 'Sampel Boy wajib diisi.',
-            'berat_sampel.required' => 'Berat Sampel wajib diisi.',
-            'berat_sampel.gt' => 'Berat Sampel harus lebih dari 0.',
-            'time.required' => 'Time (detik) wajib diisi.',
-            'time.gt' => 'Time harus lebih dari 0.',
-            'berat_nut.required' => 'Berat Nut wajib diisi.',
-            'berat_kernel.required' => 'Berat Kernel wajib diisi.',
+            'rows.required' => 'Data sampel belum tersedia.',
+            'rows.*.kode.required' => 'Kode tidak boleh kosong.',
+            'rows.*.kode.in' => 'Kode Destoner tidak valid.',
+            'rows.*.operator.in' => 'Operator tidak sesuai dengan daftar office.',
+            'rounded_time.date_format' => 'Format jam pengambilan harus HH:MM.',
+            'rows.*.berat_sampel.gt' => 'Berat Sampel harus lebih dari 0.',
+            'rows.*.time.gt' => 'Time harus lebih dari 0.',
         ]);
 
-        $isPengulangan = (bool) $request->boolean('pengulangan');
-        $this->validatePengulanganWindow(
-            KernelDestoner::class,
-            $validated['kode'],
-            $userOffice,
-            $isPengulangan,
-            'Destoner'
-        );
+        $isKegiatanDispek = (bool) $request->boolean('kegiatan_dispek');
+        if ($isKegiatanDispek && empty($validated['rounded_time'])) {
+            throw ValidationException::withMessages([
+                'rounded_time' => 'Jam pengambilan wajib diisi jika kegiatan dispatch dicentang.',
+            ]);
+        }
 
-        $beratSampel = (float) $validated['berat_sampel'];
-        $time = (float) $validated['time'];
-        $beratNut = (float) $validated['berat_nut'];
-        $beratKernel = (float) $validated['berat_kernel'];
+        $roundedTime = $isKegiatanDispek
+            ? $this->resolveInputRoundedTime($validated['rounded_time'])
+            : $this->getRoundedTime();
+        $requiredFields = ['operator', 'berat_sampel', 'time', 'berat_nut', 'berat_kernel'];
+        $rowsToSave = [];
 
-        $konversiKg = $beratSampel / 1000;
-        $rasioJamKg = $konversiKg * 3600 / $time;
-        // Destoner percentages are reported on half-sample basis.
-        $persenNut = ($beratNut / $beratSampel) * 50;
-        $persenKernel = ($beratKernel / $beratSampel) * 100;
-        $totalLossesKernel = $persenKernel + $persenNut;
-        $lossKernelJam = ($totalLossesKernel * $rasioJamKg) / 100;
-        $lossKernelTbs = $lossKernelJam / 600;
+        foreach (($validated['rows'] ?? []) as $row) {
+            $hasInput = false;
+            foreach (['berat_sampel', 'time', 'berat_nut', 'berat_kernel'] as $field) {
+                if ($this->hasAnyValue($row[$field] ?? null)) {
+                    $hasInput = true;
+                    break;
+                }
+            }
+
+            if ($hasInput) {
+                $rowsToSave[] = $row;
+            }
+        }
+
+        if (empty($rowsToSave)) {
+            throw ValidationException::withMessages([
+                'rows' => 'Silakan isi minimal satu form Destoner.',
+            ]);
+        }
+
         $limitMap = $this->getDestonerLimitMap();
-        $kode = $validated['kode'];
+        $rowErrors = [];
+        $savedRows = [];
 
-        $kernelDestoner = KernelDestoner::create([
-            'user_id' => Auth::id(),
-            'office' => $userOffice,
-            'rounded_time' => $this->getRoundedTime(),
-            'kode' => $kode,
-            'jenis' => $validated['jenis'],
-            'operator' => $validated['operator'],
-            'sampel_boy' => $validated['sampel_boy'],
-            'pengulangan' => $isPengulangan,
-            'berat_sampel' => $beratSampel,
-            'time' => $time,
-            'berat_nut' => $beratNut,
-            'berat_kernel' => $beratKernel,
-            'konversi_kg' => $konversiKg,
-            'rasio_jam_kg' => $rasioJamKg,
-            'persen_nut' => $persenNut,
-            'persen_kernel' => $persenKernel,
-            'total_losses_kernel' => $totalLossesKernel,
-            'loss_kernel_jam' => $lossKernelJam,
-            'loss_kernel_tbs' => $lossKernelTbs,
-            'limit_operator' => data_get($limitMap, $kode . '.operator', 'gt'),
-            'limit_value' => data_get($limitMap, $kode . '.value'),
-        ]);
+        foreach ($rowsToSave as $row) {
+            $kode = (string) ($row['kode'] ?? '');
 
-        $this->logCreate(
-            $kernelDestoner,
-            "Input data Destoner untuk kode {$kernelDestoner->kode}",
-            ['module' => 'destoner', 'office' => $userOffice]
-        );
+            foreach ($requiredFields as $field) {
+                if (!$this->hasAnyValue($row[$field] ?? null)) {
+                    $rowErrors['rows.' . $kode . '.' . $field] = "Field {$field} wajib diisi untuk kode {$kode}.";
+                }
+            }
 
-        $message = 'Data Destoner berhasil disimpan.';
-        $proofData = $this->buildDestonerProofData($kernelDestoner, $message);
+            $requiredErrorCount = collect($requiredFields)
+                ->filter(fn($field) => array_key_exists('rows.' . $kode . '.' . $field, $rowErrors))
+                ->count();
+            if ($requiredErrorCount > 0) {
+                continue;
+            }
+
+            $isPengulangan = (bool) ($row['pengulangan'] ?? false);
+
+            try {
+                $this->validatePengulanganWindow(
+                    KernelDestoner::class,
+                    $kode,
+                    $userOffice,
+                    $isPengulangan,
+                    'Destoner',
+                    $roundedTime
+                );
+
+                $this->validateMachineWindowForKernelInput(
+                    $kode,
+                    $userOffice,
+                    $roundedTime,
+                    'Destoner'
+                );
+            } catch (ValidationException $e) {
+                $firstMessage = collect($e->errors())->flatten()->first();
+                $rowErrors['rows.' . $kode . '.kode'] = $firstMessage ?: "Validasi untuk kode {$kode} gagal.";
+                continue;
+            }
+
+            $beratSampel = (float) $row['berat_sampel'];
+            $time = (float) $row['time'];
+            $beratNut = (float) $row['berat_nut'];
+            $beratKernel = (float) $row['berat_kernel'];
+
+            $konversiKg = $beratSampel / 1000;
+            $rasioJamKg = $konversiKg * 3600 / $time;
+            $persenNut = ($beratNut / $beratSampel) * 50;
+            $persenKernel = ($beratKernel / $beratSampel) * 100;
+            $totalLossesKernel = $persenKernel + $persenNut;
+            $lossKernelJam = ($totalLossesKernel * $rasioJamKg) / 100;
+            $lossKernelTbs = $lossKernelJam / 600;
+
+            $destonerPayload = [
+                'user_id' => Auth::id(),
+                'office' => $userOffice,
+                'rounded_time' => $roundedTime,
+                'kode' => $kode,
+                'jenis' => $row['jenis'] ?? null,
+                'operator' => $row['operator'],
+                'sampel_boy' => Auth::user()->name,
+                'berat_sampel' => $beratSampel,
+                'time' => $time,
+                'berat_nut' => $beratNut,
+                'berat_kernel' => $beratKernel,
+                'konversi_kg' => $konversiKg,
+                'rasio_jam_kg' => $rasioJamKg,
+                'persen_nut' => $persenNut,
+                'persen_kernel' => $persenKernel,
+                'total_losses_kernel' => $totalLossesKernel,
+                'loss_kernel_jam' => $lossKernelJam,
+                'loss_kernel_tbs' => $lossKernelTbs,
+                'limit_operator' => data_get($limitMap, $kode . '.operator', 'gt'),
+                'limit_value' => data_get($limitMap, $kode . '.value'),
+            ];
+            $kernelDestoner = KernelDestoner::create(
+                $this->prepareCreatePayload($destonerPayload, KernelDestoner::class, $isPengulangan)
+            );
+
+            $savedRows[] = $kernelDestoner;
+
+            $this->logCreate(
+                $kernelDestoner,
+                "Input data Destoner untuk kode {$kernelDestoner->kode}",
+                ['module' => 'destoner', 'office' => $userOffice]
+            );
+        }
+
+        if (!empty($rowErrors)) {
+            throw ValidationException::withMessages($rowErrors);
+        }
+
+        if (empty($savedRows)) {
+            throw ValidationException::withMessages([
+                'rows' => 'Tidak ada data Destoner yang berhasil disimpan.',
+            ]);
+        }
+
+        $message = count($savedRows) === 1
+            ? '1 data Destoner berhasil disimpan.'
+            : count($savedRows) . ' data Destoner berhasil disimpan.';
+
+        $proofData = $this->buildDestonerProofData($savedRows[0], $message);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
-        }
-
-        if ($request->input('_action') === 'save_and_add') {
-            return redirect()->route('kernel.destoner.create')->with('success', $message);
         }
 
         return redirect()->route('kernel.destoner.index')
@@ -1409,13 +1851,14 @@ class KernelController extends Controller
             ->keyBy('kode');
 
         $calculations = $this->getUnifiedKernelReportRecords($startDate, $endDate, $officeFilter)
-            ->sortBy('created_at')
+            ->sortBy(fn($calc) => $this->resolveDisplayTimestamp($calc)->getTimestamp())
             ->values();
 
         // Accumulate sum + count per date + kode
         $grouped = [];
         foreach ($calculations as $calc) {
-            $date = $calc->created_at->format('Y-m-d');
+            $displayAt = $this->resolveDisplayTimestamp($calc);
+            $date = $this->resolveProductionDateKeyByCutoff($displayAt);
             $kode = $calc->kode;
             if (!isset($grouped[$date][$kode])) {
                 $grouped[$date][$kode] = ['sum' => 0.0, 'count' => 0];
@@ -1625,20 +2068,22 @@ class KernelController extends Controller
             ->reject(function ($row) {
                 return str_starts_with(strtoupper((string) ($row->kode ?? '')), 'D');
             })
-            ->sortBy('created_at')
+            ->sortBy(fn($calc) => $this->resolveDisplayTimestamp($calc)->getTimestamp())
             ->values();
 
         // Build individual records (flat, one row per calculation)
         $individualRecords = [];
         foreach ($calculations as $calc) {
             /** @var object $calc */
+            $displayAt = $this->resolveDisplayTimestamp($calc);
+            $productionDate = $this->resolveProductionDateKeyByCutoff($displayAt);
             $valuePercent = (float) ($calc->kernel_losses ?? 0) * 100;
             $config = $this->mapKodeToKernelConfig($calc->kode, $bobotConfigs);
             $bobot = $config ? $this->calculateKernelBobot($valuePercent, $config, $calc->kode) : null;
             $master = $masterDataMap->get($calc->kode);
             $individualRecords[] = [
-                'date' => $calc->created_at->format('Y-m-d'),
-                'time' => $calc->created_at->format('H:i'),
+                'date' => $productionDate,
+                'time' => $displayAt->format('H:i'),
                 'operator' => $calc->operator ?? '-',
                 'sampel_boy' => $calc->sampel_boy ?? '-',
                 'nama_sample' => $master ? $master->nama_sample : $calc->kode,
@@ -1651,7 +2096,8 @@ class KernelController extends Controller
         $grouped = [];
         foreach ($calculations as $calc) {
             /** @var object $calc */
-            $date = $calc->created_at->format('Y-m-d');
+            $displayAt = $this->resolveDisplayTimestamp($calc);
+            $date = $this->resolveProductionDateKeyByCutoff($displayAt);
             $kode = $calc->kode;
             if (!isset($grouped[$date][$kode])) {
                 $grouped[$date][$kode] = ['sum' => 0.0, 'count' => 0];
@@ -1705,7 +2151,7 @@ class KernelController extends Controller
             ->filter(function ($row) {
                 return !empty($row->operator);
             })
-            ->sortByDesc('created_at')
+            ->sortByDesc(fn($calc) => $this->resolveDisplayTimestamp($calc)->getTimestamp())
             ->values();
 
         $operators = $operatorRecords->pluck('operator')->unique()->sort()->values();
@@ -1713,7 +2159,7 @@ class KernelController extends Controller
         $operatorActivities = $operatorRecords->groupBy('operator')->map(function ($records) {
             return [
                 'total_input' => $records->count(),
-                'last_input' => $records->first()->created_at,
+                'last_input' => $this->resolveDisplayTimestamp($records->first()),
             ];
         });
 
@@ -1785,6 +2231,38 @@ class KernelController extends Controller
         return $orderedOptions;
     }
 
+    private function getKernelLossesFormGroups(array $kodeOptions): array
+    {
+        $groups = [
+            ['title' => 'Fibre Cyclone', 'codes' => ['FC1', 'FC2']],
+            ['title' => 'LTDS', 'codes' => ['L1', 'L2', 'L3', 'L4']],
+            ['title' => 'Claybath Wet Shell', 'codes' => ['CWS', 'CWS2', 'CWS3']],
+        ];
+
+        $result = [];
+
+        foreach ($groups as $group) {
+            $items = [];
+            foreach ($group['codes'] as $code) {
+                if (isset($kodeOptions[$code])) {
+                    $items[] = [
+                        'kode' => $code,
+                        'label' => $kodeOptions[$code],
+                    ];
+                }
+            }
+
+            if (!empty($items)) {
+                $result[] = [
+                    'title' => $group['title'],
+                    'items' => $items,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
     private function getQwtKodeOptions(): array
     {
         return KernelMasterData::where('is_active', true)
@@ -1792,6 +2270,53 @@ class KernelController extends Controller
             ->orderBy('kode')
             ->pluck('nama_sample', 'kode')
             ->toArray();
+    }
+
+    private function getDirtMoistFormGroups(array $kodeOptions): array
+    {
+        $groups = [
+            ['title' => 'Inlet Kernel Silo', 'codes' => ['IN1', 'IN2', 'IN3', 'IN4', 'IN5']],
+            ['title' => 'Outlet Kernel Silo To Bunker', 'codes' => ['OUT1', 'OUT2', 'OUT3', 'OUT4', 'OUT5']],
+        ];
+
+        $result = [];
+        foreach ($groups as $group) {
+            $items = [];
+            foreach ($group['codes'] as $code) {
+                if (isset($kodeOptions[$code])) {
+                    $items[] = ['kode' => $code, 'label' => $kodeOptions[$code]];
+                }
+            }
+
+            if (!empty($items)) {
+                $result[] = ['title' => $group['title'], 'items' => $items];
+            }
+        }
+
+        return $result;
+    }
+
+    private function getQwtFormGroups(array $kodeOptions): array
+    {
+        $groups = [
+            ['title' => 'Press 1 - 9', 'codes' => ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9']],
+        ];
+
+        $result = [];
+        foreach ($groups as $group) {
+            $items = [];
+            foreach ($group['codes'] as $code) {
+                if (isset($kodeOptions[$code])) {
+                    $items[] = ['kode' => $code, 'label' => $kodeOptions[$code]];
+                }
+            }
+
+            if (!empty($items)) {
+                $result[] = ['title' => $group['title'], 'items' => $items];
+            }
+        }
+
+        return $result;
     }
 
     private function getQwtLimitMap(): array
@@ -1840,6 +2365,29 @@ class KernelController extends Controller
             ->toArray();
     }
 
+    private function getDestonerFormGroups(array $kodeOptions): array
+    {
+        $groups = [
+            ['title' => 'Destoner', 'codes' => ['D1', 'D2']],
+        ];
+
+        $result = [];
+        foreach ($groups as $group) {
+            $items = [];
+            foreach ($group['codes'] as $code) {
+                if (isset($kodeOptions[$code])) {
+                    $items[] = ['kode' => $code, 'label' => $kodeOptions[$code]];
+                }
+            }
+
+            if (!empty($items)) {
+                $result[] = ['title' => $group['title'], 'items' => $items];
+            }
+        }
+
+        return $result;
+    }
+
     private function getRippleMillKodeOptions(): array
     {
         return KernelMasterData::where('is_active', true)
@@ -1866,6 +2414,29 @@ class KernelController extends Controller
             ->toArray();
     }
 
+    private function getRippleMillFormGroups(array $kodeOptions): array
+    {
+        $groups = [
+            ['title' => 'Ripple Mill No. 1 - 7', 'codes' => ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7']],
+        ];
+
+        $result = [];
+        foreach ($groups as $group) {
+            $items = [];
+            foreach ($group['codes'] as $code) {
+                if (isset($kodeOptions[$code])) {
+                    $items[] = ['kode' => $code, 'label' => $kodeOptions[$code]];
+                }
+            }
+
+            if (!empty($items)) {
+                $result[] = ['title' => $group['title'], 'items' => $items];
+            }
+        }
+
+        return $result;
+    }
+
     private function getDirtMoistKodeOptions(): array
     {
         return KernelMasterData::where('is_active', true)
@@ -1887,11 +2458,11 @@ class KernelController extends Controller
             $map[$kode] = [
                 'dirty' => [
                     'operator' => 'le',
-                    'value' => 7.00,
+                    'value' => 7.99,
                 ],
                 'moist' => [
                     'operator' => 'le',
-                    'value' => 6.00,
+                    'value' => 7.99,
                 ],
             ];
         }
@@ -1922,7 +2493,156 @@ class KernelController extends Controller
         return null;
     }
 
-    private function validatePengulanganWindow(string $modelClass, string $kode, ?string $office, bool $isPengulangan, string $moduleName): void
+    private function validateMachineWindowForKernelInput(string $kode, ?string $office, Carbon $referenceTime, string $moduleName): void
+    {
+        if (!$office) {
+            return;
+        }
+
+        $targetCode = $this->normalizeMachineCode($kode);
+        if ($targetCode === '') {
+            return;
+        }
+
+        $processRows = KernelProsses::query()
+            ->with('mesin')
+            ->whereDate('process_date', $referenceTime->toDateString())
+            ->where('office', $office)
+            ->get();
+
+        if ($processRows->isEmpty()) {
+            throw ValidationException::withMessages([
+                'kode' => "Warning: Informasi proses untuk tanggal {$referenceTime->format('d/m/Y')} office {$office} belum tersedia. Input {$moduleName} belum bisa disimpan.",
+            ]);
+        }
+
+        $windows = [];
+        foreach ($processRows as $processRow) {
+            foreach ($processRow->mesin as $machine) {
+                if (!$machine instanceof KernelMesin) {
+                    continue;
+                }
+
+                $machineName = strtoupper(trim((string) $machine->machine_name));
+                $codes = $this->resolveMachineCodesByName($machineName);
+                if (!in_array($targetCode, $codes, true)) {
+                    continue;
+                }
+
+                $startLabel = substr((string) ($machine->production_start_time ?? ''), 0, 5);
+                $endLabel = substr((string) ($machine->production_end_time ?? ''), 0, 5);
+                $startMinutes = $this->timeToHourMinutes($startLabel);
+                $endMinutes = $this->timeToHourMinutes($endLabel);
+
+                if ($startMinutes === null || $endMinutes === null) {
+                    continue;
+                }
+
+                $windows[] = [
+                    'start' => $startMinutes,
+                    'end' => $endMinutes,
+                    'label' => $startLabel . '-' . $endLabel,
+                ];
+            }
+        }
+
+        if (empty($windows)) {
+            throw ValidationException::withMessages([
+                'kode' => "Warning: Mesin untuk kode {$kode} belum dicentang/jam mesin hidup belum diisi pada Informasi Proses hari ini. Input {$moduleName} belum bisa disimpan.",
+            ]);
+        }
+
+        $currentMinutes = $this->timeToHourMinutes($referenceTime->format('H:i'));
+        if ($currentMinutes === null) {
+            return;
+        }
+
+        foreach ($windows as $window) {
+            if ($this->isHourWithinRange($currentMinutes, (int) $window['start'], (int) $window['end'])) {
+                return;
+            }
+        }
+
+        $availableWindows = collect($windows)
+            ->pluck('label')
+            ->filter()
+            ->unique()
+            ->values()
+            ->implode(', ');
+
+        throw ValidationException::withMessages([
+            'kode' => "Warning: Jam saat submit ({$referenceTime->format('H:i')}) di luar jam mesin hidup untuk kode {$kode}. Jam yang diizinkan: {$availableWindows}.",
+        ]);
+    }
+
+    private function normalizeMachineCode(string $code): string
+    {
+        return strtoupper(str_replace([' ', '-', '_'], '', trim($code)));
+    }
+
+    private function resolveMachineCodesByName(string $machineName): array
+    {
+        if (preg_match('/^FIBRE CYCLONE\s+(\d+)$/', $machineName, $match)) {
+            return ['FC' . $match[1]];
+        }
+
+        if (preg_match('/^LTDS\s+(\d+)$/', $machineName, $match)) {
+            return ['L' . $match[1]];
+        }
+
+        if (preg_match('/^CLAYBATH WET SHELL\s+(\d+)$/', $machineName, $match)) {
+            $index = $match[1];
+            return $index === '1' ? ['CWS', 'CWS1'] : ['CWS' . $index];
+        }
+
+        if (preg_match('/^INLET KERNEL SILO\s+(\d+)$/', $machineName, $match)) {
+            return ['IN' . $match[1]];
+        }
+
+        if (preg_match('/^OUTLET KERNEL SILO\s+(\d+)\s+TO BUNKER$/', $machineName, $match)) {
+            return ['OUT' . $match[1]];
+        }
+
+        if (preg_match('/^PRESS\s+(\d+)$/', $machineName, $match)) {
+            return ['P' . $match[1]];
+        }
+
+        if (preg_match('/^RIPPLE MILL NO\.\s*(\d+)$/', $machineName, $match)) {
+            return ['R' . $match[1]];
+        }
+
+        if (preg_match('/^DESTONER\s+(\d+)$/', $machineName, $match)) {
+            return ['D' . $match[1]];
+        }
+
+        return [];
+    }
+
+    private function timeToHourMinutes(string $time): ?int
+    {
+        $value = trim($time);
+        if (!preg_match('/^\d{2}:\d{2}$/', $value)) {
+            return null;
+        }
+
+        [$hour] = array_map('intval', explode(':', $value));
+        if ($hour < 0 || $hour > 23) {
+            return null;
+        }
+
+        return $hour * 60;
+    }
+
+    private function isHourWithinRange(int $point, int $start, int $end): bool
+    {
+        if ($end >= $start) {
+            return $point >= $start && $point <= $end;
+        }
+
+        return $point >= $start || $point <= $end;
+    }
+
+    private function validatePengulanganWindow(string $modelClass, string $kode, ?string $office, bool $isPengulangan, string $moduleName, ?Carbon $referenceTime = null): void
     {
         $intervalHours = $this->getPengulanganIntervalHours($kode, $office);
         if (!$intervalHours) {
@@ -1951,7 +2671,7 @@ class KernelController extends Controller
             ]);
         }
 
-        $referenceTime = $this->getRoundedTime();
+        $referenceTime = $referenceTime ?? $this->getRoundedTime();
         $lastSampleTime = $lastNormalSample->rounded_time ?? $lastNormalSample->created_at;
         $elapsedSeconds = $lastSampleTime->diffInSeconds($referenceTime, false);
         $minSeconds = $intervalHours * 3600;
@@ -1982,6 +2702,15 @@ class KernelController extends Controller
         $this->pengulanganColumnCache[$modelClass] = $exists;
 
         return $exists;
+    }
+
+    private function prepareCreatePayload(array $payload, string $modelClass, bool $isPengulangan): array
+    {
+        if ($this->hasPengulanganColumn($modelClass)) {
+            $payload['pengulangan'] = $isPengulangan;
+        }
+
+        return array_filter($payload, fn($value) => $value !== null);
     }
 
     private function getOperatorOptionsByOffice(?string $office, string $module): array
@@ -2030,6 +2759,104 @@ class KernelController extends Controller
         return $query;
     }
 
+    private function resolveProductionDateRange(string $startDate, string $endDate, ?string $officeFilter = null): array
+    {
+        $resolvedOffice = $officeFilter ?? $this->resolveOfficeFilter();
+
+        [$startAt] = $this->resolveProductionWindowForDate($startDate, $resolvedOffice);
+        [, $endAt] = $this->resolveProductionWindowForDate($endDate, $resolvedOffice);
+
+        if ($endAt->lt($startAt)) {
+            $endAt = $startAt->copy()->endOfDay();
+        }
+
+        return [
+            $startAt->format('Y-m-d H:i:s'),
+            $endAt->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    private function resolveVisibleDateRange(string $startDate, string $endDate, ?string $officeFilter = null): array
+    {
+        $productionRange = $this->resolveProductionDateRange($startDate, $endDate, $officeFilter);
+        $calendarStart = Carbon::parse($startDate)->startOfDay();
+        $calendarEnd = Carbon::parse($endDate)->endOfDay();
+
+        $effectiveStart = Carbon::parse($productionRange[0])->min($calendarStart);
+        $effectiveEnd = Carbon::parse($productionRange[1])->max($calendarEnd);
+
+        return [
+            $effectiveStart->format('Y-m-d H:i:s'),
+            $effectiveEnd->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    private function resolveProductionWindowForDate(string $date, string $officeFilter): array
+    {
+        $baseDate = Carbon::parse($date)->startOfDay();
+
+        $rows = KernelProsses::query()
+            ->whereDate('process_date', $date)
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
+            ->get(['team_1_start_time', 'team_2_start_time', 'team_2_end_time']);
+
+        $team1Start = collect($rows)
+            ->pluck('team_1_start_time')
+            ->map(fn($value) => $this->extractProductionTimeValue($value, true))
+            ->first(fn($value) => $value !== null);
+
+        $team2Window = collect($rows)
+            ->map(function ($row) {
+                return [
+                    'start' => $this->extractProductionTimeValue($row->team_2_start_time ?? null, true),
+                    'end' => $this->extractProductionTimeValue($row->team_2_end_time ?? null, true),
+                ];
+            })
+            ->first(fn($window) => !empty($window['start']) && !empty($window['end']));
+
+        $team2Start = $team2Window['start'] ?? null;
+        $team2End = $team2Window['end']
+            ?? collect($rows)
+                ->pluck('team_2_end_time')
+                ->map(fn($value) => $this->extractProductionTimeValue($value))
+                ->first(fn($value) => $value !== null);
+
+        $startAt = $team1Start
+            ? Carbon::parse($date . ' ' . $team1Start)->setSecond(0)
+            : $baseDate->copy();
+
+        if (!$team2End) {
+            return [$startAt, $baseDate->copy()->endOfDay()];
+        }
+
+        $endAt = Carbon::parse($date . ' ' . $team2End)->setSecond(59);
+        if ($team2Start) {
+            $team2StartAt = Carbon::parse($date . ' ' . $team2Start)->setSecond(0);
+            if ($endAt->lte($team2StartAt)) {
+                $endAt->addDay();
+            }
+        } elseif ($endAt->lte($startAt)) {
+            $endAt->addDay();
+        }
+
+        return [$startAt, $endAt];
+    }
+
+    private function extractProductionTimeValue(mixed $value, bool $allowMidnight = false): ?string
+    {
+        $time = substr(trim((string) $value), 0, 5);
+        if (!preg_match('/^\d{2}:\d{2}$/', $time)) {
+            return null;
+        }
+
+        // In stored process rows, 00:00 is commonly a placeholder for non-input team.
+        if (!$allowMidnight && $time === '00:00') {
+            return null;
+        }
+
+        return $time;
+    }
+
     private function getRoundedTime(): Carbon
     {
         $now = now();
@@ -2037,6 +2864,18 @@ class KernelController extends Controller
         $roundedMinute = $minute < 30 ? 0 : 30;
 
         return $now->copy()->setTime((int) $now->format('H'), $roundedMinute, 0);
+    }
+
+    private function resolveInputRoundedTime(?string $input): Carbon
+    {
+        $value = trim((string) $input);
+        if (!preg_match('/^\d{2}:\d{2}$/', $value)) {
+            return $this->getRoundedTime();
+        }
+
+        [$hour, $minute] = array_map('intval', explode(':', $value));
+
+        return now()->copy()->setTime($hour, $minute, 0);
     }
 
     private function buildProofInput(string $label, $value, string $unit = '', int $decimals = 2): array
@@ -2330,7 +3169,7 @@ class KernelController extends Controller
         $kode = $request->get('kode');
         $officeFilter = $this->resolveOfficeFilter($request);
 
-        $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $kernelQuery = KernelCalculation::with('user')
             ->whereBetween('created_at', $range)
@@ -2461,7 +3300,7 @@ class KernelController extends Controller
 
     private function getUnifiedKernelReportRecords(string $startDate, string $endDate, ?string $officeFilter = null)
     {
-        $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $officeFilter = $officeFilter ?? $this->resolveOfficeFilter();
 
@@ -2483,6 +3322,7 @@ class KernelController extends Controller
 
                 return (object) [
                     'created_at' => $row->created_at,
+                    'rounded_time' => $row->rounded_time,
                     'office' => $row->office,
                     'kode' => $row->kode,
                     'jenis' => $row->jenis,
@@ -2514,6 +3354,7 @@ class KernelController extends Controller
 
                 return (object) [
                     'created_at' => $row->created_at,
+                    'rounded_time' => $row->rounded_time,
                     'office' => $row->office,
                     'kode' => $row->kode,
                     'jenis' => $row->jenis,
@@ -2545,6 +3386,7 @@ class KernelController extends Controller
 
                 return (object) [
                     'created_at' => $row->created_at,
+                    'rounded_time' => $row->rounded_time,
                     'office' => $row->office,
                     'kode' => $row->kode,
                     'jenis' => $row->jenis,
@@ -2576,6 +3418,7 @@ class KernelController extends Controller
 
                 return (object) [
                     'created_at' => $row->created_at,
+                    'rounded_time' => $row->rounded_time,
                     'office' => $row->office,
                     'kode' => $row->kode,
                     'jenis' => $row->jenis,
@@ -2606,6 +3449,35 @@ class KernelController extends Controller
             ->concat($destonerRows);
     }
 
+    private function resolveDisplayTimestamp(object $row): Carbon
+    {
+        $rounded = data_get($row, 'rounded_time');
+        if ($rounded instanceof Carbon) {
+            return $rounded->copy();
+        }
+
+        if (!empty($rounded)) {
+            return Carbon::parse((string) $rounded);
+        }
+
+        $createdAt = data_get($row, 'created_at');
+        if ($createdAt instanceof Carbon) {
+            return $createdAt->copy();
+        }
+
+        return Carbon::parse((string) $createdAt);
+    }
+
+    private function resolveProductionDateKeyByCutoff(Carbon $timestamp, int $cutoffHour = 7): string
+    {
+        $productionMoment = $timestamp->copy();
+        if ((int) $productionMoment->format('H') < $cutoffHour) {
+            $productionMoment->subDay();
+        }
+
+        return $productionMoment->format('Y-m-d');
+    }
+
     // ─── Individual module laporan pages ───────────────────────────────────────
 
     public function laporanDirtMoist(Request $request)
@@ -2617,7 +3489,7 @@ class KernelController extends Controller
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
         $officeFilter = $this->resolveOfficeFilter($request);
-        $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $query = KernelDirtMoistCalculation::with('user')
             ->whereBetween('created_at', $range)
@@ -2662,7 +3534,7 @@ class KernelController extends Controller
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
         $officeFilter = $this->resolveOfficeFilter($request);
-        $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $data = KernelDirtMoistCalculation::with('user')
             ->whereBetween('created_at', $range)
@@ -2696,7 +3568,7 @@ class KernelController extends Controller
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
         $officeFilter = $this->resolveOfficeFilter($request);
-        $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $query = KernelQwt::with('user')
             ->whereBetween('created_at', $range)
@@ -2741,7 +3613,7 @@ class KernelController extends Controller
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
         $officeFilter = $this->resolveOfficeFilter($request);
-        $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $data = KernelQwt::with('user')
             ->whereBetween('created_at', $range)
@@ -2775,7 +3647,7 @@ class KernelController extends Controller
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
         $officeFilter = $this->resolveOfficeFilter($request);
-        $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $query = KernelRippleMill::with('user')
             ->whereBetween('created_at', $range)
@@ -2815,7 +3687,7 @@ class KernelController extends Controller
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
         $officeFilter = $this->resolveOfficeFilter($request);
-        $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $data = KernelRippleMill::with('user')
             ->whereBetween('created_at', $range)
@@ -2849,7 +3721,7 @@ class KernelController extends Controller
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
         $officeFilter = $this->resolveOfficeFilter($request);
-        $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $query = KernelDestoner::with('user')
             ->whereBetween('created_at', $range)
@@ -2889,7 +3761,7 @@ class KernelController extends Controller
         $endDate = $request->get('end_date', now()->toDateString());
         $kode = $request->get('kode');
         $officeFilter = $this->resolveOfficeFilter($request);
-        $range = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
         $data = KernelDestoner::with('user')
             ->whereBetween('created_at', $range)

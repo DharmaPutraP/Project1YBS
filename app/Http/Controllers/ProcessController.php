@@ -14,6 +14,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
@@ -904,13 +905,12 @@ class ProcessController extends Controller
         $downtimeStart = (string) ($isTeamOne ? $record->team_1_start_downtime : $record->team_2_start_downtime);
         $downtimeEnd = (string) ($isTeamOne ? $record->team_1_end_downtime : $record->team_2_end_downtime);
 
-        $processMinutes = $this->minutesBetween($processStart, $processEnd);
-        $downtimeMinutes = $this->minutesBetween($downtimeStart, $downtimeEnd);
-        $processHours = intdiv($processMinutes, 60);
-        $downtimeHours = intdiv($downtimeMinutes, 60);
-        $productionHours = max($processHours - $downtimeHours, 0);
-        $spareHours = $this->calculateTeamSpareHours($record, $teamName);
-        $totalProductionHours = $productionHours + $spareHours;
+        $totalProductionHours = $this->calculateTeamProductionHours(
+            $processStart,
+            $processEnd,
+            $downtimeStart,
+            $downtimeEnd
+        );
 
         return [
             'process_date' => optional($record->process_date)->format('d/m/Y'),
@@ -933,18 +933,12 @@ class ProcessController extends Controller
         $downtimeStart = substr((string) ($isTeamOne ? $record->team_1_start_downtime : $record->team_2_start_downtime), 0, 5);
         $downtimeEnd = substr((string) ($isTeamOne ? $record->team_1_end_downtime : $record->team_2_end_downtime), 0, 5);
 
-        $processMinutes = $this->minutesBetween($processStart, $processEnd);
-        $downtimeMinutes = $this->minutesBetween($downtimeStart, $downtimeEnd);
-        $processHours = intdiv($processMinutes, 60);
-        $downtimeHours = intdiv($downtimeMinutes, 60);
-        $productionHours = max($processHours - $downtimeHours, 0);
-        $spareMinutes = (int) $teamMachines
-            ->where('is_spare_input', false)
-            ->sum(fn($machine): int => $this->hoursToMinutes((float) ($machine->is_spare ?? 0)));
-        $spareHours = intdiv($spareMinutes, 60);
-
-        $teamDeductionHours = $isTeamOne ? 2 : 1;
-        $effectiveHours = max(($productionHours + $spareHours) - $teamDeductionHours, 0);
+        $effectiveHours = $this->calculateTeamProductionHours(
+            $processStart,
+            $processEnd,
+            $downtimeStart,
+            $downtimeEnd
+        );
 
         // Use actual office from record if available, fallback to selectedOffice filter
         $office = $selectedOffice === 'all' ? 'YBS' : $selectedOffice;
@@ -1057,18 +1051,12 @@ class ProcessController extends Controller
         return $expected;
     }
 
-    private function calculateTeamSpareHours(KernelProsses $record, string $teamName): int
+    private function calculateTeamProductionHours(string $processStart, string $processEnd, string $downtimeStart, string $downtimeEnd): int
     {
-        $machines = $record->relationLoaded('mesin')
-            ? $record->mesin
-            : $record->mesin()->get();
+        $processMinutes = $this->minutesBetween($processStart, $processEnd);
+        $downtimeMinutes = $this->minutesBetween($downtimeStart, $downtimeEnd);
 
-        $spareMinutes = $machines
-            ->where('team_name', $teamName)
-            ->where('is_spare_input', false)
-            ->sum(fn(KernelMesin $machine): int => $this->hoursToMinutes((float) ($machine->is_spare ?? 0)));
-
-        return intdiv((int) $spareMinutes, 60);
+        return max(intdiv($processMinutes - $downtimeMinutes, 60), 0);
     }
 
     private function buildMachineWindowsByCode(Collection $machines): array
@@ -1280,8 +1268,15 @@ class ProcessController extends Controller
 
     private function fetchTimedCodeRows($query, string $date, string $office): Collection
     {
-        $startDateTime = $date . ' 00:00:00';
-        $endDateTime = $date . ' 23:59:59';
+        $baseDate = Carbon::parse($date);
+        $startDateTime = $baseDate->copy()->setTime(7, 0, 0)->format('Y-m-d H:i:s');
+        $endDateTime = $baseDate->copy()->addDay()->setTime(6, 59, 59)->format('Y-m-d H:i:s');
+        $table = $query->getModel()->getTable();
+        $hasPengulanganColumn = Schema::hasColumn($table, 'pengulangan');
+        $selectColumns = ['kode', 'rounded_time', 'created_at'];
+        if ($hasPengulanganColumn) {
+            $selectColumns[] = 'pengulangan';
+        }
 
         $rows = $query
             ->where(function ($builder) use ($startDateTime, $endDateTime) {
@@ -1292,7 +1287,7 @@ class ProcessController extends Controller
                     });
             })
             ->when($office !== '', fn($builder) => $builder->where('office', $office))
-            ->get(['kode', 'rounded_time', 'created_at', 'pengulangan']);
+                    ->get($selectColumns);
 
         return $rows->map(function ($row): array {
             $time = $this->extractTimeFromDateTimeValue($row->rounded_time);
@@ -1575,12 +1570,13 @@ class ProcessController extends Controller
 
     private function timeToMinutes(string $time): ?int
     {
-        if (!$this->isValidTime($time)) {
+        $normalizedTime = substr(trim($time), 0, 5);
+
+        if (!$this->isValidTime($normalizedTime)) {
             return null;
         }
 
-        [$hour] = array_map('intval', explode(':', substr($time, 0, 5)));
-        $minute = 0;
+        [$hour, $minute] = array_map('intval', explode(':', $normalizedTime));
 
         return ($hour * 60) + $minute;
     }

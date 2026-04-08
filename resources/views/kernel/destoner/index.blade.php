@@ -297,6 +297,7 @@
                                         $limitVal = (float) $row->limit_value;
                                         $total = (float) $row->total_losses_kernel;
                                         $lossTbs = (float) $row->loss_kernel_tbs;
+                                        $displayAt = $row->rounded_time ?? $row->created_at;
                                         $isGood = null;
                                         if ($limitOp && $limitVal !== null) {
                                             $isGood = $limitOp === 'gt'
@@ -309,7 +310,7 @@
                                     @endphp
                                     <tr class="hover:bg-blue-50">
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $row->created_at->format('d/m/Y H:i') }}
+                                            {{ $displayAt->format('d/m/Y H:i') }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                             {{ $row->rounded_time ? $row->rounded_time->format('H:i') : $row->created_at->format('H:i') }}

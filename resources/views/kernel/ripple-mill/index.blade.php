@@ -138,6 +138,7 @@
                         @foreach ($rippleMillRows as $row)
                             @php
                                 $master = $masterData[$row->kode] ?? null;
+                                $displayAt = $row->rounded_time ?? $row->created_at;
                                 $efficiencyValue = (float) ($row->efficiency ?? 0);
                                 $limitOperator = $row->limit_operator ?? 'gt';
                                 $limitValue = $row->limit_value !== null ? (float) $row->limit_value : null;
@@ -147,7 +148,7 @@
                             @endphp
                             <tr class="hover:bg-blue-50">
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $row->created_at->format('d/m/Y H:i') }}</td>
+                                    {{ $displayAt->format('d/m/Y H:i') }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                     {{ $row->rounded_time ? $row->rounded_time->format('H:i') : $row->created_at->format('H:i') }}
                                 </td>

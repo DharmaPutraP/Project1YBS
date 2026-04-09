@@ -872,13 +872,13 @@ class ProcessController extends Controller
             'process_date' => $validated['process_date'],
             'team_1_start_time' => $validated['team_1_start_time'],
             'team_1_end_time' => $validated['team_1_end_time'],
-            'team_1_start_downtime' => $validated['team_1_start_downtime'],
-            'team_1_end_downtime' => $validated['team_1_end_downtime'],
+            'team_1_start_downtime' => $validated['team_1_start_downtime'] ?? null,
+            'team_1_end_downtime' => $validated['team_1_end_downtime'] ?? null,
             'team_1_members' => $validated['team_1_members'] ?? [],
             'team_2_start_time' => $validated['team_2_start_time'],
             'team_2_end_time' => $validated['team_2_end_time'],
-            'team_2_start_downtime' => $validated['team_2_start_downtime'],
-            'team_2_end_downtime' => $validated['team_2_end_downtime'],
+            'team_2_start_downtime' => $validated['team_2_start_downtime'] ?? null,
+            'team_2_end_downtime' => $validated['team_2_end_downtime'] ?? null,
             'team_2_members' => $validated['team_2_members'] ?? [],
         ]);
 

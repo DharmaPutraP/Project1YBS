@@ -29,7 +29,6 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                @if (!$visibleTeam || $visibleTeam === 'Tim 1')
                 <div class="rounded-xl border border-blue-200 bg-blue-50 p-5 space-y-4">
                     <h2 class="text-lg font-semibold text-blue-900">Tim 1</h2>
 
@@ -77,9 +76,6 @@
                         @enderror
                     </div>
                 </div>
-                @endif
-
-                @if (!$visibleTeam || $visibleTeam === 'Tim 2')
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-5 space-y-4">
                     <h2 class="text-lg font-semibold text-emerald-900">Tim 2</h2>
 
@@ -127,7 +123,6 @@
                         @enderror
                     </div>
                 </div>
-                @endif
             </div>
 
             @error('team_2_members')

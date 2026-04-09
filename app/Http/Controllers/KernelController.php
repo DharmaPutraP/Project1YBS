@@ -297,6 +297,7 @@ class KernelController extends Controller
 
         $proofData = $this->buildKernelLossesProofData($savedRows[0], $message);
         $proofData['entries'] = $this->buildKernelProofEntries($savedRows);
+        $proofData['entries_metrics'] = $this->buildKernelLossesEntriesMetrics($savedRows);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
@@ -2973,6 +2974,54 @@ class KernelController extends Controller
                 'operator' => $row->operator ?? '-',
                 'sampel_boy' => $row->sampel_boy ?? '-',
                 'input_by' => $row->user?->name ?? Auth::user()->name,
+            ];
+        })->values()->all();
+    }
+
+    private function buildKernelLossesEntriesMetrics(array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $kodes = collect($rows)
+            ->pluck('kode')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $masterByKode = KernelMasterData::whereIn('kode', $kodes)
+            ->get(['kode', 'nama_sample', 'limit_operator', 'limit_value'])
+            ->keyBy('kode');
+
+        return collect($rows)->map(function ($calc) use ($masterByKode) {
+            $master = $masterByKode->get($calc->kode);
+            $lossPercent = (float) ($calc->kernel_losses ?? 0) * 100;
+            $createdAt = $calc->created_at instanceof Carbon
+                ? $calc->created_at->copy()
+                : Carbon::parse((string) $calc->created_at);
+
+            return [
+                'kode_label' => ($calc->kode ?? '-') . ' - ' . ($master->nama_sample ?? '-'),
+                'tanggal_input' => $createdAt->format('d/m/Y H:i:s'),
+                'metric' => $this->buildProofMetric(
+                    'Kernel Losses',
+                    $lossPercent,
+                    '%',
+                    2,
+                    $master?->limit_operator,
+                    $master?->limit_value,
+                    2
+                ),
+                'inputs' => [
+                    $this->buildProofInput('Berat Sampel', $calc->berat_sampel, ' g', 2),
+                    $this->buildProofInput('Nut Utuh - Nut', $calc->nut_utuh_nut, ' g', 2),
+                    $this->buildProofInput('Nut Utuh - Kernel', $calc->nut_utuh_kernel, ' g', 2),
+                    $this->buildProofInput('Nut Pecah - Nut', $calc->nut_pecah_nut, ' g', 2),
+                    $this->buildProofInput('Nut Pecah - Kernel', $calc->nut_pecah_kernel, ' g', 2),
+                    $this->buildProofInput('Kernel Utuh', $calc->kernel_utuh, ' g', 2),
+                    $this->buildProofInput('Kernel Pecah', $calc->kernel_pecah, ' g', 2),
+                ],
             ];
         })->values()->all();
     }

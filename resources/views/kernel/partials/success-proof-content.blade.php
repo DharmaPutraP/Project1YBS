@@ -102,7 +102,83 @@
     </div>
 </section>
 
-@if(!empty($metrics))
+@php
+    $entriesMetrics = $successProof['entries_metrics'] ?? [];
+@endphp
+
+@if(!empty($entriesMetrics))
+    <section class="mb-6 rounded-xl border border-purple-200 bg-purple-50/60 p-4">
+        <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-slate-900">Hasil Losses</h3>
+        </div>
+
+        @foreach($entriesMetrics as $entryMetric)
+            @php
+                $kodeLabel = $entryMetric['kode_label'] ?? '-';
+                $metric = $entryMetric['metric'] ?? [];
+                $inputs = $entryMetric['inputs'] ?? [];
+                $entryDetailInputsHtml = '';
+                if (!empty($inputs)) {
+                    $entryDetailInputsHtml = collect($inputs)->map(function ($input) use ($formatValue) {
+                        $label = e($input['label'] ?? '-');
+                        $value = e($formatValue($input['value'] ?? null, $input['decimals'] ?? 2, $input['unit'] ?? ''));
+                        return $label . ': ' . $value;
+                    })->implode('<br>');
+                }
+                
+                $decimals = $metric['decimals'] ?? 2;
+                $limitDecimals = $metric['limit_decimals'] ?? $decimals;
+                $limitOperator = $metric['limit_operator'] ?? null;
+                $limitValue = $metric['limit_value'] ?? null;
+                $isGood = null;
+                if ($limitOperator && $limitValue !== null) {
+                    $isGood = $limitOperator === 'gt'
+                        ? (float) ($metric['value'] ?? 0) > (float) $limitValue
+                        : (float) ($metric['value'] ?? 0) <= (float) $limitValue;
+                }
+                $badgeClass = $isGood === null
+                    ? 'bg-gray-100 text-gray-700'
+                    : ($isGood ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800');
+            @endphp
+            <div class="mb-4 overflow-x-auto">
+                <div class="mb-2 rounded bg-purple-100 px-3 py-2 text-sm font-semibold text-purple-900">
+                    {{ $kodeLabel }}
+                </div>
+                <table class="min-w-full divide-y divide-purple-200 overflow-hidden rounded-lg bg-white">
+                    <thead class="bg-purple-100 text-slate-700">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Parameter</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Detail Input</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Nilai</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Limit</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-purple-100 text-sm text-slate-700">
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ $metric['label'] ?? '-' }}</td>
+                            <td class="px-4 py-3">
+                                @if($entryDetailInputsHtml)
+                                    <div class="text-xs text-slate-700">{!! $entryDetailInputsHtml !!}</div>
+                                @else
+                                    <span class="text-xs text-slate-400">-</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $badgeClass }}">
+                                    {{ $formatValue($metric['value'] ?? null, $decimals, $metric['unit'] ?? '') }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-xs text-purple-800">
+                                {{ $formatLimit($limitOperator, $limitValue, $limitDecimals) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        @endforeach
+    </section>
+@elseif(!empty($metrics))
     <section class="mb-6 rounded-xl border border-purple-200 bg-purple-50/60 p-4">
         <div class="mb-3 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-slate-900">Hasil Losses</h3>

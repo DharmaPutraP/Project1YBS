@@ -1,5 +1,7 @@
 <x-layouts.app title="Informasi Proses">
     @php
+        $canManageTeamMeta = (bool) ($canManageTeamMeta ?? false);
+        $canManageMachineData = (bool) ($canManageMachineData ?? false);
         $oldSpareRows = old('spare_machines', []);
         $oldOtherConditions = old('other_conditions', []);
         $spareRowsTeam1 = collect($oldSpareRows)->filter(fn ($row) => ($row['team_name'] ?? 'Tim 1') === 'Tim 1')->all();
@@ -54,56 +56,63 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="rounded-xl border border-blue-200 bg-blue-50 p-5 space-y-4" id="team-1-section">
                     <h2 class="text-lg font-semibold text-blue-900">Tim 1</h2>
-                    <div>
-                        <p class="block text-sm font-medium text-gray-700 mb-2">Anggota Tim (Checklist)</p>
+                    @if (!$canManageTeamMeta)
+                        <p class="text-xs text-slate-600">Checklist dan jam proses hanya bisa dilihat.</p>
+                    @endif
 
-                        @if (count($teamMembers) > 0)
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                @foreach ($teamMembers as $member)
-                                    <label class="inline-flex items-center gap-2 rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm text-gray-700">
-                                        <input type="checkbox" name="team_1_members[]" value="{{ $member }}" data-team="1"
-                                            @checked(in_array($member, old('team_1_members', []), true))
-                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                        <span>{{ $member }}</span>
-                                    </label>
-                                @endforeach
+                        <div>
+                            <p class="block text-sm font-medium text-gray-700 mb-2">Anggota Tim (Checklist)</p>
+
+                            @if (count($teamMembers) > 0)
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    @foreach ($teamMembers as $member)
+                                        <label class="inline-flex items-center gap-2 rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm text-gray-700">
+                                            <input type="checkbox" name="team_1_members[]" value="{{ $member }}" data-team="1"
+                                                @checked(in_array($member, old('team_1_members', []), true))
+                                                @disabled(!$canManageTeamMeta)
+                                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                            <span>{{ $member }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-500">Daftar anggota belum tersedia untuk office Anda.</p>
+                            @endif
+
+                            @error('team_1_members')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="team_1_start_time" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Jam Mulai <span class="text-red-500">*</span>
+                                </label>
+                                <input type="time" id="team_1_start_time" name="team_1_start_time"
+                                    value="{{ old('team_1_start_time') }}"
+                                    @disabled(!$canManageTeamMeta)
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 @error('team_1_start_time') border-red-400 bg-red-50 @enderror">
+                                @error('team_1_start_time')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
-                        @else
-                            <p class="text-sm text-gray-500">Daftar anggota belum tersedia untuk office Anda.</p>
-                        @endif
 
-                        @error('team_1_members')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="team_1_start_time" class="block text-sm font-medium text-gray-700 mb-2">
-                                Jam Mulai <span class="text-red-500">*</span>
-                            </label>
-                            <input type="time" id="team_1_start_time" name="team_1_start_time"
-                                value="{{ old('team_1_start_time') }}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 @error('team_1_start_time') border-red-400 bg-red-50 @enderror">
-                            @error('team_1_start_time')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div>
+                                <label for="team_1_end_time" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Jam Akhir <span class="text-red-500">*</span>
+                                </label>
+                                <input type="time" id="team_1_end_time" name="team_1_end_time"
+                                    value="{{ old('team_1_end_time') }}"
+                                    @disabled(!$canManageTeamMeta)
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 @error('team_1_end_time') border-red-400 bg-red-50 @enderror">
+                                @error('team_1_end_time')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
-                        <div>
-                            <label for="team_1_end_time" class="block text-sm font-medium text-gray-700 mb-2">
-                                Jam Akhir <span class="text-red-500">*</span>
-                            </label>
-                            <input type="time" id="team_1_end_time" name="team_1_end_time"
-                                value="{{ old('team_1_end_time') }}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 @error('team_1_end_time') border-red-400 bg-red-50 @enderror">
-                            @error('team_1_end_time')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-
-
+                    @if ($canManageMachineData)
                     <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-4">
                         <div>
                             <h3 class="text-sm font-semibold text-slate-900">Input Mesin Tim 1</h3>
@@ -219,67 +228,83 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                     <div class="pt-2">
-                        <button type="button" data-input-team="Tim 1" class="submit-team-button inline-flex items-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                            Simpan Informasi Proses Tim 1
-                        </button>
+                        @if ($canManageTeamMeta || $canManageMachineData)
+                            <button type="button" data-input-team="Tim 1" class="submit-team-button inline-flex items-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                @if ($canManageTeamMeta && $canManageMachineData)
+                                    Simpan Informasi Proses Tim 1
+                                @elseif ($canManageTeamMeta)
+                                    Simpan Checklist &amp; Shift Tim 1
+                                @else
+                                    Simpan Detail Mesin Tim 1
+                                @endif
+                            </button>
+                        @endif
                     </div>
                     
                 </div>
 
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-5 space-y-4" id="team-2-section">
                     <h2 class="text-lg font-semibold text-emerald-900">Tim 2</h2>
+                    @if (!$canManageTeamMeta)
+                        <p class="text-xs text-slate-600">Checklist dan jam proses hanya bisa dilihat.</p>
+                    @endif
 
-                    <div>
-                        <p class="block text-sm font-medium text-gray-700 mb-2">Anggota Tim (Checklist)</p>
+                        <div>
+                            <p class="block text-sm font-medium text-gray-700 mb-2">Anggota Tim (Checklist)</p>
 
-                        @if (count($teamMembers) > 0)
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                @foreach ($teamMembers as $member)
-                                    <label class="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm text-gray-700">
-                                        <input type="checkbox" name="team_2_members[]" value="{{ $member }}" data-team="2"
-                                            @checked(in_array($member, old('team_2_members', []), true))
-                                            class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
-                                        <span>{{ $member }}</span>
-                                    </label>
-                                @endforeach
+                            @if (count($teamMembers) > 0)
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    @foreach ($teamMembers as $member)
+                                        <label class="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm text-gray-700">
+                                            <input type="checkbox" name="team_2_members[]" value="{{ $member }}" data-team="2"
+                                                @checked(in_array($member, old('team_2_members', []), true))
+                                                @disabled(!$canManageTeamMeta)
+                                                class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                                            <span>{{ $member }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-500">Daftar anggota belum tersedia untuk office Anda.</p>
+                            @endif
+
+                            @error('team_2_members')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="team_2_start_time" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Jam Mulai <span class="text-red-500">*</span>
+                                </label>
+                                <input type="time" id="team_2_start_time" name="team_2_start_time"
+                                    value="{{ old('team_2_start_time') }}"
+                                    @disabled(!$canManageTeamMeta)
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('team_2_start_time') border-red-400 bg-red-50 @enderror">
+                                @error('team_2_start_time')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
-                        @else
-                            <p class="text-sm text-gray-500">Daftar anggota belum tersedia untuk office Anda.</p>
-                        @endif
 
-                        @error('team_2_members')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="team_2_start_time" class="block text-sm font-medium text-gray-700 mb-2">
-                                Jam Mulai <span class="text-red-500">*</span>
-                            </label>
-                            <input type="time" id="team_2_start_time" name="team_2_start_time"
-                                value="{{ old('team_2_start_time') }}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('team_2_start_time') border-red-400 bg-red-50 @enderror">
-                            @error('team_2_start_time')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div>
+                                <label for="team_2_end_time" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Jam Akhir <span class="text-red-500">*</span>
+                                </label>
+                                <input type="time" id="team_2_end_time" name="team_2_end_time"
+                                    value="{{ old('team_2_end_time') }}"
+                                    @disabled(!$canManageTeamMeta)
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('team_2_end_time') border-red-400 bg-red-50 @enderror">
+                                @error('team_2_end_time')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
-                        <div>
-                            <label for="team_2_end_time" class="block text-sm font-medium text-gray-700 mb-2">
-                                Jam Akhir <span class="text-red-500">*</span>
-                            </label>
-                            <input type="time" id="team_2_end_time" name="team_2_end_time"
-                                value="{{ old('team_2_end_time') }}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('team_2_end_time') border-red-400 bg-red-50 @enderror">
-                            @error('team_2_end_time')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-
+                    @if ($canManageMachineData)
                     <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-4">
                         <div>
                             <h3 class="text-sm font-semibold text-slate-900">Input Mesin Tim 2</h3>
@@ -395,11 +420,20 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                     <div class="pt-2">
-                        <button type="button" data-input-team="Tim 2" class="submit-team-button inline-flex items-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-                            Simpan Informasi Proses Tim 2
-                        </button>
+                        @if ($canManageTeamMeta || $canManageMachineData)
+                            <button type="button" data-input-team="Tim 2" class="submit-team-button inline-flex items-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                                @if ($canManageTeamMeta && $canManageMachineData)
+                                    Simpan Informasi Proses Tim 2
+                                @elseif ($canManageTeamMeta)
+                                    Simpan Checklist &amp; Shift Tim 2
+                                @else
+                                    Simpan Detail Mesin Tim 2
+                                @endif
+                            </button>
+                        @endif
                     </div>
 
                     
@@ -451,18 +485,22 @@
                                         class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
                                         Detail
                                     </a>
-                                    <a href="{{ route('process.edit', ['kernelProsses' => $record['id']]) }}"
-                                        class="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100">
-                                        Edit
-                                    </a>
+                                    @if ($canManageTeamMeta)
+                                        <a href="{{ route('process.edit', ['kernelProsses' => $record['id']]) }}"
+                                            class="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100">
+                                            Edit
+                                        </a>
+                                    @endif
                                     <a href="{{ route('process.machines.show', ['kernelProsses' => $record['id']]) }}"
                                         class="inline-flex items-center rounded-md bg-teal-50 px-2 py-1 text-xs font-medium text-teal-700 hover:bg-teal-100">
                                         Detail Mesin
                                     </a>
-                                    <a href="{{ route('process.machines.edit', ['kernelProsses' => $record['id']]) }}"
-                                        class="inline-flex items-center rounded-md bg-cyan-50 px-2 py-1 text-xs font-medium text-cyan-700 hover:bg-cyan-100">
-                                        Edit Mesin
-                                    </a>
+                                    @if ($canManageMachineData)
+                                        <a href="{{ route('process.machines.edit', ['kernelProsses' => $record['id']]) }}"
+                                            class="inline-flex items-center rounded-md bg-cyan-50 px-2 py-1 text-xs font-medium text-cyan-700 hover:bg-cyan-100">
+                                            Edit Mesin
+                                        </a>
+                                    @endif
                                     <span class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600">
                                         {{ $record['mesin_count'] }} mesin
                                     </span>
@@ -495,8 +533,16 @@
             const team1Section = document.getElementById('team-1-section');
             const team2Section = document.getElementById('team-2-section');
             const machineOptions = @json($machineOptions);
+            const canManageTeamMeta = @json($canManageTeamMeta);
 
             function syncTeams() {
+                if (!canManageTeamMeta) {
+                    [...team1Checks, ...team2Checks].forEach(input => {
+                        input.disabled = true;
+                    });
+                    return;
+                }
+
                 const selectedTeam1 = new Set(team1Checks.filter(input => input.checked).map(input => input.value));
                 const selectedTeam2 = new Set(team2Checks.filter(input => input.checked).map(input => input.value));
 

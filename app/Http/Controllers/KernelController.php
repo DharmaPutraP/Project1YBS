@@ -296,6 +296,7 @@ class KernelController extends Controller
             : count($savedRows) . ' data Kernel Losses berhasil disimpan.';
 
         $proofData = $this->buildKernelLossesProofData($savedRows[0], $message);
+        $proofData['entries'] = $this->buildKernelProofEntries($savedRows);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
@@ -536,9 +537,11 @@ class KernelController extends Controller
                 }
             }
 
-            if (array_key_exists('rows.' . $kode . '.berat_sampel', $rowErrors)
+            if (
+                array_key_exists('rows.' . $kode . '.berat_sampel', $rowErrors)
                 || array_key_exists('rows.' . $kode . '.berat_dirty', $rowErrors)
-                || array_key_exists('rows.' . $kode . '.moist_percent', $rowErrors)) {
+                || array_key_exists('rows.' . $kode . '.moist_percent', $rowErrors)
+            ) {
                 continue;
             }
 
@@ -618,6 +621,7 @@ class KernelController extends Controller
             : count($savedRows) . ' data dirt & moist berhasil disimpan.';
 
         $proofData = $this->buildDirtMoistProofData($savedRows[0], $message);
+        $proofData['entries'] = $this->buildKernelProofEntries($savedRows);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
@@ -979,6 +983,7 @@ class KernelController extends Controller
             : count($savedRows) . ' data QWT Fibre Press berhasil disimpan.';
 
         $proofData = $this->buildQwtProofData($savedRows[0], $message);
+        $proofData['entries'] = $this->buildKernelProofEntries($savedRows);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
@@ -1331,6 +1336,7 @@ class KernelController extends Controller
             : count($savedRows) . ' data Ripple Mill berhasil disimpan.';
 
         $proofData = $this->buildRippleMillProofData($savedRows[0], $message);
+        $proofData['entries'] = $this->buildKernelProofEntries($savedRows);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
@@ -1662,6 +1668,7 @@ class KernelController extends Controller
             : count($savedRows) . ' data Destoner berhasil disimpan.';
 
         $proofData = $this->buildDestonerProofData($savedRows[0], $message);
+        $proofData['entries'] = $this->buildKernelProofEntries($savedRows);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
@@ -2926,6 +2933,48 @@ class KernelController extends Controller
             'operator' => $row->operator ?? '-',
             'sampel_boy' => $row->sampel_boy ?? '-',
         ];
+    }
+
+    private function buildKernelProofEntries(array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $kodes = collect($rows)
+            ->pluck('kode')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $masterByKode = KernelMasterData::whereIn('kode', $kodes)
+            ->get(['kode', 'nama_sample'])
+            ->keyBy('kode');
+
+        return collect($rows)->map(function ($row) use ($masterByKode) {
+            $createdAt = $row->created_at instanceof Carbon
+                ? $row->created_at->copy()
+                : Carbon::parse((string) $row->created_at);
+
+            $roundedTime = $row->rounded_time ?? null;
+            $jamProses = $roundedTime
+                ? ($roundedTime instanceof Carbon ? $roundedTime->format('H:i') : Carbon::parse((string) $roundedTime)->format('H:i'))
+                : $createdAt->format('H:i');
+
+            $kode = (string) ($row->kode ?? '');
+            $master = $masterByKode->get($kode);
+
+            return [
+                'tanggal_input' => $createdAt->format('d/m/Y H:i:s'),
+                'jam_proses' => $jamProses,
+                'kode' => $kode,
+                'kode_label' => $kode . ' - ' . ($master->nama_sample ?? '-'),
+                'jenis' => $row->jenis ?? '-',
+                'operator' => $row->operator ?? '-',
+                'sampel_boy' => $row->sampel_boy ?? '-',
+                'input_by' => $row->user?->name ?? Auth::user()->name,
+            ];
+        })->values()->all();
     }
 
     private function buildKernelLossesProofData(KernelCalculation $calc, string $message): array

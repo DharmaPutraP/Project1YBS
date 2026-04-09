@@ -158,6 +158,7 @@ class ProcessController extends Controller
 
     public function index(Request $request)
     {
+        $roleFlags = $this->resolveProcessRoleFlags();
         $teamMembers = $this->getTeamMembersByOffice();
 
         $userOffice = trim((string) (auth()->user()->office ?? ''));
@@ -193,17 +194,91 @@ class ProcessController extends Controller
             'machineGroups' => self::MACHINE_GROUPS,
             'officeFilter' => $officeFilter,
             'officeOptions' => $officeOptions,
+            'canManageTeamMeta' => $roleFlags['can_manage_team_meta'],
+            'canManageMachineData' => $roleFlags['can_manage_machine_data'],
         ]);
     }
 
     public function store(Request $request)
     {
+        $roleFlags = $this->resolveProcessRoleFlags();
         $teamMemberRules = $this->buildTeamMemberValidationRules();
         $inputTeam = (string) $request->input('input_team');
         if (!in_array($inputTeam, self::TEAM_OPTIONS, true)) {
             return back()->withInput()->withErrors([
                 'input_team' => 'Tim input tidak valid.',
             ]);
+        }
+
+        $office = (string) auth()->user()->office;
+        $existingProcess = KernelProsses::query()
+            ->whereDate('process_date', $request->input('process_date'))
+            ->where('office', $office)
+            ->where('input_team', $inputTeam)
+            ->first();
+
+        if (!$roleFlags['can_manage_team_meta'] && $roleFlags['can_manage_machine_data']) {
+            $validated = $request->validate([
+                'process_date' => ['required', 'date'],
+                'machines' => ['nullable', 'array'],
+                'machines.*.selected' => ['nullable'],
+                'machines.*.machine_name' => ['nullable', 'string', 'max:150'],
+                'machines.*.machine_group' => ['nullable', 'string', 'max:120'],
+                'machines.*.team_name' => ['nullable', 'string', 'in:Tim 1,Tim 2'],
+                'machines.*.start_time' => ['nullable', 'date_format:H:i'],
+                'machines.*.end_time' => ['nullable', 'date_format:H:i'],
+                'spare_machines' => ['nullable', 'array'],
+                'spare_machines.*.team_name' => ['nullable', 'string', 'in:Tim 1,Tim 2'],
+                'spare_machines.*.machine_name' => ['nullable', 'string', 'max:150'],
+                'spare_machines.*.start_time' => ['nullable', 'date_format:H:i'],
+                'spare_machines.*.end_time' => ['nullable', 'date_format:H:i'],
+                'other_conditions' => ['nullable', 'array'],
+                'other_conditions.*.team_name' => ['nullable', 'string', 'in:Tim 1,Tim 2'],
+                'other_conditions.*.reason' => ['nullable', 'string', 'max:255', 'required_with:other_conditions.*.start_time,other_conditions.*.end_time'],
+                'other_conditions.*.start_time' => ['nullable', 'date_format:H:i', 'required_with:other_conditions.*.reason,other_conditions.*.end_time'],
+                'other_conditions.*.end_time' => ['nullable', 'date_format:H:i', 'required_with:other_conditions.*.reason,other_conditions.*.start_time'],
+            ]);
+
+            if (!$existingProcess) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'process_date' => 'Data checklist dan shift belum diinput Analis untuk tanggal dan tim ini.',
+                    ]);
+            }
+
+            $machinePayload = $this->extractMachinePayload($request, $inputTeam);
+            $otherConditionsByTeam = $this->extractOtherConditionsPayload($request, $inputTeam);
+
+            $existingProcess->mesin()
+                ->where('team_name', $inputTeam)
+                ->delete();
+
+            if (!empty($machinePayload)) {
+                $existingProcess->mesin()->createMany($machinePayload);
+            }
+
+            if ($inputTeam === 'Tim 1') {
+                $existingProcess->update([
+                    'team_1_other_conditions' => $otherConditionsByTeam['Tim 1'] ?? [],
+                ]);
+            } else {
+                $existingProcess->update([
+                    'team_2_other_conditions' => $otherConditionsByTeam['Tim 2'] ?? [],
+                ]);
+            }
+
+            return redirect()
+                ->route('process.index')
+                ->with('success', 'Detail mesin ' . $inputTeam . ' berhasil disimpan.');
+        }
+
+        if (!$roleFlags['can_manage_team_meta']) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'input_team' => 'Anda tidak memiliki akses untuk mengubah checklist tim dan jam shift.',
+                ]);
         }
 
         $isTeamOneInput = $inputTeam === 'Tim 1';
@@ -246,16 +321,7 @@ class ProcessController extends Controller
             'other_conditions.*.end_time' => ['nullable', 'date_format:H:i', 'required_with:other_conditions.*.reason,other_conditions.*.start_time'],
         ]);
 
-        $otherConditionsByTeam = $this->extractOtherConditionsPayload($request, $inputTeam);
-        $machinePayload = $this->extractMachinePayload($request, $inputTeam);
-
-        $office = auth()->user()->office;
-
-        $alreadyExists = KernelProsses::query()
-            ->whereDate('process_date', $validated['process_date'])
-            ->where('office', $office)
-            ->where('input_team', $inputTeam)
-            ->exists();
+        $alreadyExists = $existingProcess !== null;
 
         if ($alreadyExists) {
             return back()
@@ -288,19 +354,15 @@ class ProcessController extends Controller
             'team_1_end_downtime' => $isTeamOneInput ? ($validated['team_1_end_downtime'] ?? null) : null,
             'team_1_downtime' => null,
             'team_1_members' => $isTeamOneInput ? ($validated['team_1_members'] ?? []) : [],
-            'team_1_other_conditions' => $isTeamOneInput ? ($otherConditionsByTeam['Tim 1'] ?? []) : [],
+            'team_1_other_conditions' => [],
             'team_2_start_time' => $isTeamOneInput ? '00:00' : ($validated['team_2_start_time'] ?? '00:00'),
             'team_2_end_time' => $isTeamOneInput ? '00:00' : ($validated['team_2_end_time'] ?? '00:00'),
             'team_2_start_downtime' => $isTeamOneInput ? null : ($validated['team_2_start_downtime'] ?? null),
             'team_2_end_downtime' => $isTeamOneInput ? null : ($validated['team_2_end_downtime'] ?? null),
             'team_2_downtime' => null,
             'team_2_members' => $isTeamOneInput ? [] : ($validated['team_2_members'] ?? []),
-            'team_2_other_conditions' => $isTeamOneInput ? [] : ($otherConditionsByTeam['Tim 2'] ?? []),
+            'team_2_other_conditions' => [],
         ]);
-
-        if (!empty($machinePayload)) {
-            $process->mesin()->createMany($machinePayload);
-        }
 
         return redirect()
             ->route('process.index')
@@ -325,6 +387,10 @@ class ProcessController extends Controller
 
     public function edit(KernelProsses $kernelProsses)
     {
+        if (!$this->resolveProcessRoleFlags()['can_manage_team_meta']) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah checklist tim dan jam shift.');
+        }
+
         $team1 = $this->buildTeamRow($kernelProsses, 'Tim 1');
         $team2 = $this->buildTeamRow($kernelProsses, 'Tim 2');
         $visibleTeam = in_array((string) $kernelProsses->input_team, self::TEAM_OPTIONS, true)
@@ -598,6 +664,10 @@ class ProcessController extends Controller
 
     public function editMachines(KernelProsses $kernelProsses)
     {
+        if (!$this->resolveProcessRoleFlags()['can_manage_machine_data']) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah jam proses mesin.');
+        }
+
         $kernelProsses->load('mesin');
 
         $visibleTeam = in_array((string) $kernelProsses->input_team, self::TEAM_OPTIONS, true)
@@ -696,6 +766,10 @@ class ProcessController extends Controller
 
     public function updateMachines(Request $request, KernelProsses $kernelProsses)
     {
+        if (!$this->resolveProcessRoleFlags()['can_manage_machine_data']) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah jam proses mesin.');
+        }
+
         $validated = $request->validate([
             'machines' => ['nullable', 'array'],
             'machines.*.selected' => ['nullable'],
@@ -746,6 +820,10 @@ class ProcessController extends Controller
 
     public function destroyMachines(KernelProsses $kernelProsses)
     {
+        if (!$this->resolveProcessRoleFlags()['can_manage_machine_data']) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus jam proses mesin.');
+        }
+
         $deletedCount = $kernelProsses->mesin()->count();
         $kernelProsses->mesin()->delete();
 
@@ -758,6 +836,10 @@ class ProcessController extends Controller
 
     public function updateBoth(Request $request, KernelProsses $kernelProsses)
     {
+        if (!$this->resolveProcessRoleFlags()['can_manage_team_meta']) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah checklist tim dan jam shift.');
+        }
+
         $teamMemberRules = $this->buildTeamMemberValidationRules();
         $validated = $request->validate([
             'process_date' => ['required', 'date'],
@@ -842,6 +924,10 @@ class ProcessController extends Controller
 
     public function update(Request $request, KernelProsses $kernelProsses, int $team)
     {
+        if (!$this->resolveProcessRoleFlags()['can_manage_team_meta']) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah checklist tim dan jam shift.');
+        }
+
         $this->ensureValidTeam($team);
         $teamMemberRules = $this->buildTeamMemberValidationRules();
 
@@ -1287,7 +1373,7 @@ class ProcessController extends Controller
                     });
             })
             ->when($office !== '', fn($builder) => $builder->where('office', $office))
-                    ->get($selectColumns);
+            ->get($selectColumns);
 
         return $rows->map(function ($row): array {
             $time = $this->extractTimeFromDateTimeValue($row->rounded_time);
@@ -2123,6 +2209,23 @@ class ProcessController extends Controller
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function resolveProcessRoleFlags(): array
+    {
+        $user = auth()->user();
+        $canManageTeamMeta = $user
+            ? ($user->can('create informasi proses mesin') || $user->can('edit informasi proses mesin'))
+            : false;
+
+        $canManageMachineData = $user
+            ? ($user->can('create jam proses mesin') || $user->can('edit jam proses mesin'))
+            : false;
+
+        return [
+            'can_manage_team_meta' => $canManageTeamMeta,
+            'can_manage_machine_data' => $canManageMachineData,
+        ];
     }
 
     private function buildTeamMemberValidationRules(): array

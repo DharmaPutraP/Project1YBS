@@ -3,6 +3,14 @@
     @php
         $successProof = session('success_proof');
         $defaultTab = $successProof['active_tab'] ?? 'records';
+        $mode1Entries = collect($successProof['mode1_entries'] ?? [])->values();
+        if ($mode1Entries->isEmpty() && !empty($successProof['mode1'])) {
+            $mode1Entries = collect([$successProof['mode1']]);
+        }
+        $mode2Entries = collect($successProof['mode2_entries'] ?? [])->values();
+        if ($mode2Entries->isEmpty() && !empty($successProof['mode2'])) {
+            $mode2Entries = collect([$successProof['mode2']]);
+        }
     @endphp
 
     <style>
@@ -595,7 +603,7 @@
                     </div>
                 </div>
 
-                @if(!empty($successProof['mode1']))
+                @if($mode1Entries->isNotEmpty())
                     <section class="mb-6 rounded-2xl border border-blue-200 bg-blue-50/60 p-6">
                         <div class="mb-4 flex items-center justify-between">
                             <h2 class="text-3xl font-bold text-slate-900">Data Jenis &amp; Sampel</h2>
@@ -615,35 +623,23 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-blue-100 text-base text-slate-700">
-                                    <tr>
-                                        <td class="px-5 py-4">{{ $successProof['mode1']['tanggal_input'] }}</td>
-                                        <td class="px-5 py-4 font-semibold text-blue-900">{{ $successProof['mode1']['kode_label'] }}</td>
-                                        <td class="px-5 py-4">{{ $successProof['mode1']['jenis'] ?? '-' }}</td>
-                                        <td class="px-5 py-4">{{ $successProof['mode1']['operator'] ?? '-' }}</td>
-                                        <td class="px-5 py-4">{{ $successProof['mode1']['sampel_boy'] ?? '-' }}</td>
-                                        <td class="px-5 py-4">{{ $successProof['mode1']['input_by'] ?? '-' }}</td>
-                                    </tr>
+                                    @foreach($mode1Entries as $proofMode1)
+                                        <tr>
+                                            <td class="px-5 py-4">{{ $proofMode1['tanggal_input'] }}</td>
+                                            <td class="px-5 py-4 font-semibold text-blue-900">{{ $proofMode1['kode_label'] }}</td>
+                                            <td class="px-5 py-4">{{ $proofMode1['jenis'] ?? '-' }}</td>
+                                            <td class="px-5 py-4">{{ $proofMode1['operator'] ?? '-' }}</td>
+                                            <td class="px-5 py-4">{{ $proofMode1['sampel_boy'] ?? '-' }}</td>
+                                            <td class="px-5 py-4">{{ $proofMode1['input_by'] ?? '-' }}</td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
                     </section>
                 @endif
 
-                @if(!empty($successProof['mode2']))
-                    @php
-                        $proofMode2Export = $successProof['mode2'];
-                        $proofOlwbExport = (float) ($proofMode2Export['olwb'] ?? 0);
-                        $proofOldbExport = (float) ($proofMode2Export['oldb'] ?? 0);
-                        $proofLossesExport = (float) ($proofMode2Export['oil_losses'] ?? 0);
-                        $proofLimitOlwbExport = (float) ($proofMode2Export['limitOLWB'] ?? 0);
-                        $proofLimitOldbExport = (float) ($proofMode2Export['limitOLDB'] ?? 0);
-                        $proofLimitOlExport = (float) ($proofMode2Export['limitOL'] ?? 0);
-                        $isOlwbGoodExport = ($proofMode2Export['kode'] ?? '') === 'COT IN'
-                            ? ($proofOlwbExport > $proofLimitOlwbExport && $proofLimitOlwbExport > 0)
-                            : ($proofOlwbExport <= $proofLimitOlwbExport && $proofLimitOlwbExport > 0);
-                        $isOldbGoodExport = $proofOldbExport <= $proofLimitOldbExport && $proofLimitOldbExport > 0;
-                        $isLossesGoodExport = $proofLossesExport <= $proofLimitOlExport && $proofLimitOlExport > 0;
-                    @endphp
+                @if($mode2Entries->isNotEmpty())
                     <section class="rounded-2xl border border-purple-200 bg-purple-50/60 p-6">
                         <div class="mb-4 flex items-center justify-between">
                             <h2 class="text-3xl font-bold text-slate-900">Data Perhitungan Lab</h2>
@@ -663,14 +659,16 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-purple-100 text-base text-slate-700">
-                                    <tr>
-                                        <td class="px-5 py-4 font-semibold text-purple-900">{{ $proofMode2Export['kode_label'] }}</td>
-                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['cawan_kosong'], 6) }}</td>
-                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['berat_basah'], 6) }}</td>
-                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['cawan_sample_kering'], 6) }}</td>
-                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['labu_kosong'], 6) }}</td>
-                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['oil_labu'], 6) }}</td>
-                                    </tr>
+                                    @foreach($mode2Entries as $proofMode2Export)
+                                        <tr>
+                                            <td class="px-5 py-4 font-semibold text-purple-900">{{ $proofMode2Export['kode_label'] }}</td>
+                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['cawan_kosong'], 6) }}</td>
+                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['berat_basah'], 6) }}</td>
+                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['cawan_sample_kering'], 6) }}</td>
+                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['labu_kosong'], 6) }}</td>
+                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['oil_labu'], 6) }}</td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
@@ -690,73 +688,88 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-purple-100 text-base text-slate-700">
-                                    <tr>
-                                        <td class="px-5 py-4">{{ $proofMode2Export['tanggal_input'] }}</td>
-                                        <td class="px-5 py-4 font-semibold text-purple-900">{{ $proofMode2Export['kode_label'] }}</td>
-                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['moist'], 4) }}</td>
-                                        <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['dmwm'], 4) }}</td>
-                                        <td class="px-5 py-4">
-                                            <div @class(['font-semibold', 'text-green-600' => $isOlwbGoodExport, 'text-red-600' => !$isOlwbGoodExport && $proofLimitOlwbExport > 0])>
-                                                @if($proofOlwbExport < 0)
-                                                    ({{ number_format(abs($proofOlwbExport), 2) }})
-                                                @else
-                                                    {{ number_format($proofOlwbExport, 2) }}
-                                                @endif
-                                            </div>
-                                            <div class="mt-1 text-sm text-gray-500">Limit:
-                                                @if($proofLimitOlwbExport > 0)
-                                                    @if($proofLimitOlwbExport < 0)
-                                                        ({{ number_format(abs($proofLimitOlwbExport), 2) }})
+                                    @foreach($mode2Entries as $proofMode2Export)
+                                        @php
+                                            $proofOlwbExport = (float) ($proofMode2Export['olwb'] ?? 0);
+                                            $proofOldbExport = (float) ($proofMode2Export['oldb'] ?? 0);
+                                            $proofLossesExport = (float) ($proofMode2Export['oil_losses'] ?? 0);
+                                            $proofLimitOlwbExport = (float) ($proofMode2Export['limitOLWB'] ?? 0);
+                                            $proofLimitOldbExport = (float) ($proofMode2Export['limitOLDB'] ?? 0);
+                                            $proofLimitOlExport = (float) ($proofMode2Export['limitOL'] ?? 0);
+                                            $isOlwbGoodExport = ($proofMode2Export['kode'] ?? '') === 'COT IN'
+                                                ? ($proofOlwbExport > $proofLimitOlwbExport && $proofLimitOlwbExport > 0)
+                                                : ($proofOlwbExport <= $proofLimitOlwbExport && $proofLimitOlwbExport > 0);
+                                            $isOldbGoodExport = $proofOldbExport <= $proofLimitOldbExport && $proofLimitOldbExport > 0;
+                                            $isLossesGoodExport = $proofLossesExport <= $proofLimitOlExport && $proofLimitOlExport > 0;
+                                        @endphp
+                                        <tr>
+                                            <td class="px-5 py-4">{{ $proofMode2Export['tanggal_input'] }}</td>
+                                            <td class="px-5 py-4 font-semibold text-purple-900">{{ $proofMode2Export['kode_label'] }}</td>
+                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['moist'], 4) }}</td>
+                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['dmwm'], 4) }}</td>
+                                            <td class="px-5 py-4">
+                                                <div @class(['font-semibold', 'text-green-600' => $isOlwbGoodExport, 'text-red-600' => !$isOlwbGoodExport && $proofLimitOlwbExport > 0])>
+                                                    @if($proofOlwbExport < 0)
+                                                        ({{ number_format(abs($proofOlwbExport), 2) }})
                                                     @else
-                                                        {{ number_format($proofLimitOlwbExport, 2) }}
+                                                        {{ number_format($proofOlwbExport, 2) }}
                                                     @endif
-                                                @else
-                                                    -
-                                                @endif
-                                            </div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div @class(['font-semibold', 'text-green-600' => $isOldbGoodExport, 'text-red-600' => !$isOldbGoodExport && $proofLimitOldbExport > 0])>
-                                                @if($proofOldbExport < 0)
-                                                    ({{ number_format(abs($proofOldbExport), 2) }})
-                                                @else
-                                                    {{ number_format($proofOldbExport, 2) }}
-                                                @endif
-                                            </div>
-                                            <div class="mt-1 text-sm text-gray-500">Limit:
-                                                @if($proofLimitOldbExport > 0)
-                                                    @if($proofLimitOldbExport < 0)
-                                                        ({{ number_format(abs($proofLimitOldbExport), 2) }})
+                                                </div>
+                                                <div class="mt-1 text-sm text-gray-500">Limit:
+                                                    @if($proofLimitOlwbExport > 0)
+                                                        @if($proofLimitOlwbExport < 0)
+                                                            ({{ number_format(abs($proofLimitOlwbExport), 2) }})
+                                                        @else
+                                                            {{ number_format($proofLimitOlwbExport, 2) }}
+                                                        @endif
                                                     @else
-                                                        {{ number_format($proofLimitOldbExport, 2) }}
+                                                        -
                                                     @endif
-                                                @else
-                                                    -
-                                                @endif
-                                            </div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div @class(['font-semibold', 'text-green-600' => $isLossesGoodExport, 'text-red-600' => !$isLossesGoodExport && $proofLimitOlExport > 0])>
-                                                @if($proofLossesExport < 0)
-                                                    ({{ number_format(abs($proofLossesExport), 2) }})
-                                                @else
-                                                    {{ number_format($proofLossesExport, 2) }}
-                                                @endif
-                                            </div>
-                                            <div class="mt-1 text-sm text-gray-500">Limit:
-                                                @if($proofLimitOlExport > 0)
-                                                    @if($proofLimitOlExport < 0)
-                                                        ({{ number_format(abs($proofLimitOlExport), 2) }})
+                                                </div>
+                                            </td>
+                                            <td class="px-5 py-4">
+                                                <div @class(['font-semibold', 'text-green-600' => $isOldbGoodExport, 'text-red-600' => !$isOldbGoodExport && $proofLimitOldbExport > 0])>
+                                                    @if($proofOldbExport < 0)
+                                                        ({{ number_format(abs($proofOldbExport), 2) }})
                                                     @else
-                                                        {{ number_format($proofLimitOlExport, 2) }}
+                                                        {{ number_format($proofOldbExport, 2) }}
                                                     @endif
-                                                @else
-                                                    -
-                                                @endif
-                                            </div>
-                                        </td>
-                                        <td class="px-5 py-4">{{ $proofMode2Export['input_by'] ?? '-' }}</td>
-                                    </tr>
+                                                </div>
+                                                <div class="mt-1 text-sm text-gray-500">Limit:
+                                                    @if($proofLimitOldbExport > 0)
+                                                        @if($proofLimitOldbExport < 0)
+                                                            ({{ number_format(abs($proofLimitOldbExport), 2) }})
+                                                        @else
+                                                            {{ number_format($proofLimitOldbExport, 2) }}
+                                                        @endif
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td class="px-5 py-4">
+                                                <div @class(['font-semibold', 'text-green-600' => $isLossesGoodExport, 'text-red-600' => !$isLossesGoodExport && $proofLimitOlExport > 0])>
+                                                    @if($proofLossesExport < 0)
+                                                        ({{ number_format(abs($proofLossesExport), 2) }})
+                                                    @else
+                                                        {{ number_format($proofLossesExport, 2) }}
+                                                    @endif
+                                                </div>
+                                                <div class="mt-1 text-sm text-gray-500">Limit:
+                                                    @if($proofLimitOlExport > 0)
+                                                        @if($proofLimitOlExport < 0)
+                                                            ({{ number_format(abs($proofLimitOlExport), 2) }})
+                                                        @else
+                                                            {{ number_format($proofLimitOlExport, 2) }}
+                                                        @endif
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td class="px-5 py-4">{{ $proofMode2Export['input_by'] ?? '-' }}</td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
@@ -794,7 +807,7 @@
                         </div>
                     </div>
 
-                    @if(!empty($successProof['mode1']))
+                    @if($mode1Entries->isNotEmpty())
                         <section class="mb-6 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
                             <div class="mb-3 flex items-center justify-between">
                                 <h3 class="text-lg font-semibold text-slate-900">Data Jenis &amp; Sampel</h3>
@@ -814,21 +827,23 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-blue-100 text-sm text-slate-700">
-                                        <tr>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode1']['tanggal_input'] }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap font-semibold text-blue-900">{{ $successProof['mode1']['kode_label'] }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode1']['jenis'] ?? '-' }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode1']['operator'] ?? '-' }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode1']['sampel_boy'] ?? '-' }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode1']['input_by'] ?? '-' }}</td>
-                                        </tr>
+                                        @foreach($mode1Entries as $proofMode1)
+                                            <tr>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['tanggal_input'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap font-semibold text-blue-900">{{ $proofMode1['kode_label'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['jenis'] ?? '-' }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['operator'] ?? '-' }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['sampel_boy'] ?? '-' }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['input_by'] ?? '-' }}</td>
+                                            </tr>
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
                         </section>
                     @endif
 
-                    @if(!empty($successProof['mode2']))
+                    @if($mode2Entries->isNotEmpty())
                         <section class="rounded-xl border border-purple-200 bg-purple-50/60 p-4">
                             <div class="mb-3 flex items-center justify-between">
                                 <h3 class="text-lg font-semibold text-slate-900">Data Perhitungan Lab</h3>
@@ -848,14 +863,16 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-purple-100 text-sm text-slate-700">
-                                        <tr>
-                                            <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">{{ $successProof['mode2']['kode_label'] }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['cawan_kosong'], 6) }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['berat_basah'], 6) }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['cawan_sample_kering'], 6) }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['labu_kosong'], 6) }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['oil_labu'], 6) }}</td>
-                                        </tr>
+                                        @foreach($mode2Entries as $proofMode2)
+                                            <tr>
+                                                <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">{{ $proofMode2['kode_label'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['cawan_kosong'], 6) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['berat_basah'], 6) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['cawan_sample_kering'], 6) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['labu_kosong'], 6) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['oil_labu'], 6) }}</td>
+                                            </tr>
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
@@ -875,25 +892,25 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-purple-100 text-sm text-slate-700">
-                                        @php
-                                            $proofMode2 = $successProof['mode2'];
-                                            $proofOlwb = (float) ($proofMode2['olwb'] ?? 0);
-                                            $proofOldb = (float) ($proofMode2['oldb'] ?? 0);
-                                            $proofLosses = (float) ($proofMode2['oil_losses'] ?? 0);
-                                            $proofLimitOlwb = (float) ($proofMode2['limitOLWB'] ?? 0);
-                                            $proofLimitOldb = (float) ($proofMode2['limitOLDB'] ?? 0);
-                                            $proofLimitOl = (float) ($proofMode2['limitOL'] ?? 0);
-                                            $isOlwbGood = ($proofMode2['kode'] ?? '') === 'COT IN'
-                                                ? ($proofOlwb > $proofLimitOlwb && $proofLimitOlwb > 0)
-                                                : ($proofOlwb <= $proofLimitOlwb && $proofLimitOlwb > 0);
-                                            $isOldbGood = $proofOldb <= $proofLimitOldb && $proofLimitOldb > 0;
-                                            $isLossesGood = $proofLosses <= $proofLimitOl && $proofLimitOl > 0;
-                                        @endphp
-                                        <tr>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode2']['tanggal_input'] }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">{{ $successProof['mode2']['kode_label'] }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['moist'], 4) }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $successProof['mode2']['dmwm'], 4) }}</td>
+                                        @foreach($mode2Entries as $proofMode2)
+                                            @php
+                                                $proofOlwb = (float) ($proofMode2['olwb'] ?? 0);
+                                                $proofOldb = (float) ($proofMode2['oldb'] ?? 0);
+                                                $proofLosses = (float) ($proofMode2['oil_losses'] ?? 0);
+                                                $proofLimitOlwb = (float) ($proofMode2['limitOLWB'] ?? 0);
+                                                $proofLimitOldb = (float) ($proofMode2['limitOLDB'] ?? 0);
+                                                $proofLimitOl = (float) ($proofMode2['limitOL'] ?? 0);
+                                                $isOlwbGood = ($proofMode2['kode'] ?? '') === 'COT IN'
+                                                    ? ($proofOlwb > $proofLimitOlwb && $proofLimitOlwb > 0)
+                                                    : ($proofOlwb <= $proofLimitOlwb && $proofLimitOlwb > 0);
+                                                $isOldbGood = $proofOldb <= $proofLimitOldb && $proofLimitOldb > 0;
+                                                $isLossesGood = $proofLosses <= $proofLimitOl && $proofLimitOl > 0;
+                                            @endphp
+                                            <tr>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode2['tanggal_input'] }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">{{ $proofMode2['kode_label'] }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['moist'], 4) }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['dmwm'], 4) }}</td>
                                             <td class="px-4 py-3 whitespace-nowrap">
                                                 <span @class([
                                                     'font-semibold',
@@ -966,8 +983,9 @@
                                                     @endif
                                                 </span>
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['mode2']['input_by'] ?? '-' }}</td>
-                                        </tr>
+                                            <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode2['input_by'] ?? '-' }}</td>
+                                            </tr>
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
@@ -1061,6 +1079,10 @@
                     const itemName = this.dataset.itemName || 'data ini';
                     const confirmed = await window.confirmDelete(itemName);
                     if (confirmed) {
+                        if (typeof window.lockFormSubmission === 'function') {
+                            const submitter = e.submitter || this.querySelector('button[type="submit"], input[type="submit"]');
+                            window.lockFormSubmission(this, submitter);
+                        }
                         this.submit();
                     }
                 });

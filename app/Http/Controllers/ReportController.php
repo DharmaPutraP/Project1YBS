@@ -27,8 +27,7 @@ class ReportController extends Controller
         $userOffice = Auth()->user()->office;
         $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
-        $startDateTime = $startDate . ' 00:00:00';
-        $endDateTime = $endDate . ' 23:59:59';
+        [$startDateTime, $endDateTime] = $this->resolveProductionRange($startDate, $endDate);
 
         /**
          * ======================================================
@@ -327,8 +326,7 @@ class ReportController extends Controller
         $userOffice = Auth()->user()->office;
         $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
-        $startDateTime = $startDate . ' 00:00:00';
-        $endDateTime = $endDate . ' 23:59:59';
+        [$startDateTime, $endDateTime] = $this->resolveProductionRange($startDate, $endDate);
 
         $calculationWithRecord = DB::table('oil_calculations as c')
             ->join('oil_records as r', function ($join) {
@@ -507,5 +505,16 @@ class ReportController extends Controller
         }
 
         return number_format($value, $decimals);
+    }
+
+    private function resolveProductionRange(string $startDate, string $endDate): array
+    {
+        $start = Carbon::parse($startDate)->setTime(7, 0, 0);
+        $end = Carbon::parse($endDate)->addDay()->setTime(6, 59, 59);
+
+        return [
+            $start->format('Y-m-d H:i:s'),
+            $end->format('Y-m-d H:i:s'),
+        ];
     }
 }

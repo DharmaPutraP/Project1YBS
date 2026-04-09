@@ -245,7 +245,6 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             @endcan
         @endcanany
 
-        @role('Super Admin')
         {{-- ── Process ─────────────────────────────────────── --}}
         <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
             Process
@@ -265,7 +264,6 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
                 <span class="sidebar-item-text">Performance Sampel Boy</span>
             </x-sidebar-item>
         @endcan
-        @endrole
 
         {{-- ── Admin ───────────────────────────────────────── --}}
         @canany(['view users', 'view user activity log'])

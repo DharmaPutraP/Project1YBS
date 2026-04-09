@@ -9,6 +9,21 @@
     $moduleLabel = $moduleLabelMap[$successProof['module'] ?? ''] ?? 'Kernel';
     $metrics = $successProof['metrics'] ?? [];
     $inputs = $successProof['inputs'] ?? [];
+    $entries = $successProof['entries'] ?? [];
+
+    if (empty($entries)) {
+        $entries = [
+            [
+                'tanggal_input' => $successProof['tanggal_input'] ?? '-',
+                'jam_proses' => $successProof['jam_proses'] ?? '-',
+                'kode_label' => $successProof['kode_label'] ?? ($successProof['kode'] ?? '-'),
+                'jenis' => $successProof['jenis'] ?? '-',
+                'operator' => $successProof['operator'] ?? '-',
+                'sampel_boy' => $successProof['sampel_boy'] ?? '-',
+                'input_by' => $successProof['input_by'] ?? '-',
+            ]
+        ];
+    }
 
     $formatValue = function ($value, $decimals = 2, $unit = '') {
         if ($value === null) {
@@ -39,7 +54,8 @@
     <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
             <p class="text-sm font-semibold text-emerald-900">
-                {{ $successProof['message'] ?? 'Data berhasil disimpan.' }}</p>
+                {{ $successProof['message'] ?? 'Data berhasil disimpan.' }}
+            </p>
             <p class="mt-1 text-sm text-emerald-800">Waktu bukti dibuat: {{ $successProof['generated_at'] ?? '-' }}</p>
             <p class="mt-1 text-xs text-emerald-700">Silakan unduh gambar untuk bukti input data.</p>
         </div>
@@ -68,16 +84,19 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-blue-100 text-sm text-slate-700">
-                <tr>
-                    <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['tanggal_input'] ?? '-' }}</td>
-                    <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['jam_proses'] ?? '-' }}</td>
-                    <td class="px-4 py-3 whitespace-nowrap font-semibold text-blue-900">
-                        {{ $successProof['kode_label'] ?? ($successProof['kode'] ?? '-') }}</td>
-                    <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['jenis'] ?? '-' }}</td>
-                    <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['operator'] ?? '-' }}</td>
-                    <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['sampel_boy'] ?? '-' }}</td>
-                    <td class="px-4 py-3 whitespace-nowrap">{{ $successProof['input_by'] ?? '-' }}</td>
-                </tr>
+                @foreach($entries as $entry)
+                    <tr>
+                        <td class="px-4 py-3 whitespace-nowrap">{{ $entry['tanggal_input'] ?? '-' }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">{{ $entry['jam_proses'] ?? '-' }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap font-semibold text-blue-900">
+                            {{ $entry['kode_label'] ?? ($entry['kode'] ?? '-') }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">{{ $entry['jenis'] ?? '-' }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">{{ $entry['operator'] ?? '-' }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">{{ $entry['sampel_boy'] ?? '-' }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">{{ $entry['input_by'] ?? '-' }}</td>
+                    </tr>
+                @endforeach
             </tbody>
         </table>
     </div>

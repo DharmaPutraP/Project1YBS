@@ -46,6 +46,37 @@ Menyertakan sidebar navigasi dan topbar.
 
     {{-- Auto Flash Messages dengan SweetAlert Toast --}}
     <script>
+        function lockFormSubmission(form, submitter = null) {
+            if (!form || form.dataset.submitting === '1') {
+                return;
+            }
+
+            form.dataset.submitting = '1';
+
+            const submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+            submitButtons.forEach((button) => {
+                button.disabled = true;
+
+                if (button.tagName === 'BUTTON') {
+                    if (!button.dataset.originalHtml) {
+                        button.dataset.originalHtml = button.innerHTML;
+                    }
+                    if (button === submitter) {
+                        button.innerHTML = 'Menyimpan...';
+                    }
+                } else if (button.tagName === 'INPUT') {
+                    if (!button.dataset.originalValue) {
+                        button.dataset.originalValue = button.value;
+                    }
+                    if (button === submitter) {
+                        button.value = 'Menyimpan...';
+                    }
+                }
+            });
+        }
+
+        window.lockFormSubmission = lockFormSubmission;
+
         document.addEventListener('DOMContentLoaded', function () {
             @if (session('success'))
                 window.showSuccess({!! json_encode(session('success')) !!});
@@ -97,6 +128,20 @@ Menyertakan sidebar navigasi dan topbar.
         if (backdrop) {
             backdrop.addEventListener('click', toggleMobileSidebar);
         }
+
+        document.addEventListener('submit', function (event) {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+
+            const method = (form.getAttribute('method') || 'get').toLowerCase();
+            if (method === 'get' || event.defaultPrevented) {
+                return;
+            }
+
+            lockFormSubmission(form, event.submitter ?? null);
+        }, false);
 
         // Close sidebar saat resize ke desktop
         window.addEventListener('resize', function () {

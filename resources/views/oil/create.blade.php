@@ -190,6 +190,15 @@
                             @enderror
                         </div>
                     </div>
+
+                    <div id="mode1RowsContainer" class="space-y-4"></div>
+
+                    <div>
+                        <button type="button" id="addMode1Row"
+                            class="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium">
+                            + Add Form Mode Non-Angka
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -208,35 +217,8 @@
                 <div class="space-y-4">
                     <div class="text-sm text-green-800 bg-green-100 border border-green-300 rounded-lg p-3">
                         <p>
-                            ℹ️ <strong>Perhatian:</strong> Pilih <strong>Tahap Awal</strong> untuk cawan/berat basah, <strong>Tahap Akhir</strong> untuk labu dan oil + labu, atau <strong>Lengkap</strong> bila diisi sekaligus.
+                            ℹ️ <strong>Perhatian:</strong> Tahap input terdeteksi otomatis dari field yang Anda isi.
                         </p>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tahap Input</label>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <label class="flex items-center gap-3 p-3 rounded-lg border border-green-200 bg-white cursor-pointer">
-                                <input type="radio" name="phase" value="initial" {{ old('phase', 'initial') === 'initial' ? 'checked' : '' }}>
-                                <div>
-                                    <div class="font-medium text-gray-800">Tahap Awal</div>
-                                    <div class="text-xs text-gray-500">Cawan kosong, berat basah, cawan + sample kering</div>
-                                </div>
-                            </label>
-                            <label class="flex items-center gap-3 p-3 rounded-lg border border-green-200 bg-white cursor-pointer">
-                                <input type="radio" name="phase" value="final" {{ old('phase') === 'final' ? 'checked' : '' }}>
-                                <div>
-                                    <div class="font-medium text-gray-800">Tahap Akhir</div>
-                                    <div class="text-xs text-gray-500">Labu kosong, oil + labu</div>
-                                </div>
-                            </label>
-                            <label class="flex items-center gap-3 p-3 rounded-lg border border-green-200 bg-white cursor-pointer">
-                                <input type="radio" name="phase" value="complete" {{ old('phase') === 'complete' ? 'checked' : '' }}>
-                                <div>
-                                    <div class="font-medium text-gray-800">Lengkap</div>
-                                    <div class="text-xs text-gray-500">Semua field diisi sekaligus</div>
-                                </div>
-                            </label>
-                        </div>
                     </div>
 
                     {{-- Kode Selection for Mode 2 --}}
@@ -328,8 +310,105 @@
                             </div>
                         </div>
                     </div>
+
+                    <div id="mode2RowsContainer" class="space-y-4"></div>
+
+                    <div>
+                        <button type="button" id="addMode2Row"
+                            class="px-4 py-2 border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition text-sm font-medium">
+                            + Add Form Mode Angka
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            <template id="mode1RowTemplate">
+                <div class="mode1-row border border-blue-200 bg-white rounded-lg p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-semibold text-blue-900">Mode Non-Angka Tambahan</h4>
+                        <button type="button" class="remove-mode1-row text-xs text-red-600 hover:text-red-800">Hapus</button>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Kode</label>
+                        <select name="mode1_rows[__INDEX__][kode]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                            <option value="">-- Pilih Kode --</option>
+                            @foreach($kodeOptions as $kodeValue => $kodeLabel)
+                                <option value="{{ $kodeValue }}">{{ $kodeLabel }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jenis</label>
+                            <select name="mode1_rows[__INDEX__][jenis]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                                @foreach($jenisOptions as $jenisValue => $jenisLabel)
+                                    <option value="{{ $jenisValue }}" {{ $jenisValue === 'TBS' ? 'selected' : '' }}>{{ $jenisLabel }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Operator</label>
+                            @if(!empty($operatorOptions))
+                                <select name="mode1_rows[__INDEX__][operator]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="">-- Pilih Operator --</option>
+                                    @foreach($operatorOptions as $operatorName)
+                                        <option value="{{ $operatorName }}">{{ $operatorName }}</option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <input type="text" name="mode1_rows[__INDEX__][operator]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Nama operator">
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <template id="mode2RowTemplate">
+                <div class="mode2-row border border-green-200 bg-white rounded-lg p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-semibold text-green-900">Mode Angka Tambahan</h4>
+                        <button type="button" class="remove-mode2-row text-xs text-red-600 hover:text-red-800">Hapus</button>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Kode</label>
+                        <select name="mode2_rows[__INDEX__][kode_mode2]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                            <option value="">-- Pilih Kode --</option>
+                            @foreach($kodeOptions as $kodeValue => $kodeName)
+                                <option value="{{ $kodeValue }}">{{ $kodeName }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cawan Kosong</label>
+                            <input type="number" step="0.000001" name="mode2_rows[__INDEX__][cawan_kosong]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Berat Sampel Basah</label>
+                            <input type="number" step="0.000001" name="mode2_rows[__INDEX__][berat_basah]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cawan + Sample Kering</label>
+                            <input type="number" step="0.000001" name="mode2_rows[__INDEX__][cawan_sample_kering]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Labu Kosong</label>
+                            <input type="number" step="0.000001" name="mode2_rows[__INDEX__][labu_kosong]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Oil + Labu</label>
+                            <input type="number" step="0.000001" name="mode2_rows[__INDEX__][oil_labu]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                        </div>
+                    </div>
+                </div>
+            </template>
 
             {{-- Action Buttons --}}
             <div class="flex justify-end gap-3 pt-6 border-t border-gray-200">
@@ -432,8 +511,30 @@
             updateClock();
             setInterval(updateClock, 1000);
 
+            function detectMode2Phase() {
+                const hasInitial = ['cawan_kosong', 'berat_basah', 'cawan_sample_kering'].some((field) => {
+                    const value = $(`#${field}`).val();
+                    return value && value.trim() !== '';
+                });
+
+                const hasFinal = ['labu_kosong', 'oil_labu'].some((field) => {
+                    const value = $(`#${field}`).val();
+                    return value && value.trim() !== '';
+                });
+
+                if (hasInitial && hasFinal) {
+                    return 'complete';
+                }
+
+                if (hasFinal) {
+                    return 'final';
+                }
+
+                return 'initial';
+            }
+
             function getPhase() {
-                return $('input[name="phase"]:checked').val() || 'initial';
+                return detectMode2Phase();
             }
 
             function togglePhaseFields() {
@@ -441,19 +542,21 @@
                 const initialFields = $('#initialPhaseFields').find('input');
                 const finalFields = $('#finalPhaseFields').find('input');
 
+                // Jangan lock field: user bebas isi awal/akhir, phase dideteksi otomatis.
+                initialFields.prop('disabled', false);
+                finalFields.prop('disabled', false);
+
+                $('#initialPhaseFields, #finalPhaseFields').removeClass('ring-2 ring-green-200');
                 if (phase === 'initial') {
-                    initialFields.prop('disabled', false);
-                    finalFields.prop('disabled', true);
+                    $('#initialPhaseFields').addClass('ring-2 ring-green-200');
                 } else if (phase === 'final') {
-                    initialFields.prop('disabled', true);
-                    finalFields.prop('disabled', false);
+                    $('#finalPhaseFields').addClass('ring-2 ring-green-200');
                 } else {
-                    initialFields.prop('disabled', false);
-                    finalFields.prop('disabled', false);
+                    $('#initialPhaseFields, #finalPhaseFields').addClass('ring-2 ring-green-200');
                 }
             }
 
-            $('input[name="phase"]').on('change', togglePhaseFields);
+            $('#initialPhaseFields input, #finalPhaseFields input').on('input change', togglePhaseFields);
             togglePhaseFields();
 
             // Form validation: Jika 1 field di mode diisi, semua field di mode tersebut WAJIB diisi
@@ -572,10 +675,45 @@
 
     <script>
         // Confirmation handler for form submission
+        let mode1RowIndex = 0;
+        let mode2RowIndex = 0;
+
+        function bindDynamicRows() {
+            const mode1Container = document.getElementById('mode1RowsContainer');
+            const mode2Container = document.getElementById('mode2RowsContainer');
+            const mode1Template = document.getElementById('mode1RowTemplate');
+            const mode2Template = document.getElementById('mode2RowTemplate');
+
+            document.getElementById('addMode1Row')?.addEventListener('click', function () {
+                const html = mode1Template.innerHTML.replaceAll('__INDEX__', String(mode1RowIndex++));
+                mode1Container.insertAdjacentHTML('beforeend', html);
+            });
+
+            document.getElementById('addMode2Row')?.addEventListener('click', function () {
+                const html = mode2Template.innerHTML.replaceAll('__INDEX__', String(mode2RowIndex++));
+                mode2Container.insertAdjacentHTML('beforeend', html);
+            });
+
+            document.addEventListener('click', function (event) {
+                if (event.target.classList.contains('remove-mode1-row')) {
+                    event.target.closest('.mode1-row')?.remove();
+                }
+                if (event.target.classList.contains('remove-mode2-row')) {
+                    event.target.closest('.mode2-row')?.remove();
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', bindDynamicRows);
+
         async function handleFormSubmit(event, form) {
             event.preventDefault();
             const confirmed = await window.confirmSave(form); // Pass form element untuk offline save
             if (confirmed) {
+                if (typeof window.lockFormSubmission === 'function') {
+                    const submitter = event.submitter || form.querySelector('button[type="submit"], input[type="submit"]');
+                    window.lockFormSubmission(form, submitter);
+                }
                 form.submit();
             }
             return false;

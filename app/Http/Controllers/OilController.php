@@ -16,6 +16,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -42,6 +43,7 @@ class OilController extends Controller
         // Office filter: user dengan office hanya boleh lihat office-nya sendiri
         $userOffice = Auth::user()->office;
         $officeFilter = $userOffice ?: $request->input('office', 'YBS');
+        [$rangeStart, $rangeEnd] = $this->resolveProductionRange($startDate, $endDate);
 
         // Query for Mode 2: Lab Calculations (numeric data)
         // Multi-tenancy: filter by selected office or user's office
@@ -52,7 +54,7 @@ class OilController extends Controller
             $calculationsQuery->where('office', $officeFilter);
         }
 
-        $calculationsQuery->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        $calculationsQuery->whereBetween('created_at', [$rangeStart, $rangeEnd])
             ->orderBy('created_at', 'desc');
 
         // Query for Mode 1: Lab Records (non-numeric data)
@@ -64,7 +66,7 @@ class OilController extends Controller
             $recordsQuery->where('office', $officeFilter);
         }
 
-        $recordsQuery->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        $recordsQuery->whereBetween('created_at', [$rangeStart, $rangeEnd])
             ->orderBy('created_at', 'desc');
 
         // Filter by kode if provided (optional)
@@ -82,8 +84,8 @@ class OilController extends Controller
         // Get statistics based on FILTERED queries (before pagination)
         $totalCalculations = (clone $calculationsQuery)->count();
         $totalRecords = (clone $recordsQuery)->count();
-        $todayStart = Carbon::today()->startOfDay()->format('Y-m-d H:i:s');
-        $todayEnd = Carbon::today()->endOfDay()->format('Y-m-d H:i:s');
+        $todayProductionDate = $this->resolveProductionDateKey(now());
+        [$todayStart, $todayEnd] = $this->resolveProductionRange($todayProductionDate, $todayProductionDate);
 
         // Statistics query
         $todayCalculations = OilCalculation::whereBetween('created_at', [$todayStart, $todayEnd]);
@@ -159,7 +161,7 @@ class OilController extends Controller
         // HANYA cek field yang user input manual (kode & operator)
         // Jenis dan Sampel Boy diabaikan karena punya default value
         $mode1UserFields = ['kode', 'operator'];
-        $phase = $request->input('phase', 'complete');
+        $phase = $this->detectMode2Phase($request);
         $mode2Fields = ['kode_mode2', 'cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'];
 
         // Cek apakah ada field Mode 1 yang user isi manual (kode atau operator)
@@ -222,12 +224,49 @@ class OilController extends Controller
         ]);
 
         try {
-            // Tanggal dan jam otomatis dari created_at (tidak perlu set manual)
-            // Pass user's office for multi-tenancy
-            $result = $this->oilService->store($validated, Auth::id(), Auth::user()->office);
+            $savedMode1 = [];
+            $savedMode2 = [];
+            $messages = [];
+
+            $hasPrimaryMode1 = !empty($validated['kode']) || !empty($validated['operator']);
+            $hasPrimaryMode2 = !empty($validated['kode_mode2'])
+                && collect(['cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'])
+                    ->contains(fn($field) => array_key_exists($field, $validated) && $validated[$field] !== null && $validated[$field] !== '');
+
+            if ($hasPrimaryMode1 || $hasPrimaryMode2) {
+                // Tanggal dan jam otomatis dari created_at (tidak perlu set manual)
+                // Pass user's office for multi-tenancy
+                $result = $this->oilService->store($validated, Auth::id(), Auth::user()->office);
+
+                if (isset($result['results']['mode1']) && $result['results']['mode1'] instanceof OilRecord) {
+                    $savedMode1[] = $result['results']['mode1'];
+                }
+                if (isset($result['results']['mode2']) && $result['results']['mode2'] instanceof OilCalculation) {
+                    $savedMode2[] = $result['results']['mode2'];
+                }
+                if (!empty($result['message'])) {
+                    $messages[] = $result['message'];
+                }
+            }
+
+            $additionalRowsResult = $this->storeAdditionalRows($request, Auth::id(), Auth::user()->office);
+            $savedMode1 = array_merge($savedMode1, $additionalRowsResult['mode1']);
+            $savedMode2 = array_merge($savedMode2, $additionalRowsResult['mode2']);
+            if (!empty($additionalRowsResult['messages'])) {
+                $messages = array_merge($messages, $additionalRowsResult['messages']);
+            }
+
+            if (empty($savedMode1) && empty($savedMode2)) {
+                throw new Exception('Minimal satu form harus diisi sebelum disimpan.');
+            }
+
+            $message = implode(' ', array_filter($messages));
+            if ($message === '') {
+                $message = $result['message'] ?? 'Data berhasil disimpan.';
+            }
 
             // Recalculate daily bobot average for today
-            $this->recalculateDailyBobotAverage(now()->format('Y-m-d'));
+            $this->recalculateDailyBobotAverage($this->resolveProductionDateKey(now()));
 
             // Log activity
             if (isset($result['results'])) {
@@ -257,22 +296,24 @@ class OilController extends Controller
             }
 
             $proofData = $this->buildSuccessProofData(
-                $result['results']['mode1'] ?? null,
-                $result['results']['mode2'] ?? null,
-                $result['message']
+                $savedMode1[0] ?? null,
+                $savedMode2[0] ?? null,
+                $message,
+                $savedMode1,
+                $savedMode2,
             );
 
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => $result['message'],
+                    'message' => $message,
                     'proof' => $proofData,
                 ]);
             }
 
             return redirect()
                 ->route('oil.index')
-                ->with('success', $result['message'])
+                ->with('success', $message)
                 ->with('success_proof', $proofData);
 
         } catch (Exception $e) {
@@ -283,6 +324,109 @@ class OilController extends Controller
                 ->withInput()
                 ->with('error', $e->getMessage());
         }
+    }
+
+    private function storeAdditionalRows(Request $request, int $userId, string $userOffice): array
+    {
+        $savedMode1 = [];
+        $savedMode2 = [];
+        $messages = [];
+
+        $mode1Rows = collect($request->input('mode1_rows', []))
+            ->filter(fn($row) => is_array($row));
+
+        foreach ($mode1Rows as $row) {
+            $kode = trim((string) ($row['kode'] ?? ''));
+            $operator = trim((string) ($row['operator'] ?? ''));
+
+            if ($kode === '' && $operator === '') {
+                continue;
+            }
+
+            if ($kode === '' || $operator === '') {
+                throw new Exception('Untuk data tambahan Mode Non-Angka, Kode dan Operator wajib diisi bersamaan.');
+            }
+
+            $payload = [
+                'kode' => $kode,
+                'jenis' => $row['jenis'] ?? 'TBS',
+                'operator' => $operator,
+                'sampel_boy' => $row['sampel_boy'] ?? Auth::user()->name,
+                'parameter_lain' => $row['parameter_lain'] ?? null,
+            ];
+
+            $result = $this->oilService->store($payload, $userId, $userOffice);
+            if (isset($result['results']['mode1']) && $result['results']['mode1'] instanceof OilRecord) {
+                $savedMode1[] = $result['results']['mode1'];
+            }
+            if (!empty($result['message'])) {
+                $messages[] = $result['message'];
+            }
+        }
+
+        $mode2Rows = collect($request->input('mode2_rows', []))
+            ->filter(fn($row) => is_array($row));
+
+        foreach ($mode2Rows as $row) {
+            $kodeMode2 = trim((string) ($row['kode_mode2'] ?? ''));
+            $numericFields = ['cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'];
+            $hasAnyValue = collect($numericFields)->contains(function ($field) use ($row) {
+                return array_key_exists($field, $row) && $row[$field] !== null && $row[$field] !== '';
+            });
+
+            if ($kodeMode2 === '' && !$hasAnyValue) {
+                continue;
+            }
+
+            if ($kodeMode2 === '') {
+                throw new Exception('Untuk data tambahan Mode Angka, Kode wajib diisi.');
+            }
+
+            $payload = [
+                'kode_mode2' => $kodeMode2,
+                'cawan_kosong' => $row['cawan_kosong'] ?? null,
+                'berat_basah' => $row['berat_basah'] ?? null,
+                'cawan_sample_kering' => $row['cawan_sample_kering'] ?? null,
+                'labu_kosong' => $row['labu_kosong'] ?? null,
+                'oil_labu' => $row['oil_labu'] ?? null,
+            ];
+
+            $result = $this->oilService->store($payload, $userId, $userOffice);
+            if (isset($result['results']['mode2']) && $result['results']['mode2'] instanceof OilCalculation) {
+                $savedMode2[] = $result['results']['mode2'];
+            }
+            if (!empty($result['message'])) {
+                $messages[] = $result['message'];
+            }
+        }
+
+        return [
+            'mode1' => $savedMode1,
+            'mode2' => $savedMode2,
+            'messages' => $messages,
+        ];
+    }
+
+    /**
+     * Detect phase otomatis dari field Mode 2 yang terisi.
+     */
+    private function detectMode2Phase(Request $request): string
+    {
+        $hasInitial = collect(['cawan_kosong', 'berat_basah', 'cawan_sample_kering'])
+            ->contains(fn($field) => $request->filled($field));
+
+        $hasFinal = collect(['labu_kosong', 'oil_labu'])
+            ->contains(fn($field) => $request->filled($field));
+
+        if ($hasInitial && $hasFinal) {
+            return 'complete';
+        }
+
+        if ($hasFinal) {
+            return 'final';
+        }
+
+        return 'initial';
     }
 
     /**
@@ -386,9 +530,8 @@ class OilController extends Controller
 
             // Update or create related OilRecord (non-numeric data) if provided
             if ($validated['kode'] && $validated['jenis']) {
-                $recordDate = $oilCalculation->created_at->format('Y-m-d');
-                $recordDateStart = $recordDate . ' 00:00:00';
-                $recordDateEnd = $recordDate . ' 23:59:59';
+                $recordProductionDate = $this->resolveProductionDateKey($oilCalculation->created_at);
+                [$recordDateStart, $recordDateEnd] = $this->resolveProductionRange($recordProductionDate, $recordProductionDate);
 
                 $relatedRecord = OilRecord::where('kode', $oilCalculation->kode)
                     ->whereBetween('created_at', [$recordDateStart, $recordDateEnd])
@@ -417,7 +560,7 @@ class OilController extends Controller
             }
 
             // Recalculate daily bobot average for the calculation date
-            $this->recalculateDailyBobotAverage($oilCalculation->created_at->format('Y-m-d'));
+            $this->recalculateDailyBobotAverage($this->resolveProductionDateKey($oilCalculation->created_at));
 
             // Log activity
             $this->logActivity(
@@ -465,7 +608,7 @@ class OilController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk hapus data oil losses.');
         }
 
-        $calculationDate = $oilCalculation->created_at->format('Y-m-d');
+        $calculationDate = $this->resolveProductionDateKey($oilCalculation->created_at);
         $kode = $oilCalculation->kode;
         $oilCalculationId = $oilCalculation->id;
 
@@ -561,7 +704,7 @@ class OilController extends Controller
             ]);
 
             // Recalculate daily bobot average for the calculation date
-            $this->recalculateDailyBobotAverage($oilRecord->created_at->format('Y-m-d'));
+            $this->recalculateDailyBobotAverage($this->resolveProductionDateKey($oilRecord->created_at));
 
             // Log activity
             $this->logActivity(
@@ -637,6 +780,7 @@ class OilController extends Controller
         // Office filter: user dengan office hanya boleh lihat office-nya sendiri
         $userOffice = Auth::user()->office;
         $officeFilter = $userOffice ?: $request->input('office', 'YBS');
+        [$rangeStart, $rangeEnd] = $this->resolveProductionRange($startDate, $endDate);
 
         // Get all kode with pivot from master data (ordered)
         $allKodesData = OilMasterData::where('is_active', true)
@@ -650,10 +794,8 @@ class OilController extends Controller
             });
 
         // Get oil calculations data within date range
-        $calculationsQuery = OilCalculation::where('status', 'complete')->whereBetween('created_at', [
-            $startDate . ' 00:00:00',
-            $endDate . ' 23:59:59'
-        ]);
+        $calculationsQuery = OilCalculation::where('status', 'complete')
+            ->whereBetween('created_at', [$rangeStart, $rangeEnd]);
 
         // Apply office filter jika bukan 'all'
         if ($officeFilter !== 'all') {
@@ -665,7 +807,7 @@ class OilController extends Controller
         // Group data by date and kode
         $dataByDate = [];
         foreach ($calculations as $calc) {
-            $date = $calc->created_at->format('Y-m-d');
+            $date = $this->resolveProductionDateKey($calc->created_at);
             $kode = $calc->kode;
 
             if (!isset($dataByDate[$date])) {
@@ -702,6 +844,7 @@ class OilController extends Controller
         // Office filter: user dengan office hanya boleh lihat office-nya sendiri
         $userOffice = Auth::user()->office;
         $officeFilter = $userOffice ?: $request->input('office', 'YBS');
+        [$rangeStart, $rangeEnd] = $this->resolveProductionRange($startDate, $endDate);
 
         // Get all kode with pivot from master data (ordered)
         $allKodesData = OilMasterData::where('is_active', true)
@@ -715,10 +858,8 @@ class OilController extends Controller
             });
 
         // Get oil calculations data within date range
-        $calculationsQuery = OilCalculation::where('status', 'complete')->whereBetween('created_at', [
-            $startDate . ' 00:00:00',
-            $endDate . ' 23:59:59'
-        ]);
+        $calculationsQuery = OilCalculation::where('status', 'complete')
+            ->whereBetween('created_at', [$rangeStart, $rangeEnd]);
 
         // Apply office filter jika bukan 'all'
         if ($officeFilter !== 'all') {
@@ -730,7 +871,7 @@ class OilController extends Controller
         // Group data by date and kode
         $dataByDate = [];
         foreach ($calculations as $calc) {
-            $date = $calc->created_at->format('Y-m-d');
+            $date = $this->resolveProductionDateKey($calc->created_at);
             $kode = $calc->kode;
 
             if (!isset($dataByDate[$date])) {
@@ -766,6 +907,7 @@ class OilController extends Controller
         // Office filter: user dengan office hanya boleh lihat office-nya sendiri
         $userOffice = Auth::user()->office;
         $officeFilter = $userOffice ?: $request->input('office', 'YBS');
+        [$rangeStart, $rangeEnd] = $this->resolveProductionRange($startDate, $endDate);
 
         // Get all bobot configs
         $bobotConfigs = BobotConfig::all()->keyBy('jenis');
@@ -790,9 +932,9 @@ class OilController extends Controller
             ->values();
 
         // Get all dates in range that have calculations
-        $datesQuery = OilCalculation::selectRaw('DATE(created_at) as date')
+        $datesQuery = OilCalculation::selectRaw('DATE(DATE_SUB(created_at, INTERVAL 7 HOUR)) as date')
             ->where('status', 'complete')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            ->whereBetween('created_at', [$rangeStart, $rangeEnd]);
 
         // Apply office filter jika bukan 'all'
         if ($officeFilter !== 'all') {
@@ -804,9 +946,9 @@ class OilController extends Controller
             ->pluck('date');
 
         // OPTIMIZATION: Load ALL calculations in ONE query instead of query per date
-        $allCalculationsQuery = OilCalculation::selectRaw('*, DATE(created_at) as calc_date')
+        $allCalculationsQuery = OilCalculation::selectRaw('*, DATE(DATE_SUB(created_at, INTERVAL 7 HOUR)) as calc_date')
             ->where('status', 'complete')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            ->whereBetween('created_at', [$rangeStart, $rangeEnd]);
 
         if ($officeFilter !== 'all') {
             $allCalculationsQuery->where('office', $officeFilter);
@@ -901,7 +1043,7 @@ class OilController extends Controller
         // Use LEFT JOIN and select only needed columns for better performance
         $operatorRecordsQuery = OilRecord::select('oil_records.id', 'oil_records.kode', 'oil_records.operator', 'oil_records.created_at', 'oil_master_data.jenis')
             ->leftJoin('oil_master_data', 'oil_records.kode', '=', 'oil_master_data.kode')
-            ->whereBetween('oil_records.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereBetween('oil_records.created_at', [$rangeStart, $rangeEnd])
             ->whereNotNull('oil_records.operator')
             ->where('oil_records.operator', '!=', '');
 
@@ -964,6 +1106,7 @@ class OilController extends Controller
         // Office filter: user dengan office hanya boleh lihat office-nya sendiri
         $userOffice = Auth::user()->office;
         $officeFilter = $userOffice ?: $request->input('office', 'YBS');
+        [$rangeStart, $rangeEnd] = $this->resolveProductionRange($startDate, $endDate);
 
         // Get all bobot configs
         $bobotConfigs = BobotConfig::all()->keyBy('jenis');
@@ -986,9 +1129,9 @@ class OilController extends Controller
             ->values();
 
         // Get all dates in range that have calculations
-        $datesQuery = OilCalculation::selectRaw('DATE(created_at) as date')
+        $datesQuery = OilCalculation::selectRaw('DATE(DATE_SUB(created_at, INTERVAL 7 HOUR)) as date')
             ->where('status', 'complete')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            ->whereBetween('created_at', [$rangeStart, $rangeEnd]);
 
         // Apply office filter jika bukan 'all'
         if ($officeFilter !== 'all') {
@@ -1000,9 +1143,9 @@ class OilController extends Controller
             ->pluck('date');
 
         // OPTIMIZATION: Load ALL calculations in ONE query instead of query per date
-        $allCalculationsForExport = OilCalculation::selectRaw('*, DATE(created_at) as calc_date')
+        $allCalculationsForExport = OilCalculation::selectRaw('*, DATE(DATE_SUB(created_at, INTERVAL 7 HOUR)) as calc_date')
             ->where('status', 'complete')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            ->whereBetween('created_at', [$rangeStart, $rangeEnd]);
 
         if ($officeFilter !== 'all') {
             $allCalculationsForExport->where('office', $officeFilter);
@@ -1074,7 +1217,7 @@ class OilController extends Controller
         // Get operator data
         $operatorRecords = OilRecord::select('oil_records.*', 'oil_master_data.jenis')
             ->join('oil_master_data', 'oil_records.kode', '=', 'oil_master_data.kode')
-            ->whereBetween('oil_records.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereBetween('oil_records.created_at', [$rangeStart, $rangeEnd])
             ->whereNotNull('oil_records.operator')
             ->where('oil_records.operator', '!=', '')
             ->when($officeFilter !== 'all', fn($q) => $q->where('oil_records.office', $officeFilter))
@@ -1184,8 +1327,7 @@ class OilController extends Controller
         $bobotConfigs = BobotConfig::all()->keyBy('jenis');
 
         // Get all calculations for this date with master data eager loaded to prevent N+1
-        $dateStart = Carbon::parse($date)->startOfDay()->format('Y-m-d H:i:s');
-        $dateEnd = Carbon::parse($date)->endOfDay()->format('Y-m-d H:i:s');
+        [$dateStart, $dateEnd] = $this->resolveProductionRange((string) $date, (string) $date);
 
         $calculations = OilCalculation::where('status', 'complete')->whereBetween('created_at', [$dateStart, $dateEnd])
             ->with(['masterData:id,kode,jenis'])
@@ -1239,14 +1381,49 @@ class OilController extends Controller
         }
     }
 
+    private function resolveProductionRange(string $startDate, string $endDate): array
+    {
+        $start = Carbon::parse($startDate)->setTime(7, 0, 0);
+        $end = Carbon::parse($endDate)->addDay()->setTime(6, 59, 59);
+
+        return [
+            $start->format('Y-m-d H:i:s'),
+            $end->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    private function resolveProductionDateKey(Carbon $timestamp): string
+    {
+        $productionDate = $timestamp->copy();
+        if ((int) $productionDate->format('H') < 7) {
+            $productionDate->subDay();
+        }
+
+        return $productionDate->format('Y-m-d');
+    }
+
     /**
      * Build flash payload for proof modal after create/update.
      */
-    private function buildSuccessProofData(?OilRecord $mode1Record, ?OilCalculation $mode2Calculation, string $message): array
-    {
+    private function buildSuccessProofData(
+        ?OilRecord $mode1Record,
+        ?OilCalculation $mode2Calculation,
+        string $message,
+        array $mode1Records = [],
+        array $mode2Calculations = []
+    ): array {
+        if (empty($mode1Records) && $mode1Record) {
+            $mode1Records = [$mode1Record];
+        }
+        if (empty($mode2Calculations) && $mode2Calculation) {
+            $mode2Calculations = [$mode2Calculation];
+        }
+
         $kodes = collect([
             $mode1Record?->kode,
             $mode2Calculation?->kode,
+            ...collect($mode1Records)->pluck('kode')->all(),
+            ...collect($mode2Calculations)->pluck('kode')->all(),
         ])->filter()->unique()->values();
 
         $masterDataByKode = OilMasterData::whereIn('kode', $kodes)
@@ -1254,6 +1431,23 @@ class OilController extends Controller
             ->keyBy('kode');
 
         $mode2Calculation?->loadMissing(['initialUser', 'finalUser', 'user']);
+        collect($mode2Calculations)->each(function ($calculation) {
+            if ($calculation instanceof OilCalculation) {
+                $calculation->loadMissing(['initialUser', 'finalUser', 'user']);
+            }
+        });
+
+        $mode1Entries = collect($mode1Records)
+            ->filter(fn($record) => $record instanceof OilRecord)
+            ->map(fn($record) => $this->formatMode1ProofData($record, $masterDataByKode))
+            ->values()
+            ->all();
+
+        $mode2Entries = collect($mode2Calculations)
+            ->filter(fn($calc) => $calc instanceof OilCalculation)
+            ->map(fn($calc) => $this->formatMode2ProofData($calc, $masterDataByKode))
+            ->values()
+            ->all();
 
         return [
             'message' => $message,
@@ -1261,6 +1455,8 @@ class OilController extends Controller
             'active_tab' => $mode2Calculation && !$mode1Record ? 'calculations' : 'records',
             'mode1' => $mode1Record ? $this->formatMode1ProofData($mode1Record, $masterDataByKode) : null,
             'mode2' => $mode2Calculation ? $this->formatMode2ProofData($mode2Calculation, $masterDataByKode) : null,
+            'mode1_entries' => $mode1Entries,
+            'mode2_entries' => $mode2Entries,
         ];
     }
 

@@ -71,6 +71,10 @@ class RoleAndPermissionSeeder extends Seeder
         'export laporan kernel losses',
 
         'view informasi proses mesin',
+        'create informasi proses mesin',
+        'edit informasi proses mesin',
+        'create jam proses mesin',
+        'edit jam proses mesin',
         'view performance sampel boy'
     ];
     private array $rolePermissions = [
@@ -105,7 +109,12 @@ class RoleAndPermissionSeeder extends Seeder
 
             'view laporan kernel losses',
             'export laporan kernel losses',
-            'view performance sampel boy'
+            'view performance sampel boy',
+            'view informasi proses mesin',
+            'create informasi proses mesin',
+            'edit informasi proses mesin',
+            'create jam proses mesin',
+            'edit jam proses mesin',
 
         ],
 
@@ -117,6 +126,7 @@ class RoleAndPermissionSeeder extends Seeder
             'export olwb reports',
             'view laporan oil losses',
             'export laporan oil losses',
+            'view informasi proses mesin',
         ],
 
         'Sampel Boy Kernel Losses' => [
@@ -128,6 +138,9 @@ class RoleAndPermissionSeeder extends Seeder
             'export laporan kernel losses',
             'view rekap kernel losses',
             'export rekap kernel losses',
+            'view informasi proses mesin',
+            'create jam proses mesin',
+            'edit jam proses mesin',
         ],
 
         'Analis' => [
@@ -138,6 +151,11 @@ class RoleAndPermissionSeeder extends Seeder
             'export olwb reports',
             'view laporan oil losses',
             'export laporan oil losses',
+            'view informasi proses mesin',
+            'create informasi proses mesin',
+            'edit informasi proses mesin',
+            'create jam proses mesin',
+            'edit jam proses mesin',
 
         ],
 
@@ -148,6 +166,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view performance oil losses',
             'view laporan oil losses',
             'view informasi proses mesin',
+            'create jam proses mesin',
+            'edit jam proses mesin',
             'view performance sampel boy',
             'view kernel losses',
 
@@ -178,6 +198,8 @@ class RoleAndPermissionSeeder extends Seeder
 
             'view laporan kernel losses',
             'export laporan kernel losses',
+            'view informasi proses mesin',
+            'view performance sampel boy',
 
         ],
     ];

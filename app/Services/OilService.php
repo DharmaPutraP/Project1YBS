@@ -27,7 +27,20 @@ class OilService
     public function store(array $data, int $userId, string $userOffice): array
     {
         $isMode1 = !empty($data['kode']); // Mode 1: Non-numeric
-        $isMode2 = !empty($data['kode_mode2']) && (!empty($data['cawan_kosong']) || !empty($data['berat_basah'])); // Mode 2: Numeric
+        $mode2NumericFields = [
+            'cawan_kosong',
+            'berat_basah',
+            'cawan_sample_kering',
+            'labu_kosong',
+            'oil_labu',
+        ];
+
+        // Mode 2 aktif jika kode dipilih dan minimal 1 field angka terisi.
+        // Gunakan pengecekan ketat agar nilai 0 tetap dianggap valid.
+        $isMode2 = !empty($data['kode_mode2'])
+            && collect($mode2NumericFields)->contains(function ($field) use ($data) {
+                return array_key_exists($field, $data) && $data[$field] !== null && $data[$field] !== '';
+            });
 
         if (!$isMode1 && !$isMode2) {
             throw new Exception('Minimal salah satu mode harus diisi.');
@@ -152,9 +165,7 @@ class OilService
         }
 
         $kode = $data['kode_mode2'];
-        $phase = in_array(($data['phase'] ?? 'complete'), ['initial', 'final', 'complete'], true)
-            ? $data['phase']
-            : 'complete';
+        $phase = $this->detectMode2Phase($data);
 
         $initialData = [
             'cawan_kosong' => $data['cawan_kosong'] ?? null,
@@ -207,18 +218,21 @@ class OilService
         ];
 
         if ($phase === 'initial') {
+            // Tahap awal tidak boleh menimpa draft lama untuk kode yang sama.
+            if ($existingOpenBatch) {
+                throw new Exception("Kode '{$kode}' untuk office {$userOffice} sudah memiliki data tahap awal yang belum diselesaikan. Selesaikan dengan menginput tahap akhir terlebih dahulu, atau hubungi administrator untuk koreksi.");
+            }
+
             $payload = array_merge($basePayload, [
                 'phase' => 'initial',
                 'status' => 'partial',
             ], $this->normalizeInitialPayload($initialData));
 
-            $calculation = $existingOpenBatch
-                ? tap($existingOpenBatch)->update($payload)
-                : OilCalculation::create($payload);
+            $calculation = OilCalculation::create($payload);
 
             return [
                 'type' => 'numeric',
-                'calculation' => $existingOpenBatch?->fresh() ?? $calculation,
+                'calculation' => $calculation,
                 'phase' => 'initial',
                 'status' => 'partial',
                 'message' => "Data awal (Mode 2) untuk kode {$kode} berhasil disimpan sebagai draft.",
@@ -412,5 +426,27 @@ class OilService
                 ? $this->parseNum($data['oil_labu'])
                 : null,
         ];
+    }
+
+    /**
+     * Detect phase otomatis dari field Mode 2 yang terisi.
+     */
+    private function detectMode2Phase(array $data): string
+    {
+        $hasInitial = collect(['cawan_kosong', 'berat_basah', 'cawan_sample_kering'])
+            ->contains(fn($key) => array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '');
+
+        $hasFinal = collect(['labu_kosong', 'oil_labu'])
+            ->contains(fn($key) => array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '');
+
+        if ($hasInitial && $hasFinal) {
+            return 'complete';
+        }
+
+        if ($hasFinal) {
+            return 'final';
+        }
+
+        return 'initial';
     }
 }

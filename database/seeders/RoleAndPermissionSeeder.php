@@ -170,6 +170,8 @@ class RoleAndPermissionSeeder extends Seeder
             'create jam proses mesin',
             'edit jam proses mesin',
 
+            'view performance sampel boy'
+
         ],
 
         'Asisten Lab' => [

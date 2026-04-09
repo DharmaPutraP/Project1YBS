@@ -226,26 +226,27 @@ class KernelController extends Controller
                 continue;
             }
 
-            $beratSampel = isset($row['berat_sampel']) ? (float) $row['berat_sampel'] : null;
-            $nutUtuhKernel = isset($row['nut_utuh_kernel']) ? (float) $row['nut_utuh_kernel'] : null;
-            $nutPecahKernel = isset($row['nut_pecah_kernel']) ? (float) $row['nut_pecah_kernel'] : null;
-            $kernelUtuh = isset($row['kernel_utuh']) ? (float) $row['kernel_utuh'] : null;
-            $kernelPecah = isset($row['kernel_pecah']) ? (float) $row['kernel_pecah'] : null;
+            $beratSampel = $this->normalizeKernelNumericValue($row['berat_sampel'] ?? null);
+            $nutUtuhNut = $this->normalizeKernelNumericValue($row['nut_utuh_nut'] ?? null);
+            $nutUtuhKernel = $this->normalizeKernelNumericValue($row['nut_utuh_kernel'] ?? null);
+            $nutPecahNut = $this->normalizeKernelNumericValue($row['nut_pecah_nut'] ?? null);
+            $nutPecahKernel = $this->normalizeKernelNumericValue($row['nut_pecah_kernel'] ?? null);
+            $kernelUtuh = $this->normalizeKernelNumericValue($row['kernel_utuh'] ?? null);
+            $kernelPecah = $this->normalizeKernelNumericValue($row['kernel_pecah'] ?? null);
 
-            $canCalculate = $beratSampel !== null
-                && $beratSampel > 0
-                && $nutUtuhKernel !== null
-                && $nutPecahKernel !== null
-                && $kernelUtuh !== null
-                && $kernelPecah !== null;
-
-            $ktsNutUtuh = $canCalculate ? round(($nutUtuhKernel / $beratSampel) * 100, 6) : null;
-            $ktsNutPecah = $canCalculate ? round(($nutPecahKernel / $beratSampel) * 100, 6) : null;
-            $kernelUtuhToSampel = $canCalculate ? round(($kernelUtuh / $beratSampel) * 100, 6) : null;
-            $kernelPecahToSampel = $canCalculate ? round(($kernelPecah / $beratSampel) * 100, 6) : null;
-            $kernelLosses = $canCalculate
-                ? ($ktsNutUtuh + $ktsNutPecah + $kernelUtuhToSampel + $kernelPecahToSampel) / 100
-                : null;
+            if ($beratSampel > 0) {
+                $ktsNutUtuh = round(($nutUtuhKernel / $beratSampel) * 100, 6);
+                $ktsNutPecah = round(($nutPecahKernel / $beratSampel) * 100, 6);
+                $kernelUtuhToSampel = round(($kernelUtuh / $beratSampel) * 100, 6);
+                $kernelPecahToSampel = round(($kernelPecah / $beratSampel) * 100, 6);
+                $kernelLosses = ($ktsNutUtuh + $ktsNutPecah + $kernelUtuhToSampel + $kernelPecahToSampel) / 100;
+            } else {
+                $ktsNutUtuh = 0;
+                $ktsNutPecah = 0;
+                $kernelUtuhToSampel = 0;
+                $kernelPecahToSampel = 0;
+                $kernelLosses = 0;
+            }
 
             $kernelCalculationPayload = [
                 'user_id' => Auth::id(),
@@ -256,9 +257,9 @@ class KernelController extends Controller
                 'operator' => $row['operator'] ?? null,
                 'sampel_boy' => Auth::user()->name,
                 'berat_sampel' => $beratSampel,
-                'nut_utuh_nut' => $row['nut_utuh_nut'] ?? null,
+                'nut_utuh_nut' => $nutUtuhNut,
                 'nut_utuh_kernel' => $nutUtuhKernel,
-                'nut_pecah_nut' => $row['nut_pecah_nut'] ?? null,
+                'nut_pecah_nut' => $nutPecahNut,
                 'nut_pecah_kernel' => $nutPecahKernel,
                 'kernel_utuh' => $kernelUtuh,
                 'kernel_pecah' => $kernelPecah,
@@ -319,6 +320,23 @@ class KernelController extends Controller
         }
 
         return true;
+    }
+
+    private function normalizeKernelNumericValue(mixed $value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_string($value)) {
+            $value = trim($value);
+
+            if ($value === '') {
+                return 0.0;
+            }
+        }
+
+        return is_numeric($value) ? (float) $value : 0.0;
     }
 
     public function edit(KernelCalculation $kernelCalculation)

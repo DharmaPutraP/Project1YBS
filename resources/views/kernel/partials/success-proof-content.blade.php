@@ -125,7 +125,7 @@
                         return $label . ': ' . $value;
                     })->implode('<br>');
                 }
-                
+
                 $decimals = $metric['decimals'] ?? 2;
                 $limitDecimals = $metric['limit_decimals'] ?? $decimals;
                 $limitOperator = $metric['limit_operator'] ?? null;

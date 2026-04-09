@@ -151,6 +151,19 @@ class RoleAndPermissionSeeder extends Seeder
             'export olwb reports',
             'view laporan oil losses',
             'export laporan oil losses',
+
+            'view kernel losses',
+            'create kernel losses',
+
+            'view rekap kernel losses',
+            'export rekap kernel losses',
+
+            'view performance kernel losses',
+            'export performance kernel losses',
+
+            'view laporan kernel losses',
+            'export laporan kernel losses',
+
             'view informasi proses mesin',
             'create informasi proses mesin',
             'edit informasi proses mesin',

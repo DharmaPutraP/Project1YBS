@@ -367,7 +367,7 @@ class KernelController extends Controller
 
     public function edit(KernelCalculation $kernelCalculation)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanEditKernelLosses();
 
         $kodeOptions = $this->getKernelLossesKodeOptions($kernelCalculation->office);
         $jenisOptions = KernelRecord::getJenisOptions();
@@ -378,7 +378,7 @@ class KernelController extends Controller
 
     public function update(Request $request, KernelCalculation $kernelCalculation)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanEditKernelLosses();
 
         $oldAttributes = $kernelCalculation->getOriginal();
 
@@ -680,7 +680,7 @@ class KernelController extends Controller
 
     public function dirtMoistEdit(KernelDirtMoistCalculation $dirtMoistCalculation)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanEditKernelLosses();
 
         $kodeOptions = $this->getDirtMoistKodeOptions($dirtMoistCalculation->office);
         $jenisOptions = KernelRecord::getJenisOptions();
@@ -691,7 +691,7 @@ class KernelController extends Controller
 
     public function dirtMoistUpdate(Request $request, KernelDirtMoistCalculation $dirtMoistCalculation)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanEditKernelLosses();
 
         $oldAttributes = $dirtMoistCalculation->getOriginal();
 
@@ -737,7 +737,7 @@ class KernelController extends Controller
 
     public function dirtMoistDestroy(KernelDirtMoistCalculation $dirtMoistCalculation)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanDeleteKernelLosses();
 
         $this->logDelete(
             $dirtMoistCalculation,
@@ -1043,7 +1043,7 @@ class KernelController extends Controller
 
     public function qwtEdit(KernelQwt $kernelQwt)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanEditKernelLosses();
 
         $kodeOptions = $this->getQwtKodeOptions($kernelQwt->office);
         $jenisOptions = KernelRecord::getJenisOptions();
@@ -1054,7 +1054,7 @@ class KernelController extends Controller
 
     public function qwtUpdate(Request $request, KernelQwt $kernelQwt)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanEditKernelLosses();
 
         $oldAttributes = $kernelQwt->getOriginal();
 
@@ -1137,7 +1137,7 @@ class KernelController extends Controller
 
     public function qwtDestroy(KernelQwt $kernelQwt)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanDeleteKernelLosses();
 
         $this->logDelete(
             $kernelQwt,
@@ -1397,7 +1397,7 @@ class KernelController extends Controller
 
     public function rippleMillEdit(KernelRippleMill $kernelRippleMill)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanEditKernelLosses();
 
         $kodeOptions = $this->getRippleMillKodeOptions($kernelRippleMill->office);
         $jenisOptions = KernelRecord::getJenisOptions();
@@ -1408,7 +1408,7 @@ class KernelController extends Controller
 
     public function rippleMillUpdate(Request $request, KernelRippleMill $kernelRippleMill)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanEditKernelLosses();
 
         $oldAttributes = $kernelRippleMill->getOriginal();
 
@@ -1458,7 +1458,7 @@ class KernelController extends Controller
 
     public function rippleMillDestroy(KernelRippleMill $kernelRippleMill)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanDeleteKernelLosses();
 
         $this->logDelete(
             $kernelRippleMill,
@@ -1730,7 +1730,7 @@ class KernelController extends Controller
 
     public function destonerEdit(KernelDestoner $kernelDestoner)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanEditKernelLosses();
 
         $kodeOptions = $this->getDestonerKodeOptions($kernelDestoner->office);
         $jenisOptions = KernelRecord::getJenisOptions();
@@ -1741,7 +1741,7 @@ class KernelController extends Controller
 
     public function destonerUpdate(Request $request, KernelDestoner $kernelDestoner)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanEditKernelLosses();
 
         $oldAttributes = $kernelDestoner->getOriginal();
 
@@ -1805,7 +1805,7 @@ class KernelController extends Controller
 
     public function destonerDestroy(KernelDestoner $kernelDestoner)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanDeleteKernelLosses();
 
         $this->logDelete(
             $kernelDestoner,
@@ -1820,7 +1820,7 @@ class KernelController extends Controller
 
     public function destroyRecord(KernelRecord $kernelRecord)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanDeleteKernelLosses();
 
         $this->logDelete(
             $kernelRecord,
@@ -1834,7 +1834,7 @@ class KernelController extends Controller
 
     public function destroyCalculation(KernelCalculation $kernelCalculation)
     {
-        $this->ensurePpicRole();
+        $this->ensureCanDeleteKernelLosses();
 
         $this->logDelete(
             $kernelCalculation,
@@ -2261,10 +2261,17 @@ class KernelController extends Controller
         return ($jenis && isset($bobotConfigs[$jenis])) ? $bobotConfigs[$jenis] : null;
     }
 
-    private function ensurePpicRole(): void
+    private function ensureCanEditKernelLosses(): void
     {
-        if (!Auth::user() || !Auth::user()->hasRole('PPIC')) {
-            abort(403, 'Aksi ini hanya tersedia untuk role PPIC.');
+        if (!Auth::user() || !Auth::user()->can('edit kernel losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk edit data kernel losses.');
+        }
+    }
+
+    private function ensureCanDeleteKernelLosses(): void
+    {
+        if (!Auth::user() || !Auth::user()->can('delete kernel losses')) {
+            abort(403, 'Anda tidak memiliki akses untuk hapus data kernel losses.');
         }
     }
 

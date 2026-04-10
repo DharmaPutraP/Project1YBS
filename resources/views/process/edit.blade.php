@@ -11,8 +11,7 @@
     </div>
 
     <x-ui.card title="Form Edit Informasi Proses">
-        <form action="{{ route('process.update', ['kernelProsses' => $record->id]) }}" method="POST"
-            class="space-y-6">
+        <form action="{{ route('process.update', ['kernelProsses' => $record->id]) }}" method="POST" class="space-y-6">
             @csrf
             @method('PUT')
 
@@ -62,7 +61,8 @@
                         @if (count($teamMembers) > 0)
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 @foreach ($teamMembers as $member)
-                                    <label class="inline-flex items-center gap-2 rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm text-gray-700">
+                                    <label
+                                        class="inline-flex items-center gap-2 rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm text-gray-700">
                                         <input type="checkbox" name="team_1_members[]" value="{{ $member }}" data-team="1"
                                             @checked(in_array($member, old('team_1_members', $team1['members']), true))
                                             class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
@@ -109,7 +109,8 @@
                         @if (count($teamMembers) > 0)
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 @foreach ($teamMembers as $member)
-                                    <label class="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm text-gray-700">
+                                    <label
+                                        class="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm text-gray-700">
                                         <input type="checkbox" name="team_2_members[]" value="{{ $member }}" data-team="2"
                                             @checked(in_array($member, old('team_2_members', $team2['members']), true))
                                             class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">

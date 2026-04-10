@@ -162,7 +162,7 @@ class OilController extends Controller
         // Jenis dan Sampel Boy diabaikan karena punya default value
         $mode1UserFields = ['kode', 'operator'];
         $phase = $this->detectMode2Phase($request);
-        $mode2Fields = ['kode_mode2', 'cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'];
+        $mode2Fields = ['cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'];
 
         // Cek apakah ada field Mode 1 yang user isi manual (kode atau operator)
         $mode1HasAnyValue = collect($mode1UserFields)->contains(fn($field) => $request->filled($field));
@@ -170,32 +170,14 @@ class OilController extends Controller
         // Cek apakah ada field Mode 2 yang diisi
         $mode2HasAnyValue = collect($mode2Fields)->contains(fn($field) => $request->filled($field));
 
-        $mode2Rules = match ($phase) {
-            'initial' => [
-                'kode_mode2' => $mode2HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
-                'cawan_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-                'berat_basah' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-                'cawan_sample_kering' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-                'labu_kosong' => 'nullable|numeric|min:0',
-                'oil_labu' => 'nullable|numeric|min:0',
-            ],
-            'final' => [
-                'kode_mode2' => $mode2HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
-                'cawan_kosong' => 'nullable|numeric|min:0',
-                'berat_basah' => 'nullable|numeric|min:0',
-                'cawan_sample_kering' => 'nullable|numeric|min:0',
-                'labu_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-                'oil_labu' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-            ],
-            default => [
-                'kode_mode2' => $mode2HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
-                'cawan_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-                'berat_basah' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-                'cawan_sample_kering' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-                'labu_kosong' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-                'oil_labu' => $mode2HasAnyValue ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-            ],
-        };
+        $mode2Rules = [
+            'kode_mode2' => $mode2HasAnyValue ? 'required|string|exists:oil_master_data,kode' : 'nullable|string|exists:oil_master_data,kode',
+            'cawan_kosong' => 'nullable|numeric|min:0',
+            'berat_basah' => 'nullable|numeric|min:0',
+            'cawan_sample_kering' => 'nullable|numeric|min:0',
+            'labu_kosong' => 'nullable|numeric|min:0',
+            'oil_labu' => 'nullable|numeric|min:0',
+        ];
 
         // Validate fields
         $validated = $request->validate(array_merge([
@@ -218,8 +200,8 @@ class OilController extends Controller
             'kode_mode2.exists' => 'Kode tidak valid atau tidak ditemukan di master data',
             'cawan_kosong.required' => 'Cawan Kosong wajib diisi jika Anda mengisi Mode Angka',
             'berat_basah.required' => 'Berat Basah wajib diisi jika Anda mengisi Mode Angka',
-            'cawan_sample_kering.required' => 'Cawan + Sample Kering wajib diisi jika Anda mengisi Mode Angka',
-            'labu_kosong.required' => 'Labu Kosong wajib diisi jika Anda mengisi Mode Angka',
+            'labu_kosong.required' => 'Labu Kosong wajib diisi pada Tahap 1 atau input sekaligus.',
+            'cawan_sample_kering.required' => 'Cawan + Sample Kering wajib diisi pada Tahap 2 atau input sekaligus.',
             'oil_labu.required' => 'Oil + Labu wajib diisi jika Anda mengisi Mode Angka',
         ]);
 
@@ -412,18 +394,24 @@ class OilController extends Controller
      */
     private function detectMode2Phase(Request $request): string
     {
-        $hasInitial = collect(['cawan_kosong', 'berat_basah', 'cawan_sample_kering'])
+        $hasStep1 = collect(['cawan_kosong', 'berat_basah', 'labu_kosong'])
             ->contains(fn($field) => $request->filled($field));
 
-        $hasFinal = collect(['labu_kosong', 'oil_labu'])
-            ->contains(fn($field) => $request->filled($field));
+        $hasStep2 = $request->filled('cawan_sample_kering');
+        $hasFinal = $request->filled('oil_labu');
 
-        if ($hasInitial && $hasFinal) {
+        // Jika oil+labu diisi, dianggap tahap akhir (complete).
+        if ($hasFinal) {
             return 'complete';
         }
 
-        if ($hasFinal) {
+        // Mapping enum lama: gunakan "final" untuk tahap ke-2 (middle step).
+        if ($hasStep2) {
             return 'final';
+        }
+
+        if ($hasStep1) {
+            return 'initial';
         }
 
         return 'initial';

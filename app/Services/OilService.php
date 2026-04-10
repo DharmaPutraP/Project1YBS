@@ -167,16 +167,22 @@ class OilService
         $kode = $data['kode_mode2'];
         $phase = $this->detectMode2Phase($data);
 
-        $initialData = [
-            'cawan_kosong' => $data['cawan_kosong'] ?? null,
-            'berat_basah' => $data['berat_basah'] ?? null,
-            'cawan_sample_kering' => $data['cawan_sample_kering'] ?? null,
-        ];
+        $step1Data = [];
+        foreach (['cawan_kosong', 'berat_basah', 'labu_kosong'] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] !== null && $data[$field] !== '') {
+                $step1Data[$field] = $data[$field];
+            }
+        }
 
-        $finalData = [
-            'labu_kosong' => $data['labu_kosong'] ?? null,
-            'oil_labu' => $data['oil_labu'] ?? null,
-        ];
+        $step2Data = [];
+        if (array_key_exists('cawan_sample_kering', $data) && $data['cawan_sample_kering'] !== null && $data['cawan_sample_kering'] !== '') {
+            $step2Data['cawan_sample_kering'] = $data['cawan_sample_kering'];
+        }
+
+        $finalData = [];
+        if (array_key_exists('oil_labu', $data) && $data['oil_labu'] !== null && $data['oil_labu'] !== '') {
+            $finalData['oil_labu'] = $data['oil_labu'];
+        }
 
         $existingOpenBatch = OilCalculation::where('office', $userOffice)
             ->where('kode', $kode)
@@ -214,7 +220,7 @@ class OilService
             'oil_master_id' => $masterData->id,
             'kode' => $masterData->kode,
             'initial_user_id' => $existingOpenBatch?->initial_user_id ?? ($phase === 'initial' || $phase === 'complete' ? $userId : null),
-            'final_user_id' => $existingOpenBatch?->final_user_id ?? ($phase === 'final' || $phase === 'complete' ? $userId : null),
+            'final_user_id' => $existingOpenBatch?->final_user_id ?? ($phase === 'complete' ? $userId : null),
         ];
 
         if ($phase === 'initial') {
@@ -226,7 +232,7 @@ class OilService
             $payload = array_merge($basePayload, [
                 'phase' => 'initial',
                 'status' => 'partial',
-            ], $this->normalizeInitialPayload($initialData));
+            ], $this->normalizeInitialPayload($step1Data));
 
             $calculation = OilCalculation::create($payload);
 
@@ -235,31 +241,31 @@ class OilService
                 'calculation' => $calculation,
                 'phase' => 'initial',
                 'status' => 'partial',
-                'message' => "Data awal (Mode 2) untuk kode {$kode} berhasil disimpan sebagai draft.",
+                'message' => "Tahap 1 (cawan kosong, berat sampel basah, labu kosong) untuk kode {$kode} berhasil disimpan sebagai draft.",
             ];
         }
 
+        // Mapping enum lama: gunakan phase "final" untuk tahap ke-2.
         if ($phase === 'final') {
             if (!$existingOpenBatch) {
-                throw new Exception("Kode '{$kode}' belum memiliki data awal yang aktif. Simpan tahap awal terlebih dahulu sebelum input tahap akhir.");
+                throw new Exception("Kode '{$kode}' belum memiliki data Tahap 1 yang aktif. Simpan Tahap 1 terlebih dahulu sebelum input Tahap 2.");
             }
 
             $mergedData = array_merge($existingOpenBatch->only([
                 'cawan_kosong',
                 'berat_basah',
-                'cawan_sample_kering',
                 'labu_kosong',
+                'cawan_sample_kering',
                 'oil_labu',
-            ]), $finalData);
+            ]), $step2Data);
 
-            if ($mergedData['cawan_kosong'] === null || $mergedData['berat_basah'] === null || $mergedData['cawan_sample_kering'] === null) {
-                throw new Exception("Data awal untuk kode '{$kode}' belum lengkap. Lengkapi tahap awal terlebih dahulu.");
+            if ($mergedData['cawan_kosong'] === null || $mergedData['berat_basah'] === null || $mergedData['labu_kosong'] === null) {
+                throw new Exception("Data Tahap 1 untuk kode '{$kode}' belum lengkap. Lengkapi Tahap 1 terlebih dahulu.");
             }
 
-            $calculations = $this->calculateAllValues(array_merge($mergedData, $finalData), $masterData);
-            $payload = array_merge($basePayload, $calculations, $this->normalizeInitialPayload($mergedData), $this->normalizeFinalPayload($finalData), [
+            $payload = array_merge($basePayload, $this->normalizeInitialPayload($mergedData), $this->normalizeFinalPayload($mergedData), [
                 'phase' => 'final',
-                'status' => 'complete',
+                'status' => 'partial',
             ]);
 
             $existingOpenBatch->update($payload);
@@ -268,15 +274,36 @@ class OilService
                 'type' => 'numeric',
                 'calculation' => $existingOpenBatch->fresh(),
                 'phase' => 'final',
-                'status' => 'complete',
-                'message' => "Data akhir (Mode 2) untuk kode {$kode} berhasil dilengkapi.",
+                'status' => 'partial',
+                'message' => "Tahap 2 (cawan + sampel kering) untuk kode {$kode} berhasil disimpan. Lanjutkan Tahap Akhir untuk hasil perhitungan.",
             ];
         }
 
-        $calculations = $this->calculateAllValues(array_merge($initialData, $finalData), $masterData);
-        $payload = array_merge($basePayload, $calculations, $this->normalizeInitialPayload($initialData), $this->normalizeFinalPayload($finalData), [
+        $mergedForComplete = array_merge(
+            $existingOpenBatch?->only([
+                'cawan_kosong',
+                'berat_basah',
+                'labu_kosong',
+                'cawan_sample_kering',
+                'oil_labu',
+            ]) ?? [],
+            $step1Data,
+            $step2Data,
+            $finalData
+        );
+
+        $requiredCompleteFields = ['cawan_kosong', 'berat_basah', 'labu_kosong', 'cawan_sample_kering', 'oil_labu'];
+        foreach ($requiredCompleteFields as $field) {
+            if (!array_key_exists($field, $mergedForComplete) || $mergedForComplete[$field] === null || $mergedForComplete[$field] === '') {
+                throw new Exception("Tahap akhir membutuhkan data lengkap Tahap 1 dan Tahap 2. Field '{$field}' belum tersedia untuk kode '{$kode}'.");
+            }
+        }
+
+        $calculations = $this->calculateAllValues($mergedForComplete, $masterData);
+        $payload = array_merge($basePayload, $calculations, $this->normalizeInitialPayload($mergedForComplete), $this->normalizeFinalPayload($mergedForComplete), [
             'phase' => 'complete',
             'status' => 'complete',
+            'final_user_id' => $userId,
         ]);
 
         $calculation = $existingOpenBatch
@@ -288,7 +315,7 @@ class OilService
             'calculation' => $existingOpenBatch?->fresh() ?? $calculation,
             'phase' => 'complete',
             'status' => 'complete',
-            'message' => "Data perhitungan (Mode 2) untuk kode {$kode} berhasil disimpan.",
+            'message' => "Tahap akhir (oil + labu) untuk kode {$kode} berhasil disimpan. Hasil perhitungan sudah lengkap.",
         ];
     }
 
@@ -407,8 +434,8 @@ class OilService
             'berat_basah' => array_key_exists('berat_basah', $data) && $data['berat_basah'] !== null && $data['berat_basah'] !== ''
                 ? $this->parseNum($data['berat_basah'])
                 : null,
-            'cawan_sample_kering' => array_key_exists('cawan_sample_kering', $data) && $data['cawan_sample_kering'] !== null && $data['cawan_sample_kering'] !== ''
-                ? $this->parseNum($data['cawan_sample_kering'])
+            'labu_kosong' => array_key_exists('labu_kosong', $data) && $data['labu_kosong'] !== null && $data['labu_kosong'] !== ''
+                ? $this->parseNum($data['labu_kosong'])
                 : null,
         ];
     }
@@ -419,8 +446,8 @@ class OilService
     private function normalizeFinalPayload(array $data): array
     {
         return [
-            'labu_kosong' => array_key_exists('labu_kosong', $data) && $data['labu_kosong'] !== null && $data['labu_kosong'] !== ''
-                ? $this->parseNum($data['labu_kosong'])
+            'cawan_sample_kering' => array_key_exists('cawan_sample_kering', $data) && $data['cawan_sample_kering'] !== null && $data['cawan_sample_kering'] !== ''
+                ? $this->parseNum($data['cawan_sample_kering'])
                 : null,
             'oil_labu' => array_key_exists('oil_labu', $data) && $data['oil_labu'] !== null && $data['oil_labu'] !== ''
                 ? $this->parseNum($data['oil_labu'])
@@ -433,18 +460,23 @@ class OilService
      */
     private function detectMode2Phase(array $data): string
     {
-        $hasInitial = collect(['cawan_kosong', 'berat_basah', 'cawan_sample_kering'])
+        $hasStep1 = collect(['cawan_kosong', 'berat_basah', 'labu_kosong'])
             ->contains(fn($key) => array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '');
 
-        $hasFinal = collect(['labu_kosong', 'oil_labu'])
-            ->contains(fn($key) => array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '');
+        $hasStep2 = array_key_exists('cawan_sample_kering', $data) && $data['cawan_sample_kering'] !== null && $data['cawan_sample_kering'] !== '';
+        $hasFinal = array_key_exists('oil_labu', $data) && $data['oil_labu'] !== null && $data['oil_labu'] !== '';
 
-        if ($hasInitial && $hasFinal) {
+        if ($hasFinal) {
             return 'complete';
         }
 
-        if ($hasFinal) {
+        // Mapping enum lama: "final" dipakai sebagai tahap ke-2.
+        if ($hasStep2) {
             return 'final';
+        }
+
+        if ($hasStep1) {
+            return 'initial';
         }
 
         return 'initial';

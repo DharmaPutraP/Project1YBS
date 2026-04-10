@@ -210,14 +210,14 @@
                         2
                     </div>
                     <h3 class="text-lg font-semibold text-gray-800">
-                        Mode Angka <span class="text-sm text-gray-600 font-normal">(bisa tahap awal, tahap akhir, atau lengkap)</span>
+                        Mode Angka <span class="text-sm text-gray-600 font-normal">(Tahap 1, Tahap 2, lalu Tahap Akhir)</span>
                     </h3>
                 </div>
 
                 <div class="space-y-4">
                     <div class="text-sm text-green-800 bg-green-100 border border-green-300 rounded-lg p-3">
                         <p>
-                            ℹ️ <strong>Perhatian:</strong> Tahap input terdeteksi otomatis dari field yang Anda isi.
+                            ℹ️ <strong>Perhatian:</strong> Urutan input: <strong>Tahap 1</strong> (Cawan Kosong, Berat Sampel Basah, Labu Kosong), <strong>Tahap 2</strong> (Cawan + Sampel Kering), lalu <strong>Tahap Akhir</strong> (Oil + Labu). Tahap terdeteksi otomatis dari field yang diisi.
                         </p>
                     </div>
 
@@ -242,7 +242,7 @@
                     </div>
 
                     <div id="initialPhaseFields">
-                        <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap Awal</div>
+                        <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap 1</div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label for="cawan_kosong" class="block text-sm font-medium text-gray-700 mb-2">
@@ -269,6 +269,23 @@
                             </div>
 
                             <div>
+                                <label for="labu_kosong" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Labu Kosong
+                                </label>
+                                <input type="number" step="0.000001" name="labu_kosong" id="labu_kosong"
+                                    value="{{ old('labu_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
+                                           @error('labu_kosong') border-red-400 bg-red-50 @enderror">
+                                @error('labu_kosong')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="middlePhaseFields">
+                        <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap 2</div>
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+                            <div>
                                 <label for="cawan_sample_kering" class="block text-sm font-medium text-gray-700 mb-2">
                                     Cawan + Sample Kering
                                 </label>
@@ -284,19 +301,7 @@
 
                     <div id="finalPhaseFields">
                         <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap Akhir</div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="labu_kosong" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Labu Kosong
-                                </label>
-                                <input type="number" step="0.000001" name="labu_kosong" id="labu_kosong"
-                                    value="{{ old('labu_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                           @error('labu_kosong') border-red-400 bg-red-50 @enderror">
-                                @error('labu_kosong')
-                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
                             <div>
                                 <label for="oil_labu" class="block text-sm font-medium text-gray-700 mb-2">
                                     Oil + Labu
@@ -512,22 +517,31 @@
             setInterval(updateClock, 1000);
 
             function detectMode2Phase() {
-                const hasInitial = ['cawan_kosong', 'berat_basah', 'cawan_sample_kering'].some((field) => {
+                const hasStep1 = ['cawan_kosong', 'berat_basah', 'labu_kosong'].some((field) => {
                     const value = $(`#${field}`).val();
                     return value && value.trim() !== '';
                 });
 
-                const hasFinal = ['labu_kosong', 'oil_labu'].some((field) => {
-                    const value = $(`#${field}`).val();
+                const hasStep2 = (() => {
+                    const value = $('#cawan_sample_kering').val();
                     return value && value.trim() !== '';
-                });
+                })();
 
-                if (hasInitial && hasFinal) {
+                const hasFinal = (() => {
+                    const value = $('#oil_labu').val();
+                    return value && value.trim() !== '';
+                })();
+
+                if (hasFinal) {
                     return 'complete';
                 }
 
-                if (hasFinal) {
+                if (hasStep2) {
                     return 'final';
+                }
+
+                if (hasStep1) {
+                    return 'initial';
                 }
 
                 return 'initial';
@@ -540,23 +554,25 @@
             function togglePhaseFields() {
                 const phase = getPhase();
                 const initialFields = $('#initialPhaseFields').find('input');
+                const middleFields = $('#middlePhaseFields').find('input');
                 const finalFields = $('#finalPhaseFields').find('input');
 
                 // Jangan lock field: user bebas isi awal/akhir, phase dideteksi otomatis.
                 initialFields.prop('disabled', false);
+                middleFields.prop('disabled', false);
                 finalFields.prop('disabled', false);
 
-                $('#initialPhaseFields, #finalPhaseFields').removeClass('ring-2 ring-green-200');
+                $('#initialPhaseFields, #middlePhaseFields, #finalPhaseFields').removeClass('ring-2 ring-green-200');
                 if (phase === 'initial') {
                     $('#initialPhaseFields').addClass('ring-2 ring-green-200');
                 } else if (phase === 'final') {
-                    $('#finalPhaseFields').addClass('ring-2 ring-green-200');
+                    $('#middlePhaseFields').addClass('ring-2 ring-green-200');
                 } else {
-                    $('#initialPhaseFields, #finalPhaseFields').addClass('ring-2 ring-green-200');
+                    $('#initialPhaseFields, #middlePhaseFields, #finalPhaseFields').addClass('ring-2 ring-green-200');
                 }
             }
 
-            $('#initialPhaseFields input, #finalPhaseFields input').on('input change', togglePhaseFields);
+            $('#initialPhaseFields input, #middlePhaseFields input, #finalPhaseFields input').on('input change', togglePhaseFields);
             togglePhaseFields();
 
             // Form validation: Jika 1 field di mode diisi, semua field di mode tersebut WAJIB diisi
@@ -603,16 +619,16 @@
                     'kode_mode2': 'Kode',
                     'cawan_kosong': 'Cawan Kosong',
                     'berat_basah': 'Berat Basah',
-                    'cawan_sample_kering': 'Cawan + Sample Kering',
                     'labu_kosong': 'Labu Kosong',
+                    'cawan_sample_kering': 'Cawan + Sample Kering',
                     'oil_labu': 'Oil + Labu'
                 };
 
                 const phaseFields = phase === 'initial'
-                    ? ['kode_mode2', 'cawan_kosong', 'berat_basah', 'cawan_sample_kering']
+                    ? ['kode_mode2', 'cawan_kosong', 'berat_basah', 'labu_kosong']
                     : phase === 'final'
-                        ? ['kode_mode2', 'labu_kosong', 'oil_labu']
-                        : Object.keys(mode2Fields);
+                        ? ['kode_mode2', 'cawan_sample_kering']
+                        : ['kode_mode2', 'oil_labu'];
 
                 const mode2Values = phaseFields.map(field => {
                     const value = $(`#${field}`).val();

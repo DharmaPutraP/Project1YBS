@@ -25,7 +25,9 @@ class ProcessController extends Controller
 
     private const TEAM_OPTIONS = ['Tim 1', 'Tim 2'];
 
-    private const MACHINE_GROUPS = [
+    // Hardcoded master mesin per PT.
+    // Silakan ubah daftar di konstanta ini sesuai kebutuhan masing-masing PT.
+    private const MACHINE_GROUPS_YBS = [
         'FIBRE CYCLONE' => [
             'FIBRE CYCLONE 1',
             'FIBRE CYCLONE 2',
@@ -80,6 +82,49 @@ class ProcessController extends Controller
             'DESTONER 2',
         ],
     ];
+
+    // Ubah jika daftar SUN berbeda dengan YBS.
+    private const MACHINE_GROUPS_SUN = [
+        'FIBRE CYCLONE' => [
+            'FIBRE CYCLONE 1',
+            'FIBRE CYCLONE 2',
+        ],
+        'LTDS' => [
+            'LTDS 1',
+            'LTDS 2',
+        ],
+        'CLAYBATH WET SHELL' => [
+            'CLAYBATH WET SHELL 1',
+        ],
+        'INLET KERNEL SILO' => [
+            'INLET KERNEL SILO 1',
+            'INLET KERNEL SILO 2',
+        ],
+        'OUTLET KERNEL SILO TO BUNKER' => [
+            'OUTLET KERNEL SILO 1 TO BUNKER',
+            'OUTLET KERNEL SILO 2 TO BUNKER',
+            'OUTLET KERNEL SILO 3 TO BUNKER',
+            'OUTLET KERNEL SILO 4 TO BUNKER',
+        ],
+        'PRESS' => [
+            'PRESS 1',
+            'PRESS 2',
+            'PRESS 3',
+            'PRESS 4',
+        ],
+        'RIPPLE MILL' => [
+            'RIPPLE MILL NO. 1',
+            'RIPPLE MILL NO. 2',
+            'RIPPLE MILL NO. 3',
+        ],
+        'DESTONER' => [
+            'DESTONER 1',
+            'DESTONER 2',
+        ],
+    ];
+
+    // Ubah jika daftar SJN berbeda dengan YBS.
+    private const MACHINE_GROUPS_SJN = self::MACHINE_GROUPS_YBS;
 
     // YBS: interval sampling per kelompok mesin (tetap harus berturut-turut)
     private const PERFORMANCE_GROUP_INTERVAL_MINUTES = [
@@ -188,10 +233,12 @@ class ProcessController extends Controller
                 ];
             });
 
+        $machineGroups = $this->getMachineGroupsForOffice($userOffice !== '' ? $userOffice : null);
+
         return view('process.index', [
             'teamMembers' => $teamMembers,
             'records' => $records,
-            'machineGroups' => self::MACHINE_GROUPS,
+            'machineGroups' => $machineGroups,
             'officeFilter' => $officeFilter,
             'officeOptions' => $officeOptions,
             'canManageTeamMeta' => $roleFlags['can_manage_team_meta'],
@@ -247,7 +294,7 @@ class ProcessController extends Controller
                     ]);
             }
 
-            $machinePayload = $this->extractMachinePayload($request, $inputTeam);
+            $machinePayload = $this->extractMachinePayload($request, $inputTeam, $office);
             $otherConditionsByTeam = $this->extractOtherConditionsPayload($request, $inputTeam);
 
             $existingProcess->mesin()
@@ -751,11 +798,12 @@ class ProcessController extends Controller
             }
         }
 
-        $machineOptions = collect(self::MACHINE_GROUPS)->flatten()->values()->all();
+        $machineGroups = $this->getMachineGroupsForOffice($kernelProsses->office ?: null);
+        $machineOptions = collect($machineGroups)->flatten()->values()->all();
 
         return view('process.edit-machines', [
             'record' => $kernelProsses,
-            'machineGroups' => self::MACHINE_GROUPS,
+            'machineGroups' => $machineGroups,
             'selectedMainMachines' => $selectedMainMachines,
             'spareRowsByTeam' => $spareRowsByTeam,
             'otherConditionsByTeam' => $otherConditionsByTeam,
@@ -793,7 +841,7 @@ class ProcessController extends Controller
 
         $otherConditionsByTeam = $this->extractOtherConditionsPayload($request);
 
-        $machinePayload = $this->extractMachinePayload($request);
+        $machinePayload = $this->extractMachinePayload($request, null, $kernelProsses->office ?: null);
 
         $kernelProsses->mesin()->delete();
         if (!empty($machinePayload)) {
@@ -1848,12 +1896,14 @@ class ProcessController extends Controller
         return (int) collect($merged)->sum(fn($segment): int => $segment['end'] - $segment['start']);
     }
 
-    private function extractMachinePayload(Request $request, ?string $inputTeam = null): array
+    private function extractMachinePayload(Request $request, ?string $inputTeam = null, ?string $office = null): array
     {
-        $allowedByGroup = collect(self::MACHINE_GROUPS)
+        $machineGroups = $this->getMachineGroupsForOffice($office);
+
+        $allowedByGroup = collect($machineGroups)
             ->map(fn(array $machines): array => array_values($machines));
 
-        $machineToGroup = collect(self::MACHINE_GROUPS)
+        $machineToGroup = collect($machineGroups)
             ->flatMap(function (array $machines, string $group): array {
                 $map = [];
                 foreach ($machines as $machine) {
@@ -2058,6 +2108,17 @@ class ProcessController extends Controller
             })
             ->values()
             ->all();
+    }
+
+    private function getMachineGroupsForOffice(?string $office = null): array
+    {
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
+
+        return match ($officeCode) {
+            'SUN' => self::MACHINE_GROUPS_SUN,
+            'SJN' => self::MACHINE_GROUPS_SJN,
+            default => self::MACHINE_GROUPS_YBS,
+        };
     }
 
     private function extractOtherConditionsPayload(Request $request, ?string $inputTeam = null): array

@@ -32,6 +32,31 @@ class KernelController extends Controller
 {
     use LogsActivity;
 
+    // Kernel Losses kode groups by office
+    private const KERNEL_LOSSES_KODES_YBS = ['FC1', 'FC2', 'L1', 'L2', 'L3', 'L4', 'CWS', 'CWS2', 'CWS3'];
+    private const KERNEL_LOSSES_KODES_SUN = ['FC1', 'FC2', 'L1', 'L2', 'CWS'];
+    private const KERNEL_LOSSES_KODES_SJN = self::KERNEL_LOSSES_KODES_YBS;
+
+    // Dirt & Moist kode groups by office
+    private const DIRT_MOIST_KODES_YBS = ['IN1', 'IN2', 'IN3', 'IN4', 'IN5', 'OUT1', 'OUT2', 'OUT3', 'OUT4', 'OUT5'];
+    private const DIRT_MOIST_KODES_SUN = ['IN1', 'IN2', 'OUT1', 'OUT2', 'OUT3', 'OUT4'];
+    private const DIRT_MOIST_KODES_SJN = self::DIRT_MOIST_KODES_YBS;
+
+    // QWT kode groups by office
+    private const QWT_KODES_YBS = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9'];
+    private const QWT_KODES_SUN = ['P1', 'P2', 'P3', 'P4'];
+    private const QWT_KODES_SJN = self::QWT_KODES_YBS;
+
+    // Ripple Mill kode groups by office
+    private const RIPPLE_MILL_KODES_YBS = ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'];
+    private const RIPPLE_MILL_KODES_SUN = ['R1', 'R2', 'R3'];
+    private const RIPPLE_MILL_KODES_SJN = self::RIPPLE_MILL_KODES_YBS;
+
+    // Destoner kode groups by office
+    private const DESTONER_KODES_YBS = ['D1', 'D2'];
+    private const DESTONER_KODES_SUN = ['D1', 'D2'];
+    private const DESTONER_KODES_SJN = self::DESTONER_KODES_YBS;
+
     private array $pengulanganColumnCache = [];
 
     public function index(Request $request)
@@ -91,7 +116,8 @@ class KernelController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk input data kernel losses.');
         }
 
-        $kodeOptions = $this->getKernelLossesKodeOptions();
+        $userOffice = $this->getUserOffice();
+        $kodeOptions = $this->getKernelLossesKodeOptions($userOffice);
         $kodeFormGroups = $this->getKernelLossesFormGroups($kodeOptions);
         $jenisOptions = KernelRecord::getJenisOptions();
 
@@ -107,7 +133,7 @@ class KernelController extends Controller
             })
             ->toArray();
 
-        $operatorOptions = $this->getOperatorOptionsByOffice($this->getUserOffice(), 'kernel');
+        $operatorOptions = $this->getOperatorOptionsByOffice($userOffice, 'kernel');
 
         return view('kernel.create', compact('kodeOptions', 'kodeFormGroups', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
     }
@@ -128,7 +154,7 @@ class KernelController extends Controller
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
-        $kodeOptions = $this->getKernelLossesKodeOptions();
+        $kodeOptions = $this->getKernelLossesKodeOptions($userOffice);
 
         $validated = $request->validate([
             'kegiatan_dispek' => 'nullable|boolean',
@@ -343,7 +369,7 @@ class KernelController extends Controller
     {
         $this->ensurePpicRole();
 
-        $kodeOptions = $this->getKernelLossesKodeOptions();
+        $kodeOptions = $this->getKernelLossesKodeOptions($kernelCalculation->office);
         $jenisOptions = KernelRecord::getJenisOptions();
         $operatorOptions = $this->getOperatorOptionsByOffice($kernelCalculation->office, 'kernel');
 
@@ -357,7 +383,7 @@ class KernelController extends Controller
         $oldAttributes = $kernelCalculation->getOriginal();
 
         $validated = $request->validate([
-            'kode' => ['required', 'string', Rule::in(array_keys($this->getKernelLossesKodeOptions()))],
+            'kode' => ['required', 'string', Rule::in(array_keys($this->getKernelLossesKodeOptions($kernelCalculation->office)))],
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($kernelCalculation->office, true, 'kernel'),
             'sampel_boy' => 'required|string|max:255',
@@ -443,7 +469,7 @@ class KernelController extends Controller
         $dirtMoistCalculations = $query->paginate(15, ['*'], 'calculations');
         $dirtMoistCalculations->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
-        $kodeOptions = $this->getDirtMoistKodeOptions();
+        $kodeOptions = $this->getDirtMoistKodeOptions($officeFilter);
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
 
         return view('kernel.dirt-moist.index', compact(
@@ -463,11 +489,12 @@ class KernelController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk input data dirt & moist.');
         }
 
-        $kodeOptions = $this->getDirtMoistKodeOptions();
+        $userOffice = $this->getUserOffice();
+        $kodeOptions = $this->getDirtMoistKodeOptions($userOffice);
         $kodeFormGroups = $this->getDirtMoistFormGroups($kodeOptions);
         $jenisOptions = KernelRecord::getJenisOptions();
-        $kernelLimitMap = $this->getDirtMoistLimitMap();
-        $operatorOptions = $this->getOperatorOptionsByOffice($this->getUserOffice(), 'dirt_moist');
+        $kernelLimitMap = $this->getDirtMoistLimitMap($userOffice);
+        $operatorOptions = $this->getOperatorOptionsByOffice($userOffice, 'dirt_moist');
 
         return view('kernel.dirt-moist.create', compact('kodeOptions', 'kodeFormGroups', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
     }
@@ -488,7 +515,7 @@ class KernelController extends Controller
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
-        $kodeOptions = $this->getDirtMoistKodeOptions();
+        $kodeOptions = $this->getDirtMoistKodeOptions($userOffice);
 
         $validated = $request->validate([
             'kegiatan_dispek' => 'nullable|boolean',
@@ -543,7 +570,7 @@ class KernelController extends Controller
             ]);
         }
 
-        $limitMap = $this->getDirtMoistLimitMap();
+        $limitMap = $this->getDirtMoistLimitMap($userOffice);
         $rowErrors = [];
         $savedRows = [];
 
@@ -655,7 +682,7 @@ class KernelController extends Controller
     {
         $this->ensurePpicRole();
 
-        $kodeOptions = $this->getDirtMoistKodeOptions();
+        $kodeOptions = $this->getDirtMoistKodeOptions($dirtMoistCalculation->office);
         $jenisOptions = KernelRecord::getJenisOptions();
         $operatorOptions = $this->getOperatorOptionsByOffice($dirtMoistCalculation->office, 'dirt_moist');
 
@@ -669,7 +696,7 @@ class KernelController extends Controller
         $oldAttributes = $dirtMoistCalculation->getOriginal();
 
         $validated = $request->validate([
-            'kode' => 'required|string',
+            'kode' => ['required', 'string', Rule::in(array_keys($this->getDirtMoistKodeOptions($dirtMoistCalculation->office)))],
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($dirtMoistCalculation->office, true, 'dirt_moist'),
             'sampel_boy' => 'nullable|string|max:255',
@@ -679,7 +706,7 @@ class KernelController extends Controller
         ]);
 
         $dirtyToSampel = round(($validated['berat_dirty'] / $validated['berat_sampel']) * 100, 6);
-        $limitMap = $this->getDirtMoistLimitMap();
+        $limitMap = $this->getDirtMoistLimitMap($dirtMoistCalculation->office);
         $limitConfig = $limitMap[$validated['kode']] ?? ['dirty' => null, 'moist' => null];
 
         $dirtMoistCalculation->update([
@@ -759,7 +786,7 @@ class KernelController extends Controller
         $kernelQwtRows = $query->paginate(15, ['*'], 'calculations');
         $kernelQwtRows->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
-        $kodeOptions = $this->getQwtKodeOptions();
+        $kodeOptions = $this->getQwtKodeOptions($officeFilter);
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
 
         return view('kernel.qwt.index', compact(
@@ -779,11 +806,12 @@ class KernelController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk input data QWT Fibre Press.');
         }
 
-        $kodeOptions = $this->getQwtKodeOptions();
+        $userOffice = $this->getUserOffice();
+        $kodeOptions = $this->getQwtKodeOptions($userOffice);
         $kodeFormGroups = $this->getQwtFormGroups($kodeOptions);
         $jenisOptions = KernelRecord::getJenisOptions();
-        $kernelLimitMap = $this->getQwtLimitMap();
-        $operatorOptions = $this->getOperatorOptionsByOffice($this->getUserOffice(), 'qwt');
+        $kernelLimitMap = $this->getQwtLimitMap($userOffice);
+        $operatorOptions = $this->getOperatorOptionsByOffice($userOffice, 'qwt');
 
         return view('kernel.qwt.create', compact('kodeOptions', 'kodeFormGroups', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
     }
@@ -804,7 +832,7 @@ class KernelController extends Controller
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
-        $kodeOptions = $this->getQwtKodeOptions();
+        $kodeOptions = $this->getQwtKodeOptions($userOffice);
 
         $validated = $request->validate([
             'kegiatan_dispek' => 'nullable|boolean',
@@ -879,7 +907,7 @@ class KernelController extends Controller
             ]);
         }
 
-        $limitMap = $this->getQwtLimitMap();
+        $limitMap = $this->getQwtLimitMap($userOffice);
         $rowErrors = [];
         $savedRows = [];
 
@@ -1017,7 +1045,7 @@ class KernelController extends Controller
     {
         $this->ensurePpicRole();
 
-        $kodeOptions = $this->getQwtKodeOptions();
+        $kodeOptions = $this->getQwtKodeOptions($kernelQwt->office);
         $jenisOptions = KernelRecord::getJenisOptions();
         $operatorOptions = $this->getOperatorOptionsByOffice($kernelQwt->office, 'qwt');
 
@@ -1031,7 +1059,7 @@ class KernelController extends Controller
         $oldAttributes = $kernelQwt->getOriginal();
 
         $validated = $request->validate([
-            'kode' => 'required|string',
+            'kode' => ['required', 'string', Rule::in(array_keys($this->getQwtKodeOptions($kernelQwt->office)))],
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($kernelQwt->office, true, 'qwt'),
             'sampel_boy' => 'required|string|max:255',
@@ -1067,7 +1095,7 @@ class KernelController extends Controller
         );
         $bnTn = $totalBeratNut > 0 ? round(($beratBrokenNut / $totalBeratNut) * 100, 6) : 0;
 
-        $limitMap = $this->getQwtLimitMap();
+        $limitMap = $this->getQwtLimitMap($kernelQwt->office);
         $kode = $validated['kode'];
 
         $kernelQwt->update([
@@ -1158,7 +1186,7 @@ class KernelController extends Controller
         $rippleMillRows = $query->paginate(15, ['*'], 'calculations');
         $rippleMillRows->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
-        $kodeOptions = $this->getRippleMillKodeOptions();
+        $kodeOptions = $this->getRippleMillKodeOptions($officeFilter);
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
 
         return view('kernel.ripple-mill.index', compact(
@@ -1178,11 +1206,12 @@ class KernelController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk input data Ripple Mill.');
         }
 
-        $kodeOptions = $this->getRippleMillKodeOptions();
+        $userOffice = $this->getUserOffice();
+        $kodeOptions = $this->getRippleMillKodeOptions($userOffice);
         $kodeFormGroups = $this->getRippleMillFormGroups($kodeOptions);
         $jenisOptions = KernelRecord::getJenisOptions();
-        $kernelLimitMap = $this->getRippleMillLimitMap();
-        $operatorOptions = $this->getOperatorOptionsByOffice($this->getUserOffice(), 'ripple_mill');
+        $kernelLimitMap = $this->getRippleMillLimitMap($userOffice);
+        $operatorOptions = $this->getOperatorOptionsByOffice($userOffice, 'ripple_mill');
 
         return view('kernel.ripple-mill.create', compact('kodeOptions', 'kodeFormGroups', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
     }
@@ -1203,7 +1232,7 @@ class KernelController extends Controller
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
-        $kodeOptions = $this->getRippleMillKodeOptions();
+        $kodeOptions = $this->getRippleMillKodeOptions($userOffice);
 
         $validated = $request->validate([
             'kegiatan_dispek' => 'nullable|boolean',
@@ -1258,7 +1287,7 @@ class KernelController extends Controller
             ]);
         }
 
-        $limitMap = $this->getRippleMillLimitMap();
+        $limitMap = $this->getRippleMillLimitMap($userOffice);
         $rowErrors = [];
         $savedRows = [];
 
@@ -1370,7 +1399,7 @@ class KernelController extends Controller
     {
         $this->ensurePpicRole();
 
-        $kodeOptions = $this->getRippleMillKodeOptions();
+        $kodeOptions = $this->getRippleMillKodeOptions($kernelRippleMill->office);
         $jenisOptions = KernelRecord::getJenisOptions();
         $operatorOptions = $this->getOperatorOptionsByOffice($kernelRippleMill->office, 'ripple_mill');
 
@@ -1384,7 +1413,7 @@ class KernelController extends Controller
         $oldAttributes = $kernelRippleMill->getOriginal();
 
         $validated = $request->validate([
-            'kode' => 'required|string',
+            'kode' => ['required', 'string', Rule::in(array_keys($this->getRippleMillKodeOptions($kernelRippleMill->office)))],
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($kernelRippleMill->office, true, 'ripple_mill'),
             'sampel_boy' => 'required|string|max:255',
@@ -1398,7 +1427,7 @@ class KernelController extends Controller
         $sampleNutPecah = round(((float) $validated['berat_nut_pecah'] / $beratSampel) * 100, 6);
         $efficiency = round(100 - $sampleNutPecah - $sampleNutUtuh, 6);
 
-        $limitMap = $this->getRippleMillLimitMap();
+        $limitMap = $this->getRippleMillLimitMap($kernelRippleMill->office);
         $kode = $validated['kode'];
 
         $kernelRippleMill->update([
@@ -1478,7 +1507,7 @@ class KernelController extends Controller
         $destonerRows = $query->paginate(15, ['*'], 'calculations');
         $destonerRows->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
-        $kodeOptions = $this->getDestonerKodeOptions();
+        $kodeOptions = $this->getDestonerKodeOptions($officeFilter);
         $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
 
         return view('kernel.destoner.index', compact(
@@ -1498,11 +1527,12 @@ class KernelController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk input data Destoner.');
         }
 
-        $kodeOptions = $this->getDestonerKodeOptions();
+        $userOffice = $this->getUserOffice();
+        $kodeOptions = $this->getDestonerKodeOptions($userOffice);
         $kodeFormGroups = $this->getDestonerFormGroups($kodeOptions);
         $jenisOptions = KernelRecord::getJenisOptions();
-        $kernelLimitMap = $this->getDestonerLimitMap();
-        $operatorOptions = $this->getOperatorOptionsByOffice($this->getUserOffice(), 'destoner');
+        $kernelLimitMap = $this->getDestonerLimitMap($userOffice);
+        $operatorOptions = $this->getOperatorOptionsByOffice($userOffice, 'destoner');
 
         return view('kernel.destoner.create', compact('kodeOptions', 'kodeFormGroups', 'jenisOptions', 'kernelLimitMap', 'operatorOptions'));
     }
@@ -1523,7 +1553,7 @@ class KernelController extends Controller
                 ->with('error', 'Anda harus memiliki Office yang ditentukan untuk dapat input data. Silakan hubungi Administrator.');
         }
 
-        $kodeOptions = $this->getDestonerKodeOptions();
+        $kodeOptions = $this->getDestonerKodeOptions($userOffice);
 
         $validated = $request->validate([
             'kegiatan_dispek' => 'nullable|boolean',
@@ -1580,7 +1610,7 @@ class KernelController extends Controller
             ]);
         }
 
-        $limitMap = $this->getDestonerLimitMap();
+        $limitMap = $this->getDestonerLimitMap($userOffice);
         $rowErrors = [];
         $savedRows = [];
 
@@ -1702,7 +1732,7 @@ class KernelController extends Controller
     {
         $this->ensurePpicRole();
 
-        $kodeOptions = $this->getDestonerKodeOptions();
+        $kodeOptions = $this->getDestonerKodeOptions($kernelDestoner->office);
         $jenisOptions = KernelRecord::getJenisOptions();
         $operatorOptions = $this->getOperatorOptionsByOffice($kernelDestoner->office, 'destoner');
 
@@ -1716,7 +1746,7 @@ class KernelController extends Controller
         $oldAttributes = $kernelDestoner->getOriginal();
 
         $validated = $request->validate([
-            'kode' => 'required|string',
+            'kode' => ['required', 'string', Rule::in(array_keys($this->getDestonerKodeOptions($kernelDestoner->office)))],
             'jenis' => 'required|string',
             'operator' => $this->getOperatorValidationRules($kernelDestoner->office, true, 'destoner'),
             'sampel_boy' => 'required|string|max:255',
@@ -1739,7 +1769,7 @@ class KernelController extends Controller
         $lossKernelJam = round(($totalLossesKernel * $rasioJamKg) / 100, 6);
         $lossKernelTbs = round($lossKernelJam / 300, 8);
 
-        $limitMap = $this->getDestonerLimitMap();
+        $limitMap = $this->getDestonerLimitMap($kernelDestoner->office);
         $kode = $validated['kode'];
 
         $kernelDestoner->update([
@@ -2238,9 +2268,16 @@ class KernelController extends Controller
         }
     }
 
-    private function getKernelLossesKodeOptions(): array
+    private function getKernelLossesKodeOptions(?string $office = null): array
     {
-        $orderedCodes = ['FC1', 'FC2', 'L1', 'L2', 'L3', 'L4', 'CWS', 'CWS2', 'CWS3'];
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
+
+        $orderedCodes = match ($officeCode) {
+            'SUN' => self::KERNEL_LOSSES_KODES_SUN,
+            'SJN' => self::KERNEL_LOSSES_KODES_SJN,
+            'ALL' => self::KERNEL_LOSSES_KODES_YBS,
+            default => self::KERNEL_LOSSES_KODES_YBS,
+        };
 
         $options = KernelMasterData::where('is_active', true)
             ->whereIn('kode', $orderedCodes)
@@ -2289,13 +2326,30 @@ class KernelController extends Controller
         return $result;
     }
 
-    private function getQwtKodeOptions(): array
+    private function getQwtKodeOptions(?string $office = null): array
     {
-        return KernelMasterData::where('is_active', true)
-            ->where('kode', 'like', 'P%')
-            ->orderBy('kode')
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
+
+        $orderedCodes = match ($officeCode) {
+            'SUN' => self::QWT_KODES_SUN,
+            'SJN' => self::QWT_KODES_SJN,
+            'ALL' => self::QWT_KODES_YBS,
+            default => self::QWT_KODES_YBS,
+        };
+
+        $options = KernelMasterData::where('is_active', true)
+            ->whereIn('kode', $orderedCodes)
             ->pluck('nama_sample', 'kode')
             ->toArray();
+
+        $orderedOptions = [];
+        foreach ($orderedCodes as $kode) {
+            if (isset($options[$kode])) {
+                $orderedOptions[$kode] = $options[$kode];
+            }
+        }
+
+        return $orderedOptions;
     }
 
     private function getDirtMoistFormGroups(array $kodeOptions): array
@@ -2345,11 +2399,11 @@ class KernelController extends Controller
         return $result;
     }
 
-    private function getQwtLimitMap(): array
+    private function getQwtLimitMap(?string $office = null): array
     {
         $map = [];
 
-        foreach (array_keys($this->getQwtKodeOptions()) as $kode) {
+        foreach (array_keys($this->getQwtKodeOptions($office)) as $kode) {
             $map[$kode] = [
                 'bn_tn' => [
                     'operator' => 'le',
@@ -2365,20 +2419,36 @@ class KernelController extends Controller
         return $map;
     }
 
-    private function getDestonerKodeOptions(): array
+    private function getDestonerKodeOptions(?string $office = null): array
     {
-        return KernelMasterData::where('is_active', true)
-            ->where('kode', 'like', 'D%')
-            ->orderBy('kode')
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
+
+        $orderedCodes = match ($officeCode) {
+            'SUN' => self::DESTONER_KODES_SUN,
+            'SJN' => self::DESTONER_KODES_SJN,
+            'ALL' => self::DESTONER_KODES_YBS,
+            default => self::DESTONER_KODES_YBS,
+        };
+
+        $options = KernelMasterData::where('is_active', true)
+            ->whereIn('kode', $orderedCodes)
             ->pluck('nama_sample', 'kode')
             ->toArray();
+
+        $orderedOptions = [];
+        foreach ($orderedCodes as $kode) {
+            if (isset($options[$kode])) {
+                $orderedOptions[$kode] = $options[$kode];
+            }
+        }
+
+        return $orderedOptions;
     }
 
-    private function getDestonerLimitMap(): array
+    private function getDestonerLimitMap(?string $office = null): array
     {
         return KernelMasterData::where('is_active', true)
-            ->where('kode', 'like', 'D%')
-            ->orderBy('kode')
+            ->whereIn('kode', array_keys($this->getDestonerKodeOptions($office)))
             ->get()
             ->mapWithKeys(function ($item) {
                 return [
@@ -2414,20 +2484,36 @@ class KernelController extends Controller
         return $result;
     }
 
-    private function getRippleMillKodeOptions(): array
+    private function getRippleMillKodeOptions(?string $office = null): array
     {
-        return KernelMasterData::where('is_active', true)
-            ->where('kode', 'like', 'R%')
-            ->orderBy('kode')
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
+
+        $orderedCodes = match ($officeCode) {
+            'SUN' => self::RIPPLE_MILL_KODES_SUN,
+            'SJN' => self::RIPPLE_MILL_KODES_SJN,
+            'ALL' => self::RIPPLE_MILL_KODES_YBS,
+            default => self::RIPPLE_MILL_KODES_YBS,
+        };
+
+        $options = KernelMasterData::where('is_active', true)
+            ->whereIn('kode', $orderedCodes)
             ->pluck('nama_sample', 'kode')
             ->toArray();
+
+        $orderedOptions = [];
+        foreach ($orderedCodes as $kode) {
+            if (isset($options[$kode])) {
+                $orderedOptions[$kode] = $options[$kode];
+            }
+        }
+
+        return $orderedOptions;
     }
 
-    private function getRippleMillLimitMap(): array
+    private function getRippleMillLimitMap(?string $office = null): array
     {
         return KernelMasterData::where('is_active', true)
-            ->where('kode', 'like', 'R%')
-            ->orderBy('kode')
+            ->whereIn('kode', array_keys($this->getRippleMillKodeOptions($office)))
             ->get()
             ->mapWithKeys(function ($item) {
                 return [
@@ -2463,21 +2549,35 @@ class KernelController extends Controller
         return $result;
     }
 
-    private function getDirtMoistKodeOptions(): array
+    private function getDirtMoistKodeOptions(?string $office = null): array
     {
-        return KernelMasterData::where('is_active', true)
-            ->where(function ($query) {
-                $query->where('kode', 'like', 'IN%')
-                    ->orWhere('kode', 'like', 'OUT%');
-            })
-            ->orderBy('kode')
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
+
+        $orderedCodes = match ($officeCode) {
+            'SUN' => self::DIRT_MOIST_KODES_SUN,
+            'SJN' => self::DIRT_MOIST_KODES_SJN,
+            'ALL' => self::DIRT_MOIST_KODES_YBS,
+            default => self::DIRT_MOIST_KODES_YBS,
+        };
+
+        $options = KernelMasterData::where('is_active', true)
+            ->whereIn('kode', $orderedCodes)
             ->pluck('nama_sample', 'kode')
             ->toArray();
+
+        $orderedOptions = [];
+        foreach ($orderedCodes as $kode) {
+            if (isset($options[$kode])) {
+                $orderedOptions[$kode] = $options[$kode];
+            }
+        }
+
+        return $orderedOptions;
     }
 
-    private function getDirtMoistLimitMap(): array
+    private function getDirtMoistLimitMap(?string $office = null): array
     {
-        $kodeOptions = $this->getDirtMoistKodeOptions();
+        $kodeOptions = $this->getDirtMoistKodeOptions($office);
         $map = [];
 
         foreach (array_keys($kodeOptions) as $kode) {
@@ -3077,7 +3177,7 @@ class KernelController extends Controller
     private function buildDirtMoistProofData(KernelDirtMoistCalculation $calc, string $message): array
     {
         $master = KernelMasterData::where('kode', $calc->kode)->first();
-        $limitMap = $this->getDirtMoistLimitMap();
+        $limitMap = $this->getDirtMoistLimitMap($calc->office);
         $limitConfig = $limitMap[$calc->kode] ?? ['dirty' => null, 'moist' => null];
 
         $proof = $this->buildKernelProofBase('dirt_moist', $message, $calc, $master);

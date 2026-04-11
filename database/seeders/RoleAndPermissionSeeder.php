@@ -4,13 +4,107 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RoleAndPermissionSeeder extends Seeder
 {
+    private array $defaultSampleBoyUsers = [
+        [
+            'name' => 'ARYA GAUTAMA S.',
+            'username' => 'Arya',
+            'office' => 'YBS',
+            'password' => 'arya',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'DENNY SAPITRA',
+            'username' => 'Denny',
+            'office' => 'YBS',
+            'password' => 'denny',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'ELIZER YOSUA',
+            'username' => 'Elizer',
+            'office' => 'YBS',
+            'password' => 'elizer',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'OLOAN S.M. SIMANJUNTAK',
+            'username' => 'Oloan',
+            'office' => 'YBS',
+            'password' => 'oloan',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'PATRISIUS CHARLOS SITUMORANG',
+            'username' => 'Patrisius',
+            'office' => 'YBS',
+            'password' => 'patrisius',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'RAHMAT HIDAYAT',
+            'username' => 'Dayat',
+            'office' => 'YBS',
+            'password' => 'dayat',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'Ringki Napola',
+            'username' => 'Ringki',
+            'office' => 'YBS',
+            'password' => 'ringki',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'Dodi Irwan Sahputra Butar-butar',
+            'username' => 'Dodi',
+            'office' => 'SUN',
+            'password' => 'dodi',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'Vega Prayoga',
+            'username' => 'Vega',
+            'office' => 'SUN',
+            'password' => 'vega',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'Wahyu Rizki Maulana',
+            'username' => 'Rizki',
+            'office' => 'SUN',
+            'password' => 'rizki',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'Andriansyah Lubis',
+            'username' => 'Andriansyah',
+            'office' => 'SUN',
+            'password' => 'andriansyah',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'Pengarepen perangin-angin',
+            'username' => 'Pengarepen',
+            'office' => 'SUN',
+            'password' => 'pengarepen',
+            'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
+        ],
+        [
+            'name' => 'Silvyana Novira',
+            'username' => 'Vira',
+            'office' => 'YBS',
+            'password' => 'vira',
+            'roles' => ['PPIC'],
+        ],
+
+    ];
+
     /**
      * Daftar semua permission yang tersedia dalam sistem,
      * dikelompokkan berdasarkan modul agar mudah dikelola.
@@ -100,7 +194,6 @@ class RoleAndPermissionSeeder extends Seeder
             'export laporan oil losses',
 
             'view kernel losses',
-
             'view rekap kernel losses',
             'export rekap kernel losses',
 
@@ -246,7 +339,7 @@ class RoleAndPermissionSeeder extends Seeder
                 'name' => 'Super Administrator',
                 'office' => null,  // NULL = can see ALL offices
                 'email' => 'admin@ybs.local',
-                'password' => Hash::make('admin123'), // Ganti password ini sebelum production!
+                'password' => 'admin123', // Ganti password ini sebelum production!
             ]
         );
 
@@ -254,6 +347,9 @@ class RoleAndPermissionSeeder extends Seeder
         // syncRoles() juga berguna saat seseorang *dipindah* ke group lain:
         //   $user->syncRoles(['Mill Manager']);
         $adminUser->syncRoles(['Super Admin']);
+
+        // ── 5. Buat akun default Sampel Boy + assign role ───────────────────
+        $this->seedDefaultSampleBoyUsers();
 
         $this->command->info('✅  Roles, permissions, dan akun admin berhasil dibuat.');
         $this->command->table(
@@ -263,5 +359,26 @@ class RoleAndPermissionSeeder extends Seeder
                 $r->permissions->count(),
             ])->toArray()
         );
+    }
+
+    private function seedDefaultSampleBoyUsers(): void
+    {
+        foreach ($this->defaultSampleBoyUsers as $sampleUser) {
+            $user = User::withTrashed()->firstOrNew([
+                'username' => $sampleUser['username'],
+            ]);
+
+            if ($user->exists && method_exists($user, 'trashed') && $user->trashed()) {
+                $user->restore();
+            }
+
+            $user->name = $sampleUser['name'];
+            $user->office = $sampleUser['office'];
+            $user->email = $user->email ?: null;
+            $user->password = $sampleUser['password'];
+            $user->save();
+
+            $user->syncRoles($sampleUser['roles']);
+        }
     }
 }

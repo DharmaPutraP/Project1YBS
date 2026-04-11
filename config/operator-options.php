@@ -34,7 +34,20 @@ return [
             "RIZKI ARDIAN SINAGA",
             'WIRA CANDRA'
         ],
-        'SUN' => ['Diki Apriadi Nasution', 'Jovyel Romatuah Silaen', 'Apriandi', 'Sarianda', 'Muhammad Zainuddin Siagian', 'Roy Vandi Haviki', 'Andrian Pranata', 'Mei Shandy Dwi Putra', 'Setia Ardi ', 'Rohmania Budi Nantoko'],
+        'SUN' => [
+            'Ramanda',
+            'Andri Kaswari',
+            'Diki Apriadi Nasution',
+            'Jovyel Romatuah Silaen',
+            'Apriandi',
+            'Sarianda',
+            'Muhammad Zainuddin Siagian',
+            'Roy Vandi Haviki',
+            'Andrian Pranata',
+            'Mei Shandy Dwi Putra',
+            'Setia Ardi ',
+            'Rohmania Budi Nantoko'
+        ],
         'SJN' => [],
     ],
     'dirt_moist' => [
@@ -53,7 +66,20 @@ return [
             "RIZKI ARDIAN SINAGA",
             'WIRA CANDRA'
         ],
-        'SUN' => ['Diki Apriadi Nasution', 'Jovyel Romatuah Silaen', 'Apriandi', 'Sarianda', 'Muhammad Zainuddin Siagian', 'Roy Vandi Haviki', 'Andrian Pranata', 'Mei Shandy Dwi Putra', 'Setia Ardi ', 'Rohmania Budi Nantoko'],
+        'SUN' => [
+            'Ramanda',
+            'Andri Kaswari',
+            'Diki Apriadi Nasution',
+            'Jovyel Romatuah Silaen',
+            'Apriandi',
+            'Sarianda',
+            'Muhammad Zainuddin Siagian',
+            'Roy Vandi Haviki',
+            'Andrian Pranata',
+            'Mei Shandy Dwi Putra',
+            'Setia Ardi ',
+            'Rohmania Budi Nantoko'
+        ],
         'SJN' => [],
     ],
     'qwt' => [
@@ -72,7 +98,20 @@ return [
             "RIZKI ARDIAN SINAGA",
             'WIRA CANDRA'
         ],
-        'SUN' => ['Diki Apriadi Nasution', 'Jovyel Romatuah Silaen', 'Apriandi', 'Sarianda', 'Muhammad Zainuddin Siagian', 'Roy Vandi Haviki', 'Andrian Pranata', 'Mei Shandy Dwi Putra', 'Setia Ardi ', 'Rohmania Budi Nantoko'],
+        'SUN' => [
+            'Ramanda',
+            'Andri Kaswari',
+            'Diki Apriadi Nasution',
+            'Jovyel Romatuah Silaen',
+            'Apriandi',
+            'Sarianda',
+            'Muhammad Zainuddin Siagian',
+            'Roy Vandi Haviki',
+            'Andrian Pranata',
+            'Mei Shandy Dwi Putra',
+            'Setia Ardi ',
+            'Rohmania Budi Nantoko'
+        ],
         'SJN' => [],
     ],
     'ripple_mill' => [
@@ -91,7 +130,20 @@ return [
             "RIZKI ARDIAN SINAGA",
             'WIRA CANDRA'
         ],
-        'SUN' => ['Diki Apriadi Nasution', 'Jovyel Romatuah Silaen', 'Apriandi', 'Sarianda', 'Muhammad Zainuddin Siagian', 'Roy Vandi Haviki', 'Andrian Pranata', 'Mei Shandy Dwi Putra', 'Setia Ardi ', 'Rohmania Budi Nantoko'],
+        'SUN' => [
+            'Ramanda',
+            'Andri Kaswari',
+            'Diki Apriadi Nasution',
+            'Jovyel Romatuah Silaen',
+            'Apriandi',
+            'Sarianda',
+            'Muhammad Zainuddin Siagian',
+            'Roy Vandi Haviki',
+            'Andrian Pranata',
+            'Mei Shandy Dwi Putra',
+            'Setia Ardi ',
+            'Rohmania Budi Nantoko'
+        ],
         'SJN' => [],
     ],
     'destoner' => [
@@ -110,7 +162,20 @@ return [
             "RIZKI ARDIAN SINAGA",
             'WIRA CANDRA'
         ],
-        'SUN' => ['Diki Apriadi Nasution', 'Jovyel Romatuah Silaen', 'Apriandi', 'Sarianda', 'Muhammad Zainuddin Siagian', 'Roy Vandi Haviki', 'Andrian Pranata', 'Mei Shandy Dwi Putra', 'Setia Ardi ', 'Rohmania Budi Nantoko'],
+        'SUN' => [
+            'Ramanda',
+            'Andri Kaswari',
+            'Diki Apriadi Nasution',
+            'Jovyel Romatuah Silaen',
+            'Apriandi',
+            'Sarianda',
+            'Muhammad Zainuddin Siagian',
+            'Roy Vandi Haviki',
+            'Andrian Pranata',
+            'Mei Shandy Dwi Putra',
+            'Setia Ardi ',
+            'Rohmania Budi Nantoko'
+        ],
         'SJN' => [],
     ],
 ];

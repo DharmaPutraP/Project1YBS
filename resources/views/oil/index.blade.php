@@ -166,7 +166,8 @@
                         Office/PT
                     </label>
                     @if(auth()->user()->office)
-                        <div class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-700">
+                        <div
+                            class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-700">
                             {{ auth()->user()->office }}
                         </div>
                     @else
@@ -307,8 +308,8 @@
                                         Sampel Boy
                                     </th>
                                     <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                                                                                                                Parameter Lain
-                                                                                                                                            </th> -->
+                                                                                                                                                        Parameter Lain
+                                                                                                                                                    </th> -->
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Input By
                                     </th>
@@ -339,8 +340,8 @@
                                             {{ $record->sampel_boy ?? '-' }}
                                         </td>
                                         <!-- <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                                                                                                                                                                                {{ $record->parameter_lain ?? '-' }}
-                                                                                                                                                                                                            </td> -->
+                                                                                                                                                                                                                            {{ $record->parameter_lain ?? '-' }}
+                                                                                                                                                                                                                        </td> -->
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $record->user->name }}
                                         </td>
@@ -454,7 +455,13 @@
                                             @php
                                                 $olwb_calc = $oilLoss->olwb ?? 0;
                                                 $limitolwb = $oilLoss->limitOLWB ?? 0;
-                                                $oilLoss->kode == 'COT IN' ? $isGood = $olwb_calc > $limitolwb && $limitolwb > 0 : $isGood = $olwb_calc <= $limitolwb && $limitolwb > 0;
+                                                $limitOperator = $oilLoss->limit_operator ?? 'le';
+                                                $isGood = $limitolwb > 0 && match ($limitOperator) {
+                                                    'lt' => $olwb_calc < $limitolwb,
+                                                    'ge' => $olwb_calc >= $limitolwb,
+                                                    'gt' => $olwb_calc > $limitolwb,
+                                                    default => $olwb_calc <= $limitolwb,
+                                                };
                                             @endphp
                                             <span @class([
                                                 'font-semibold',
@@ -594,11 +601,13 @@
                         <div>
                             <h1 class="text-3xl font-bold text-slate-900">Bukti Input Data Oil Losses</h1>
                             <p class="mt-3 text-lg font-semibold text-emerald-900">{{ $successProof['message'] }}</p>
-                            <p class="mt-2 text-base text-emerald-800">Waktu bukti dibuat: {{ $successProof['generated_at'] }}</p>
+                            <p class="mt-2 text-base text-emerald-800">Waktu bukti dibuat:
+                                {{ $successProof['generated_at'] }}</p>
                         </div>
                         <div class="min-w-[260px] rounded-xl bg-white/80 p-4 text-base text-emerald-900">
                             <div><span class="font-semibold">User login:</span> {{ auth()->user()->name }}</div>
-                            <div class="mt-1"><span class="font-semibold">Office login:</span> {{ auth()->user()->office ?? '-' }}</div>
+                            <div class="mt-1"><span class="font-semibold">Office login:</span>
+                                {{ auth()->user()->office ?? '-' }}</div>
                         </div>
                     </div>
                 </div>
@@ -607,19 +616,25 @@
                     <section class="mb-6 rounded-2xl border border-blue-200 bg-blue-50/60 p-6">
                         <div class="mb-4 flex items-center justify-between">
                             <h2 class="text-3xl font-bold text-slate-900">Data Jenis &amp; Sampel</h2>
-                            <span class="rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">Mode Non-Angka</span>
+                            <span class="rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">Mode
+                                Non-Angka</span>
                         </div>
 
                         <div class="overflow-hidden rounded-2xl border border-blue-200 bg-white">
                             <table class="divide-y divide-blue-200">
                                 <thead class="bg-blue-100 text-slate-700">
                                     <tr>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal Input</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal
+                                            Input</th>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Kode</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Jenis</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Operator</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Sampel Boy</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Input By</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Jenis
+                                        </th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Operator
+                                        </th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Sampel
+                                            Boy</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Input By
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-blue-100 text-base text-slate-700">
@@ -643,7 +658,8 @@
                     <section class="rounded-2xl border border-purple-200 bg-purple-50/60 p-6">
                         <div class="mb-4 flex items-center justify-between">
                             <h2 class="text-3xl font-bold text-slate-900">Data Perhitungan Lab</h2>
-                            <span class="rounded-full bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-700">Mode Angka</span>
+                            <span class="rounded-full bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-700">Mode
+                                Angka</span>
                         </div>
 
                         <div class="mb-5 overflow-hidden rounded-2xl border border-purple-200 bg-white">
@@ -651,21 +667,31 @@
                                 <thead class="bg-purple-100 text-slate-700">
                                     <tr>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Kode</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Cawan Kosong</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Berat Basah</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Cawan + Sample Kering</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Labu Kosong</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Oil + Labu</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Cawan
+                                            Kosong</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Berat
+                                            Basah</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Cawan +
+                                            Sample Kering</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Labu
+                                            Kosong</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Oil +
+                                            Labu</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-purple-100 text-base text-slate-700">
                                     @foreach($mode2Entries as $proofMode2Export)
                                         <tr>
-                                            <td class="px-5 py-4 font-semibold text-purple-900">{{ $proofMode2Export['kode_label'] }}</td>
-                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['cawan_kosong'], 6) }}</td>
-                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['berat_basah'], 6) }}</td>
-                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['cawan_sample_kering'], 6) }}</td>
-                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['labu_kosong'], 6) }}</td>
+                                            <td class="px-5 py-4 font-semibold text-purple-900">
+                                                {{ $proofMode2Export['kode_label'] }}</td>
+                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['cawan_kosong'], 6) }}
+                                            </td>
+                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['berat_basah'], 6) }}
+                                            </td>
+                                            <td class="px-5 py-4">
+                                                {{ number_format((float) $proofMode2Export['cawan_sample_kering'], 6) }}</td>
+                                            <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['labu_kosong'], 6) }}
+                                            </td>
                                             <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['oil_labu'], 6) }}</td>
                                         </tr>
                                     @endforeach
@@ -677,14 +703,19 @@
                             <table class="divide-y divide-purple-200">
                                 <thead class="bg-purple-100 text-slate-700">
                                     <tr>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal Input</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal
+                                            Input</th>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Kode</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Moist (%)</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">DMWM (%)</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Moist (%)
+                                        </th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">DMWM (%)
+                                        </th>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">OLWB</th>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">OLDB</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Oil Losses (%)</th>
-                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Input By</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Oil
+                                            Losses (%)</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Input By
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-purple-100 text-base text-slate-700">
@@ -696,15 +727,21 @@
                                             $proofLimitOlwbExport = (float) ($proofMode2Export['limitOLWB'] ?? 0);
                                             $proofLimitOldbExport = (float) ($proofMode2Export['limitOLDB'] ?? 0);
                                             $proofLimitOlExport = (float) ($proofMode2Export['limitOL'] ?? 0);
-                                            $isOlwbGoodExport = ($proofMode2Export['kode'] ?? '') === 'COT IN'
-                                                ? ($proofOlwbExport > $proofLimitOlwbExport && $proofLimitOlwbExport > 0)
-                                                : ($proofOlwbExport <= $proofLimitOlwbExport && $proofLimitOlwbExport > 0);
+                                            $proofLimitOperatorExport = $proofMode2Export['limit_operator'] ?? 'le';
+                                            $isOlwbGoodExport = $proofLimitOlwbExport > 0
+                                                && match ($proofLimitOperatorExport) {
+                                                    'lt' => $proofOlwbExport < $proofLimitOlwbExport,
+                                                    'ge' => $proofOlwbExport >= $proofLimitOlwbExport,
+                                                    'gt' => $proofOlwbExport > $proofLimitOlwbExport,
+                                                    default => $proofOlwbExport <= $proofLimitOlwbExport,
+                                                };
                                             $isOldbGoodExport = $proofOldbExport <= $proofLimitOldbExport && $proofLimitOldbExport > 0;
                                             $isLossesGoodExport = $proofLossesExport <= $proofLimitOlExport && $proofLimitOlExport > 0;
                                         @endphp
                                         <tr>
                                             <td class="px-5 py-4">{{ $proofMode2Export['tanggal_input'] }}</td>
-                                            <td class="px-5 py-4 font-semibold text-purple-900">{{ $proofMode2Export['kode_label'] }}</td>
+                                            <td class="px-5 py-4 font-semibold text-purple-900">
+                                                {{ $proofMode2Export['kode_label'] }}</td>
                                             <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['moist'], 4) }}</td>
                                             <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['dmwm'], 4) }}</td>
                                             <td class="px-5 py-4">
@@ -783,11 +820,14 @@
                 <div class="flex items-start justify-between border-b border-slate-200 px-6 py-4">
                     <div>
                         <h2 class="text-xl font-semibold text-slate-900">Bukti Input Data Oil Losses</h2>
-                        <p class="mt-1 text-sm text-slate-600">Silakan screenshot bagian ini sebagai bukti bahwa data sudah tersimpan.</p>
+                        <p class="mt-1 text-sm text-slate-600">Silakan screenshot bagian ini sebagai bukti bahwa data sudah
+                            tersimpan.</p>
                     </div>
-                    <button type="button" onclick="closeSuccessProofModal()" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                    <button type="button" onclick="closeSuccessProofModal()"
+                        class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
@@ -797,8 +837,10 @@
                         <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                             <div>
                                 <p class="text-sm font-semibold text-emerald-900">{{ $successProof['message'] }}</p>
-                                <p class="mt-1 text-sm text-emerald-800">Waktu bukti dibuat: {{ $successProof['generated_at'] }}</p>
-                                <p class="mt-1 text-xs text-emerald-700">Tips mobile: gunakan tombol Unduh Gambar untuk bukti 1 file JPG tanpa perlu screenshot panjang.</p>
+                                <p class="mt-1 text-sm text-emerald-800">Waktu bukti dibuat:
+                                    {{ $successProof['generated_at'] }}</p>
+                                <p class="mt-1 text-xs text-emerald-700">Tips mobile: gunakan tombol Unduh Gambar untuk
+                                    bukti 1 file JPG tanpa perlu screenshot panjang.</p>
                             </div>
                             <div class="text-sm text-emerald-800">
                                 <div>User login: {{ auth()->user()->name }}</div>
@@ -811,26 +853,34 @@
                         <section class="mb-6 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
                             <div class="mb-3 flex items-center justify-between">
                                 <h3 class="text-lg font-semibold text-slate-900">Data Jenis &amp; Sampel</h3>
-                                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">Mode Non-Angka</span>
+                                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">Mode
+                                    Non-Angka</span>
                             </div>
 
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-blue-200 overflow-hidden rounded-lg bg-white">
                                     <thead class="bg-blue-100 text-slate-700">
                                         <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Tanggal Input</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Jenis</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Operator</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Sampel Boy</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Input By</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                                                Tanggal Input</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode
+                                            </th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Jenis
+                                            </th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                                                Operator</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                                                Sampel Boy</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Input
+                                                By</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-blue-100 text-sm text-slate-700">
                                         @foreach($mode1Entries as $proofMode1)
                                             <tr>
                                                 <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['tanggal_input'] }}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap font-semibold text-blue-900">{{ $proofMode1['kode_label'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap font-semibold text-blue-900">
+                                                    {{ $proofMode1['kode_label'] }}</td>
                                                 <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['jenis'] ?? '-' }}</td>
                                                 <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['operator'] ?? '-' }}</td>
                                                 <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['sampel_boy'] ?? '-' }}</td>
@@ -847,30 +897,43 @@
                         <section class="rounded-xl border border-purple-200 bg-purple-50/60 p-4">
                             <div class="mb-3 flex items-center justify-between">
                                 <h3 class="text-lg font-semibold text-slate-900">Data Perhitungan Lab</h3>
-                                <span class="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">Mode Angka</span>
+                                <span class="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">Mode
+                                    Angka</span>
                             </div>
 
                             <div class="mb-4 overflow-x-auto rounded-lg border border-purple-200 bg-white">
                                 <table class="min-w-full divide-y divide-purple-200">
                                     <thead class="bg-purple-100 text-slate-700">
                                         <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Cawan Kosong</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Berat Basah</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Cawan + Sample Kering</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Labu Kosong</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Oil + Labu</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode
+                                            </th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Cawan
+                                                Kosong</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Berat
+                                                Basah</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Cawan
+                                                + Sample Kering</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Labu
+                                                Kosong</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Oil +
+                                                Labu</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-purple-100 text-sm text-slate-700">
                                         @foreach($mode2Entries as $proofMode2)
                                             <tr>
-                                                <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">{{ $proofMode2['kode_label'] }}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['cawan_kosong'], 6) }}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['berat_basah'], 6) }}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['cawan_sample_kering'], 6) }}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['labu_kosong'], 6) }}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['oil_labu'], 6) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">
+                                                    {{ $proofMode2['kode_label'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    {{ number_format((float) $proofMode2['cawan_kosong'], 6) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    {{ number_format((float) $proofMode2['berat_basah'], 6) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    {{ number_format((float) $proofMode2['cawan_sample_kering'], 6) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    {{ number_format((float) $proofMode2['labu_kosong'], 6) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    {{ number_format((float) $proofMode2['oil_labu'], 6) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -881,14 +944,22 @@
                                 <table class="min-w-full divide-y divide-purple-200 overflow-hidden rounded-lg bg-white">
                                     <thead class="bg-purple-100 text-slate-700">
                                         <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Tanggal Input</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Moist (%)</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">DMWM (%)</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">OLWB</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">OLDB</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Oil Losses (%)</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Input By</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                                                Tanggal Input</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode
+                                            </th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Moist
+                                                (%)</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">DMWM
+                                                (%)</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">OLWB
+                                            </th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">OLDB
+                                            </th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Oil
+                                                Losses (%)</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Input
+                                                By</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-purple-100 text-sm text-slate-700">
@@ -900,90 +971,98 @@
                                                 $proofLimitOlwb = (float) ($proofMode2['limitOLWB'] ?? 0);
                                                 $proofLimitOldb = (float) ($proofMode2['limitOLDB'] ?? 0);
                                                 $proofLimitOl = (float) ($proofMode2['limitOL'] ?? 0);
-                                                $isOlwbGood = ($proofMode2['kode'] ?? '') === 'COT IN'
-                                                    ? ($proofOlwb > $proofLimitOlwb && $proofLimitOlwb > 0)
-                                                    : ($proofOlwb <= $proofLimitOlwb && $proofLimitOlwb > 0);
+                                                $proofLimitOperator = $proofMode2['limit_operator'] ?? 'le';
+                                                $isOlwbGood = $proofLimitOlwb > 0
+                                                    && match ($proofLimitOperator) {
+                                                        'lt' => $proofOlwb < $proofLimitOlwb,
+                                                        'ge' => $proofOlwb >= $proofLimitOlwb,
+                                                        'gt' => $proofOlwb > $proofLimitOlwb,
+                                                        default => $proofOlwb <= $proofLimitOlwb,
+                                                    };
                                                 $isOldbGood = $proofOldb <= $proofLimitOldb && $proofLimitOldb > 0;
                                                 $isLossesGood = $proofLosses <= $proofLimitOl && $proofLimitOl > 0;
                                             @endphp
                                             <tr>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode2['tanggal_input'] }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">{{ $proofMode2['kode_label'] }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['moist'], 4) }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ number_format((float) $proofMode2['dmwm'], 4) }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap">
-                                                <span @class([
-                                                    'font-semibold',
-                                                    'text-green-600' => $isOlwbGood,
-                                                    'text-red-600' => !$isOlwbGood && $proofLimitOlwb > 0,
-                                                ])>
-                                                    @if($proofOlwb < 0)
-                                                        ({{ number_format(abs($proofOlwb), 2) }})
-                                                    @else
-                                                        {{ number_format($proofOlwb, 2) }}
-                                                    @endif
-                                                </span>
-                                                <span class="text-xs text-gray-500 block">Limit:
-                                                    @if($proofLimitOlwb > 0)
-                                                        @if($proofLimitOlwb < 0)
-                                                            ({{ number_format(abs($proofLimitOlwb), 2) }})
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode2['tanggal_input'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">
+                                                    {{ $proofMode2['kode_label'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    {{ number_format((float) $proofMode2['moist'], 4) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    {{ number_format((float) $proofMode2['dmwm'], 4) }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    <span @class([
+                                                        'font-semibold',
+                                                        'text-green-600' => $isOlwbGood,
+                                                        'text-red-600' => !$isOlwbGood && $proofLimitOlwb > 0,
+                                                    ])>
+                                                        @if($proofOlwb < 0)
+                                                            ({{ number_format(abs($proofOlwb), 2) }})
                                                         @else
-                                                            {{ number_format($proofLimitOlwb, 2) }}
+                                                            {{ number_format($proofOlwb, 2) }}
                                                         @endif
-                                                    @else
-                                                        -
-                                                    @endif
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3 whitespace-nowrap">
-                                                <span @class([
-                                                    'font-semibold',
-                                                    'text-green-600' => $isOldbGood,
-                                                    'text-red-600' => !$isOldbGood && $proofLimitOldb > 0,
-                                                ])>
-                                                    @if($proofOldb < 0)
-                                                        ({{ number_format(abs($proofOldb), 2) }})
-                                                    @else
-                                                        {{ number_format($proofOldb, 2) }}
-                                                    @endif
-                                                </span>
-                                                <span class="text-xs text-gray-500 block">Limit:
-                                                    @if($proofLimitOldb > 0)
-                                                        @if($proofLimitOldb < 0)
-                                                            ({{ number_format(abs($proofLimitOldb), 2) }})
+                                                    </span>
+                                                    <span class="text-xs text-gray-500 block">Limit:
+                                                        @if($proofLimitOlwb > 0)
+                                                            @if($proofLimitOlwb < 0)
+                                                                ({{ number_format(abs($proofLimitOlwb), 2) }})
+                                                            @else
+                                                                {{ number_format($proofLimitOlwb, 2) }}
+                                                            @endif
                                                         @else
-                                                            {{ number_format($proofLimitOldb, 2) }}
+                                                            -
                                                         @endif
-                                                    @else
-                                                        -
-                                                    @endif
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3 whitespace-nowrap">
-                                                <span @class([
-                                                    'font-semibold',
-                                                    'text-green-600' => $isLossesGood,
-                                                    'text-red-600' => !$isLossesGood && $proofLimitOl > 0,
-                                                ])>
-                                                    @if($proofLosses < 0)
-                                                        ({{ number_format(abs($proofLosses), 2) }})
-                                                    @else
-                                                        {{ number_format($proofLosses, 2) }}
-                                                    @endif
-                                                </span>
-                                                <span class="text-xs text-gray-500 block">Limit:
-                                                    @if($proofLimitOl > 0)
-                                                        @if($proofLimitOl < 0)
-                                                            ({{ number_format(abs($proofLimitOl), 2) }})
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    <span @class([
+                                                        'font-semibold',
+                                                        'text-green-600' => $isOldbGood,
+                                                        'text-red-600' => !$isOldbGood && $proofLimitOldb > 0,
+                                                    ])>
+                                                        @if($proofOldb < 0)
+                                                            ({{ number_format(abs($proofOldb), 2) }})
                                                         @else
-                                                            {{ number_format($proofLimitOl, 2) }}
+                                                            {{ number_format($proofOldb, 2) }}
                                                         @endif
-                                                    @else
-                                                        -
-                                                    @endif
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode2['input_by'] ?? '-' }}</td>
+                                                    </span>
+                                                    <span class="text-xs text-gray-500 block">Limit:
+                                                        @if($proofLimitOldb > 0)
+                                                            @if($proofLimitOldb < 0)
+                                                                ({{ number_format(abs($proofLimitOldb), 2) }})
+                                                            @else
+                                                                {{ number_format($proofLimitOldb, 2) }}
+                                                            @endif
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    <span @class([
+                                                        'font-semibold',
+                                                        'text-green-600' => $isLossesGood,
+                                                        'text-red-600' => !$isLossesGood && $proofLimitOl > 0,
+                                                    ])>
+                                                        @if($proofLosses < 0)
+                                                            ({{ number_format(abs($proofLosses), 2) }})
+                                                        @else
+                                                            {{ number_format($proofLosses, 2) }}
+                                                        @endif
+                                                    </span>
+                                                    <span class="text-xs text-gray-500 block">Limit:
+                                                        @if($proofLimitOl > 0)
+                                                            @if($proofLimitOl < 0)
+                                                                ({{ number_format(abs($proofLimitOl), 2) }})
+                                                            @else
+                                                                {{ number_format($proofLimitOl, 2) }}
+                                                            @endif
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode2['input_by'] ?? '-' }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -994,10 +1073,12 @@
                 </div>
 
                 <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
-                    <button type="button" onclick="downloadSuccessProofImage()" class="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
+                    <button type="button" onclick="downloadSuccessProofImage()"
+                        class="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
                         Unduh Gambar (JPG)
                     </button>
-                    <button type="button" onclick="closeSuccessProofModal()" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                    <button type="button" onclick="closeSuccessProofModal()"
+                        class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
                         Tutup
                     </button>
                 </div>

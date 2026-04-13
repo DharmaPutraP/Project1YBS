@@ -300,9 +300,12 @@
                                         $displayAt = $row->rounded_time ?? $row->created_at;
                                         $isGood = null;
                                         if ($limitOp && $limitVal !== null) {
-                                            $isGood = $limitOp === 'gt'
-                                                ? $lossTbs > $limitVal
-                                                : $lossTbs <= $limitVal;
+                                            $isGood = match ($limitOp) {
+                                                'lt' => $lossTbs < $limitVal,
+                                                'ge' => $lossTbs >= $limitVal,
+                                                'gt' => $lossTbs > $limitVal,
+                                                default => $lossTbs <= $limitVal,
+                                            };
                                         }
                                         $limitBadge = $isGood === null
                                             ? 'bg-gray-100 text-gray-700'
@@ -377,7 +380,8 @@
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-center text-xs font-semibold text-orange-800">
                                             @if($limitOp && $limitVal !== null)
-                                                {{ $limitOp === 'gt' ? '>' : '≤' }} {{ $limitVal }}
+                                                {{ match ($limitOp) { 'lt' => '<', 'ge' => '≥', 'gt' => '>', default => '≤'} }}
+                                                {{ $limitVal }}
                                             @else
                                                 -
                                             @endif

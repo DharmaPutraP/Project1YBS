@@ -570,7 +570,7 @@ class OilController extends Controller
                 'cawan_sample_kering' => $validated['cawan_sample_kering'],
                 'labu_kosong' => $validated['labu_kosong'],
                 'oil_labu' => $validated['oil_labu'],
-            ], $kodeForCalculation);
+            ], $kodeForCalculation, $oilCalculation->office);
 
             // Update OilCalculation (numeric data)
             $oilCalculation->update([
@@ -591,6 +591,7 @@ class OilController extends Controller
                 'limitOLWB' => $result['limitOLWB'],
                 'limitOLDB' => $result['limitOLDB'],
                 'limitOL' => $result['limitOL'],
+                'limit_operator' => $result['limit_operator'],
                 'persen' => $result['persen'],
                 'persen4' => $result['persen4'],
                 'user_id' => Auth::id(),
@@ -852,6 +853,7 @@ class OilController extends Controller
 
         // Get all kode with pivot from master data (ordered)
         $allKodesData = OilMasterData::where('is_active', true)
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->orderBy('kode')
             ->get()
             ->map(function ($masterData) {
@@ -886,6 +888,7 @@ class OilController extends Controller
             $dataByDate[$date][$kode] = [
                 'olwb' => $calc->olwb,
                 'limitOLWB' => $calc->limitOLWB,
+                'limit_operator' => $calc->limit_operator,
                 'id' => $calc->id,
             ];
         }
@@ -916,6 +919,7 @@ class OilController extends Controller
 
         // Get all kode with pivot from master data (ordered)
         $allKodesData = OilMasterData::where('is_active', true)
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->orderBy('kode')
             ->get()
             ->map(function ($masterData) {
@@ -949,6 +953,7 @@ class OilController extends Controller
             $dataByDate[$date][$kode] = [
                 'olwb' => $calc->olwb,
                 'limitOLWB' => $calc->limitOLWB,
+                'limit_operator' => $calc->limit_operator,
                 'id' => $calc->id,
             ];
         }
@@ -983,6 +988,7 @@ class OilController extends Controller
         // Get ALL kodes from OilMasterData that have jenis mapping to bobot configs
         // Return with pivot info for header display
         $allKodesData = OilMasterData::where('is_active', true)
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->get()
             ->filter(function ($masterData) use ($bobotConfigs) {
                 // Check if jenis can be mapped to bobot config
@@ -1110,7 +1116,10 @@ class OilController extends Controller
         // Get operator data for the same date range with optimized join
         // Use LEFT JOIN and select only needed columns for better performance
         $operatorRecordsQuery = OilRecord::select('oil_records.id', 'oil_records.kode', 'oil_records.operator', 'oil_records.created_at', 'oil_master_data.jenis')
-            ->leftJoin('oil_master_data', 'oil_records.kode', '=', 'oil_master_data.kode')
+            ->leftJoin('oil_master_data', function ($join) {
+                $join->on('oil_records.kode', '=', 'oil_master_data.kode')
+                    ->on('oil_records.office', '=', 'oil_master_data.office');
+            })
             ->whereBetween('oil_records.created_at', [$rangeStart, $rangeEnd])
             ->whereNotNull('oil_records.operator')
             ->where('oil_records.operator', '!=', '');
@@ -1181,6 +1190,7 @@ class OilController extends Controller
 
         // Get ALL kodes from OilMasterData that have jenis mapping to bobot configs
         $allKodesData = OilMasterData::where('is_active', true)
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
             ->get()
             ->filter(function ($masterData) use ($bobotConfigs) {
                 $jenisConfig = $this->mapJenisToConfig($masterData->jenis, $bobotConfigs);
@@ -1409,9 +1419,23 @@ class OilController extends Controller
 
         // Pre-load all master data in one query to avoid N+1
         $kodes = $calculations->pluck('kode')->unique();
-        $masterDataCache = OilMasterData::whereIn('kode', $kodes)
-            ->get()
-            ->keyBy('kode');
+        $offices = $calculations->pluck('office')
+            ->filter()
+            ->map(fn($office) => strtoupper(trim((string) $office)))
+            ->unique()
+            ->values();
+
+        $masterRows = OilMasterData::query()
+            ->whereIn('kode', $kodes)
+            ->when($offices->isNotEmpty(), fn($q) => $q->whereIn('office', $offices))
+            ->get();
+
+        $masterDataCache = $masterRows->keyBy(
+            fn($row) => strtoupper(trim((string) $row->office)) . '|' . (string) $row->kode
+        );
+
+        $masterFallbackByKode = $masterRows->groupBy('kode')
+            ->map(fn($group) => $group->first());
 
         $bobotScores = [];
 
@@ -1420,7 +1444,9 @@ class OilController extends Controller
                 continue;
 
             // Get master data from cache (no query)
-            $masterData = $masterDataCache->get($calc->kode);
+            $officeCode = strtoupper(trim((string) ($calc->office ?? '')));
+            $masterData = $masterDataCache->get($officeCode . '|' . $calc->kode)
+                ?? $masterFallbackByKode->get($calc->kode);
             if (!$masterData)
                 continue;
 
@@ -1494,9 +1520,27 @@ class OilController extends Controller
             ...collect($mode2Calculations)->pluck('kode')->all(),
         ])->filter()->unique()->values();
 
-        $masterDataByKode = OilMasterData::whereIn('kode', $kodes)
-            ->get(['kode', 'pivot'])
-            ->keyBy('kode');
+        $offices = collect([
+            $mode1Record?->office,
+            $mode2Calculation?->office,
+            ...collect($mode1Records)->pluck('office')->all(),
+            ...collect($mode2Calculations)->pluck('office')->all(),
+        ])->filter()
+            ->map(fn($office) => strtoupper(trim((string) $office)))
+            ->unique()
+            ->values();
+
+        $masterRows = OilMasterData::query()
+            ->whereIn('kode', $kodes)
+            ->when($offices->isNotEmpty(), fn($q) => $q->whereIn('office', $offices))
+            ->get(['office', 'kode', 'pivot']);
+
+        $masterDataByOfficeKode = $masterRows->keyBy(
+            fn($row) => strtoupper(trim((string) $row->office)) . '|' . (string) $row->kode
+        );
+
+        $masterDataFallbackByKode = $masterRows->groupBy('kode')
+            ->map(fn($group) => $group->first());
 
         $mode2Calculation?->loadMissing(['initialUser', 'finalUser', 'user']);
         collect($mode2Calculations)->each(function ($calculation) {
@@ -1507,13 +1551,13 @@ class OilController extends Controller
 
         $mode1Entries = collect($mode1Records)
             ->filter(fn($record) => $record instanceof OilRecord)
-            ->map(fn($record) => $this->formatMode1ProofData($record, $masterDataByKode))
+            ->map(fn($record) => $this->formatMode1ProofData($record, $masterDataByOfficeKode, $masterDataFallbackByKode))
             ->values()
             ->all();
 
         $mode2Entries = collect($mode2Calculations)
             ->filter(fn($calc) => $calc instanceof OilCalculation)
-            ->map(fn($calc) => $this->formatMode2ProofData($calc, $masterDataByKode))
+            ->map(fn($calc) => $this->formatMode2ProofData($calc, $masterDataByOfficeKode, $masterDataFallbackByKode))
             ->values()
             ->all();
 
@@ -1521,8 +1565,8 @@ class OilController extends Controller
             'message' => $message,
             'generated_at' => now()->format('d/m/Y H:i:s'),
             'active_tab' => $mode2Calculation && !$mode1Record ? 'calculations' : 'records',
-            'mode1' => $mode1Record ? $this->formatMode1ProofData($mode1Record, $masterDataByKode) : null,
-            'mode2' => $mode2Calculation ? $this->formatMode2ProofData($mode2Calculation, $masterDataByKode) : null,
+            'mode1' => $mode1Record ? $this->formatMode1ProofData($mode1Record, $masterDataByOfficeKode, $masterDataFallbackByKode) : null,
+            'mode2' => $mode2Calculation ? $this->formatMode2ProofData($mode2Calculation, $masterDataByOfficeKode, $masterDataFallbackByKode) : null,
             'mode1_entries' => $mode1Entries,
             'mode2_entries' => $mode2Entries,
         ];
@@ -1531,9 +1575,11 @@ class OilController extends Controller
     /**
      * Format non-numeric record data for success proof modal.
      */
-    private function formatMode1ProofData(OilRecord $record, $masterDataByKode): array
+    private function formatMode1ProofData(OilRecord $record, $masterDataByOfficeKode, $masterDataFallbackByKode): array
     {
-        $masterData = $masterDataByKode->get($record->kode);
+        $officeCode = strtoupper(trim((string) ($record->office ?? '')));
+        $masterData = $masterDataByOfficeKode->get($officeCode . '|' . $record->kode)
+            ?? $masterDataFallbackByKode->get($record->kode);
 
         return [
             'tanggal_input' => $record->created_at->format('d/m/Y H:i:s'),
@@ -1549,9 +1595,11 @@ class OilController extends Controller
     /**
      * Format numeric calculation data for success proof modal.
      */
-    private function formatMode2ProofData(OilCalculation $calculation, $masterDataByKode): array
+    private function formatMode2ProofData(OilCalculation $calculation, $masterDataByOfficeKode, $masterDataFallbackByKode): array
     {
-        $masterData = $masterDataByKode->get($calculation->kode);
+        $officeCode = strtoupper(trim((string) ($calculation->office ?? '')));
+        $masterData = $masterDataByOfficeKode->get($officeCode . '|' . $calculation->kode)
+            ?? $masterDataFallbackByKode->get($calculation->kode);
 
         return [
             'phase' => $calculation->phase,

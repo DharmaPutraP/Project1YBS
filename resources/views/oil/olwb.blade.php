@@ -149,13 +149,13 @@
                                             @php
                                                 $olwb = $kodeData[$kode]['olwb'];
                                                 $limit = $kodeData[$kode]['limitOLWB'];
-
-                                                // Determine if value is good based on kode
-                                                if ($kode == 'COT IN') {
-                                                    $isGood = $olwb > $limit && $limit > 0;
-                                                } else {
-                                                    $isGood = $olwb <= $limit && $limit > 0;
-                                                }
+                                                $operator = $kodeData[$kode]['limit_operator'] ?? 'le';
+                                                $isGood = $limit > 0 && match ($operator) {
+                                                    'lt' => $olwb < $limit,
+                                                    'ge' => $olwb >= $limit,
+                                                    'gt' => $olwb > $limit,
+                                                    default => $olwb <= $limit,
+                                                };
                                             @endphp
 
                                             <div class="flex flex-col items-center gap-1">

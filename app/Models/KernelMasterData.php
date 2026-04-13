@@ -9,6 +9,7 @@ class KernelMasterData extends Model
     protected $table = 'kernel_master_data';
 
     protected $fillable = [
+        'office',
         'kode',
         'nama_sample',
         'limit_operator',
@@ -18,7 +19,7 @@ class KernelMasterData extends Model
 
     protected $casts = [
         'limit_value' => 'decimal:3',
-        'is_active'   => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function scopeActive($query)
@@ -29,9 +30,13 @@ class KernelMasterData extends Model
     /**
      * Returns ['KODE' => 'Nama Sample', ...] for dropdowns.
      */
-    public static function getKodeDropdown(): array
+    public static function getKodeDropdown(?string $office = null): array
     {
-        return static::where('is_active', true)
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()?->office ?? '')));
+
+        return static::query()
+            ->where('is_active', true)
+            ->when($officeCode !== '' && $officeCode !== 'ALL', fn($q) => $q->where('office', $officeCode))
             ->orderBy('kode')
             ->pluck('nama_sample', 'kode')
             ->toArray();

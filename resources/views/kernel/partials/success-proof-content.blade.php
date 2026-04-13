@@ -37,7 +37,12 @@
         if (!$operator || $value === null) {
             return '-';
         }
-        $symbol = $operator === 'gt' ? '>' : '<=';
+        $symbol = match ($operator) {
+            'lt' => '<',
+            'ge' => '>=',
+            'gt' => '>',
+            default => '<=',
+        };
         return $symbol . ' ' . number_format((float) $value, $decimals);
     };
     $detailInputsHtml = '';
@@ -132,9 +137,14 @@
                 $limitValue = $metric['limit_value'] ?? null;
                 $isGood = null;
                 if ($limitOperator && $limitValue !== null) {
-                    $isGood = $limitOperator === 'gt'
-                        ? (float) ($metric['value'] ?? 0) > (float) $limitValue
-                        : (float) ($metric['value'] ?? 0) <= (float) $limitValue;
+                    $metricValue = (float) ($metric['value'] ?? 0);
+                    $limitNumber = (float) $limitValue;
+                    $isGood = match ($limitOperator) {
+                        'lt' => $metricValue < $limitNumber,
+                        'ge' => $metricValue >= $limitNumber,
+                        'gt' => $metricValue > $limitNumber,
+                        default => $metricValue <= $limitNumber,
+                    };
                 }
                 $badgeClass = $isGood === null
                     ? 'bg-gray-100 text-gray-700'
@@ -202,9 +212,14 @@
                             $limitValue = $metric['limit_value'] ?? null;
                             $isGood = null;
                             if ($limitOperator && $limitValue !== null) {
-                                $isGood = $limitOperator === 'gt'
-                                    ? (float) ($metric['value'] ?? 0) > (float) $limitValue
-                                    : (float) ($metric['value'] ?? 0) <= (float) $limitValue;
+                                $metricValue = (float) ($metric['value'] ?? 0);
+                                $limitNumber = (float) $limitValue;
+                                $isGood = match ($limitOperator) {
+                                    'lt' => $metricValue < $limitNumber,
+                                    'ge' => $metricValue >= $limitNumber,
+                                    'gt' => $metricValue > $limitNumber,
+                                    default => $metricValue <= $limitNumber,
+                                };
                             }
                             $badgeClass = $isGood === null
                                 ? 'bg-gray-100 text-gray-700'

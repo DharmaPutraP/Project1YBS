@@ -165,12 +165,19 @@
                             $efficiencyValue = (float) ($row->efficiency ?? 0);
                             $limitOperator = $row->limit_operator ?? 'gt';
                             $limitValue = $row->limit_value !== null ? (float) $row->limit_value : null;
-                            $isGood = $limitValue !== null ? ($limitOperator === 'le' ? $efficiencyValue <= $limitValue : $efficiencyValue > $limitValue) : null;
-                            $displayAt = $row->rounded_time ?? $row->created_at;
-                                $productionDate = $displayAt->copy();
-                                if ((int) $productionDate->format('H') < 7) {
-                                    $productionDate->subDay();
+                            $isGood = $limitValue !== null
+                                ? match ($limitOperator) {
+                                    'lt' => $efficiencyValue < $limitValue,
+                                    'ge' => $efficiencyValue >= $limitValue,
+                                    'gt' => $efficiencyValue > $limitValue,
+                                    default => $efficiencyValue <= $limitValue,
                                 }
+                                : null;
+                            $displayAt = $row->rounded_time ?? $row->created_at;
+                            $productionDate = $displayAt->copy();
+                            if ((int) $productionDate->format('H') < 7) {
+                                $productionDate->subDay();
+                            }
                             $beratSampel = (float) ($row->berat_sampel ?? 0);
                             $beratUtuh = (float) ($row->berat_nut_utuh ?? 0);
                             $beratPecah = (float) ($row->berat_nut_pecah ?? 0);
@@ -179,18 +186,24 @@
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="sticky left-0 z-[20] bg-white border px-3 py-2 text-center">
-                                {{ ($rows->currentPage() - 1) * $rows->perPage() + $loop->iteration }}</td>
+                                {{ ($rows->currentPage() - 1) * $rows->perPage() + $loop->iteration }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[50px] z-[10] bg-white whitespace-nowrap">
-                                  {{ $productionDate->format('F Y') }}</td>
+                                {{ $productionDate->format('F Y') }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[160px] z-[10] bg-white whitespace-nowrap">
-                                  {{ $productionDate->format('d-m-Y') }}</td>
+                                {{ $productionDate->format('d-m-Y') }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[270px] z-[10] bg-white whitespace-nowrap">
-                                {{ $displayAt->format('H:i:s') }}</td>
+                                {{ $displayAt->format('H:i:s') }}
+                            </td>
                             <td
                                 class="border px-3 py-2 lg:sticky lg:left-[360px] z-[10] bg-white font-semibold text-blue-800 whitespace-nowrap">
-                                {{ $row->kode }}</td>
+                                {{ $row->kode }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[450px] z-[10] bg-white whitespace-nowrap">
-                                {{ $master->nama_sample ?? '-' }}</td>
+                                {{ $master->nama_sample ?? '-' }}
+                            </td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ optional($row->user)->name ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap"><span
                                     class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{{ $row->jenis ?? '-' }}</span>
@@ -221,7 +234,8 @@
                             <td
                                 class="border px-3 py-2 text-center bg-orange-50 text-orange-800 font-medium whitespace-nowrap">
                                 @if($limitValue !== null)
-                                    {{ $limitOperator === 'le' ? '<=' : '>' }} {{ number_format($limitValue, 4) }}%
+                                    {{ match ($limitOperator) { 'lt' => '<', 'ge' => '>=', 'gt' => '>', default => '<='} }}
+                                    {{ number_format($limitValue, 4) }}%
                                 @else
                                     -
                                 @endif

@@ -24,11 +24,11 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
 
     public function __construct($data, $masterData, string $startDate, string $endDate, ?string $kode = null)
     {
-        $this->data       = $data;
+        $this->data = $data;
         $this->masterData = $masterData;
-        $this->startDate  = $startDate;
-        $this->endDate    = $endDate;
-        $this->kode       = $kode;
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+        $this->kode = $kode;
     }
 
     public function collection(): Collection
@@ -40,16 +40,33 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
     public function headings(): array
     {
         return [
-            'NO', 'BULAN', 'TANGGAL', 'JAM', 'KODE', 'NAMA SAMPLE',
-            'INPUTED BY', 'JENIS', 'OPERATOR', 'SAMPEL BOY',
+            'NO',
+            'BULAN',
+            'TANGGAL',
+            'JAM',
+            'KODE',
+            'NAMA SAMPLE',
+            'INPUTED BY',
+            'JENIS',
+            'OPERATOR',
+            'SAMPEL BOY',
             'SAMPEL SETELAH KUARTER',
-            'BERAT NUT UTUH (g)', 'BERAT NUT PECAH (g)',
-            'BERAT KERNEL UTUH (g)', 'BERAT KERNEL PECAH (g)',
-            'BERAT CANGKANG (g)', 'BERAT BATU (g)', 'BERAT FIBER (g)', 'BERAT BROKEN NUT (g)',
+            'BERAT NUT UTUH (g)',
+            'BERAT NUT PECAH (g)',
+            'BERAT KERNEL UTUH (g)',
+            'BERAT KERNEL PECAH (g)',
+            'BERAT CANGKANG (g)',
+            'BERAT BATU (g)',
+            'BERAT FIBER (g)',
+            'BERAT BROKEN NUT (g)',
             'TOTAL BERAT NUT (g)',
-            'BN/TN (%)', 'LIMIT BN/TN',
-            'MOISTURE (%)', 'LIMIT MOISTURE',
-            'AMPERE SCREW', 'TEKANAN HYDRAULIC', 'KECEPATAN SCREW',
+            'BN/TN (%)',
+            'LIMIT BN/TN',
+            'MOISTURE (%)',
+            'LIMIT MOISTURE',
+            'AMPERE SCREW',
+            'TEKANAN HYDRAULIC',
+            'KECEPATAN SCREW',
         ];
     }
 
@@ -60,15 +77,28 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
 
         $master = $this->masterData[$row->kode] ?? null;
 
-        $bntnVal   = (float) ($row->bn_tn ?? 0);
-        $moistVal  = (float) ($row->moisture ?? 0);
+        $bntnVal = (float) ($row->bn_tn ?? 0);
+        $moistVal = (float) ($row->moisture ?? 0);
         $bntnLimOp = $row->bn_tn_limit_operator ?? null;
-        $bntnLimV  = $row->bn_tn_limit_value !== null ? (float) $row->bn_tn_limit_value : null;
+        $bntnLimV = $row->bn_tn_limit_value !== null ? (float) $row->bn_tn_limit_value : null;
         $moistLimOp = $row->moist_limit_operator ?? null;
-        $moistLimV  = $row->moist_limit_value !== null ? (float) $row->moist_limit_value : null;
+        $moistLimV = $row->moist_limit_value !== null ? (float) $row->moist_limit_value : null;
 
-        $bntnLimit  = $bntnLimV  !== null ? (($bntnLimOp  === 'le') ? '<= ' : '> ') . number_format($bntnLimV, 4)  . '%' : '-';
-        $moistLimit = $moistLimV !== null ? (($moistLimOp === 'le') ? '<= ' : '> ') . number_format($moistLimV, 4) . '%' : '-';
+        $bntnSymbol = match ($bntnLimOp) {
+            'lt' => '< ',
+            'ge' => '>= ',
+            'gt' => '> ',
+            default => '<= ',
+        };
+        $moistSymbol = match ($moistLimOp) {
+            'lt' => '< ',
+            'ge' => '>= ',
+            'gt' => '> ',
+            default => '<= ',
+        };
+
+        $bntnLimit = $bntnLimV !== null ? $bntnSymbol . number_format($bntnLimV, 4) . '%' : '-';
+        $moistLimit = $moistLimV !== null ? $moistSymbol . number_format($moistLimV, 4) . '%' : '-';
 
         return [
             $counter,
@@ -143,14 +173,14 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
         // BN/TN = column U (21), limit = V (22)
         // Moisture = column W (23), limit = X (24)
         for ($r = 5; $r <= $lastRow; $r++) {
-            $bntn    = $sheet->getCell('U' . $r)->getValue();
+            $bntn = $sheet->getCell('U' . $r)->getValue();
             $bntnLim = $sheet->getCell('V' . $r)->getValue();
             if (is_numeric($bntn) && $bntnLim !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $bntnLim, $m);
                 if (count($m) === 3) {
-                    $op  = trim($m[1]);
+                    $op = trim($m[1]);
                     $lim = (float) $m[2];
-                    $ok  = ($op === '<=' || $op === '=<') ? $bntn <= $lim : $bntn > $lim;
+                    $ok = ($op === '<=' || $op === '=<') ? $bntn <= $lim : $bntn > $lim;
                     $sheet->getStyle('U' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],
@@ -161,14 +191,14 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
                 }
             }
 
-            $moist    = $sheet->getCell('W' . $r)->getValue();
+            $moist = $sheet->getCell('W' . $r)->getValue();
             $moistLim = $sheet->getCell('X' . $r)->getValue();
             if (is_numeric($moist) && $moistLim !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $moistLim, $m);
                 if (count($m) === 3) {
-                    $op  = trim($m[1]);
+                    $op = trim($m[1]);
                     $lim = (float) $m[2];
-                    $ok  = ($op === '<=' || $op === '=<') ? $moist <= $lim : $moist > $lim;
+                    $ok = ($op === '<=' || $op === '=<') ? $moist <= $lim : $moist > $lim;
                     $sheet->getStyle('W' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],

@@ -24,11 +24,11 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
 
     public function __construct($data, $masterData, string $startDate, string $endDate, ?string $kode = null)
     {
-        $this->data       = $data;
+        $this->data = $data;
         $this->masterData = $masterData;
-        $this->startDate  = $startDate;
-        $this->endDate    = $endDate;
-        $this->kode       = $kode;
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+        $this->kode = $kode;
     }
 
     public function collection(): Collection
@@ -39,11 +39,22 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
-            'NO', 'BULAN', 'TANGGAL', 'JAM', 'KODE', 'NAMA SAMPLE',
-            'INPUTED BY', 'JENIS', 'OPERATOR', 'SAMPEL BOY',
-            'BERAT SAMPEL (g)', 'BERAT DIRTY (g)',
-            'DIRTY TO SAMPEL (%)', 'LIMIT DIRTY',
-            'KADAR AIR KERNEL (%)', 'LIMIT MOIST',
+            'NO',
+            'BULAN',
+            'TANGGAL',
+            'JAM',
+            'KODE',
+            'NAMA SAMPLE',
+            'INPUTED BY',
+            'JENIS',
+            'OPERATOR',
+            'SAMPEL BOY',
+            'BERAT SAMPEL (g)',
+            'BERAT DIRTY (g)',
+            'DIRTY TO SAMPEL (%)',
+            'LIMIT DIRTY',
+            'KADAR AIR KERNEL (%)',
+            'LIMIT MOIST',
         ];
     }
 
@@ -54,15 +65,28 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
 
         $master = $this->masterData[$row->kode] ?? null;
 
-        $dirtyVal   = (float) ($row->dirty_to_sampel ?? 0);
-        $moistVal   = (float) ($row->moist_percent ?? 0);
+        $dirtyVal = (float) ($row->dirty_to_sampel ?? 0);
+        $moistVal = (float) ($row->moist_percent ?? 0);
         $dirtyLimOp = $row->dirty_limit_operator ?? null;
-        $dirtyLimV  = $row->dirty_limit_value !== null ? (float) $row->dirty_limit_value : null;
+        $dirtyLimV = $row->dirty_limit_value !== null ? (float) $row->dirty_limit_value : null;
         $moistLimOp = $row->moist_limit_operator ?? null;
-        $moistLimV  = $row->moist_limit_value !== null ? (float) $row->moist_limit_value : null;
+        $moistLimV = $row->moist_limit_value !== null ? (float) $row->moist_limit_value : null;
 
-        $dirtyLimit = $dirtyLimV !== null ? (($dirtyLimOp === 'le') ? '<= ' : '> ') . number_format($dirtyLimV, 4) . '%' : '-';
-        $moistLimit = $moistLimV !== null ? (($moistLimOp === 'le') ? '<= ' : '> ') . number_format($moistLimV, 4) . '%' : '-';
+        $dirtySymbol = match ($dirtyLimOp) {
+            'lt' => '< ',
+            'ge' => '>= ',
+            'gt' => '> ',
+            default => '<= ',
+        };
+        $moistSymbol = match ($moistLimOp) {
+            'lt' => '< ',
+            'ge' => '>= ',
+            'gt' => '> ',
+            default => '<= ',
+        };
+
+        $dirtyLimit = $dirtyLimV !== null ? $dirtySymbol . number_format($dirtyLimV, 4) . '%' : '-';
+        $moistLimit = $moistLimV !== null ? $moistSymbol . number_format($moistLimV, 4) . '%' : '-';
 
         return [
             $counter,
@@ -125,14 +149,14 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
 
         // Conditional colour for DIRTY column (M) and MOIST column (O)
         for ($r = 5; $r <= $lastRow; $r++) {
-            $dirty    = $sheet->getCell('M' . $r)->getValue();
+            $dirty = $sheet->getCell('M' . $r)->getValue();
             $dirtyLim = $sheet->getCell('N' . $r)->getValue();
             if (is_numeric($dirty) && $dirtyLim !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $dirtyLim, $m);
                 if (count($m) === 3) {
-                    $op  = trim($m[1]);
+                    $op = trim($m[1]);
                     $lim = (float) $m[2];
-                    $ok  = ($op === '<=' || $op === '=<') ? $dirty <= $lim : $dirty > $lim;
+                    $ok = ($op === '<=' || $op === '=<') ? $dirty <= $lim : $dirty > $lim;
                     $sheet->getStyle('M' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],
@@ -143,14 +167,14 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
                 }
             }
 
-            $moist    = $sheet->getCell('O' . $r)->getValue();
+            $moist = $sheet->getCell('O' . $r)->getValue();
             $moistLim = $sheet->getCell('P' . $r)->getValue();
             if (is_numeric($moist) && $moistLim !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $moistLim, $m);
                 if (count($m) === 3) {
-                    $op  = trim($m[1]);
+                    $op = trim($m[1]);
                     $lim = (float) $m[2];
-                    $ok  = ($op === '<=' || $op === '=<') ? $moist <= $lim : $moist > $lim;
+                    $ok = ($op === '<=' || $op === '=<') ? $moist <= $lim : $moist > $lim;
                     $sheet->getStyle('O' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],

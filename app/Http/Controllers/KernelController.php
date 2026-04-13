@@ -97,8 +97,8 @@ class KernelController extends Controller
 
         $kernelCalculations->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
-        $kodeOptions = KernelMasterData::getKodeDropdown();
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $kodeOptions = KernelMasterData::getKodeDropdown($officeFilter);
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
 
         return view('kernel.index', compact(
             'kernelCalculations',
@@ -122,7 +122,7 @@ class KernelController extends Controller
         $kodeFormGroups = $this->getKernelLossesFormGroups($kodeOptions, $userOffice);
         $jenisOptions = KernelRecord::getJenisOptions();
 
-        $kernelLimitMap = KernelMasterData::where('is_active', true)
+        $kernelLimitMap = $this->activeKernelMasterDataQuery($userOffice)
             ->get()
             ->mapWithKeys(function ($item) {
                 return [
@@ -474,7 +474,7 @@ class KernelController extends Controller
         $dirtMoistCalculations->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         $kodeOptions = $this->getDirtMoistKodeOptions($officeFilter);
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
 
         return view('kernel.dirt-moist.index', compact(
             'dirtMoistCalculations',
@@ -822,7 +822,7 @@ class KernelController extends Controller
         $kernelQwtRows->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         $kodeOptions = $this->getQwtKodeOptions($officeFilter);
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
 
         return view('kernel.qwt.index', compact(
             'kernelQwtRows',
@@ -1216,7 +1216,7 @@ class KernelController extends Controller
         $rippleMillRows->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         $kodeOptions = $this->getRippleMillKodeOptions($officeFilter);
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
 
         return view('kernel.ripple-mill.index', compact(
             'rippleMillRows',
@@ -1543,7 +1543,7 @@ class KernelController extends Controller
         $destonerRows->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         $kodeOptions = $this->getDestonerKodeOptions($officeFilter);
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
 
         return view('kernel.destoner.index', compact(
             'destonerRows',
@@ -1933,7 +1933,7 @@ class KernelController extends Controller
     {
         $allowedKodes = $this->getKernelOfficeAllowedCodes($officeFilter);
 
-        $allKodesData = KernelMasterData::where('is_active', true)
+        $allKodesData = $this->activeKernelMasterDataQuery($officeFilter)
             ->whereIn('kode', $allowedKodes)
             ->orderBy('kode')
             ->get()
@@ -1946,7 +1946,7 @@ class KernelController extends Controller
                 ];
             });
 
-        $masterMap = KernelMasterData::where('is_active', true)
+        $masterMap = $this->activeKernelMasterDataQuery($officeFilter)
             ->get()
             ->keyBy('kode');
 
@@ -2163,7 +2163,7 @@ class KernelController extends Controller
         $allowedKodes = $this->getKernelOfficeAllowedCodes($officeFilter);
 
         // Get all active kodes that have a matching bobot config
-        $allKodesData = KernelMasterData::where('is_active', true)
+        $allKodesData = $this->activeKernelMasterDataQuery($officeFilter)
             ->whereIn('kode', $allowedKodes)
             ->get()
             ->reject(function ($m) {
@@ -2179,7 +2179,7 @@ class KernelController extends Controller
             ])
             ->values();
 
-        $masterDataMap = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $masterDataMap = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
 
         // Get unified records from all kernel modules grouped by date+kode
         $calculations = $this->getUnifiedKernelReportRecords($startDate, $endDate, $officeFilter)
@@ -2275,15 +2275,19 @@ class KernelController extends Controller
         $operators = $operatorRecords->pluck('operator')->unique()->sort()->values();
 
         $operatorActivities = $operatorRecords->groupBy('operator')->map(function ($records) {
+            $group = collect($records);
+
             return [
-                'total_input' => $records->count(),
-                'last_input' => $this->resolveDisplayTimestamp($records->first()),
+                'total_input' => $group->count(),
+                'last_input' => $this->resolveDisplayTimestamp($group->first()),
             ];
         });
 
         $reportDates = collect($reportData)->pluck('date');
         $dailyPerformance = collect($reportData)->keyBy('date')->map(function ($item) {
-            return ['average_bobot' => $item['average_bobot']];
+            $row = (array) $item;
+
+            return ['average_bobot' => $row['average_bobot'] ?? null];
         });
 
         // Build per-operator daily performance from individual records
@@ -2390,7 +2394,7 @@ class KernelController extends Controller
             default => self::KERNEL_LOSSES_KODES_YBS,
         };
 
-        $options = KernelMasterData::where('is_active', true)
+        $options = $this->activeKernelMasterDataQuery($officeCode)
             ->whereIn('kode', $orderedCodes)
             ->pluck('nama_sample', 'kode')
             ->toArray();
@@ -2459,7 +2463,7 @@ class KernelController extends Controller
             default => self::QWT_KODES_YBS,
         };
 
-        $options = KernelMasterData::where('is_active', true)
+        $options = $this->activeKernelMasterDataQuery($officeCode)
             ->whereIn('kode', $orderedCodes)
             ->pluck('nama_sample', 'kode')
             ->toArray();
@@ -2545,22 +2549,27 @@ class KernelController extends Controller
 
     private function getQwtLimitMap(?string $office = null): array
     {
-        $map = [];
+        return $this->activeKernelMasterDataQuery($office)
+            ->whereIn('kode', array_keys($this->getQwtKodeOptions($office)))
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $operator = $item->limit_operator ?? 'le';
+                $value = (float) ($item->limit_value ?? 0);
 
-        foreach (array_keys($this->getQwtKodeOptions($office)) as $kode) {
-            $map[$kode] = [
-                'bn_tn' => [
-                    'operator' => 'le',
-                    'value' => 15.00,
-                ],
-                'moist' => [
-                    'operator' => 'le',
-                    'value' => 40.00,
-                ],
-            ];
-        }
-
-        return $map;
+                return [
+                    $item->kode => [
+                        'bn_tn' => [
+                            'operator' => $operator,
+                            'value' => $value,
+                        ],
+                        'moist' => [
+                            'operator' => $operator,
+                            'value' => $value,
+                        ],
+                    ],
+                ];
+            })
+            ->toArray();
     }
 
     private function getDestonerKodeOptions(?string $office = null): array
@@ -2574,7 +2583,7 @@ class KernelController extends Controller
             default => self::DESTONER_KODES_YBS,
         };
 
-        $options = KernelMasterData::where('is_active', true)
+        $options = $this->activeKernelMasterDataQuery($officeCode)
             ->whereIn('kode', $orderedCodes)
             ->pluck('nama_sample', 'kode')
             ->toArray();
@@ -2591,7 +2600,7 @@ class KernelController extends Controller
 
     private function getDestonerLimitMap(?string $office = null): array
     {
-        return KernelMasterData::where('is_active', true)
+        return $this->activeKernelMasterDataQuery($office)
             ->whereIn('kode', array_keys($this->getDestonerKodeOptions($office)))
             ->get()
             ->mapWithKeys(function ($item) {
@@ -2650,7 +2659,7 @@ class KernelController extends Controller
             default => self::RIPPLE_MILL_KODES_YBS,
         };
 
-        $options = KernelMasterData::where('is_active', true)
+        $options = $this->activeKernelMasterDataQuery($officeCode)
             ->whereIn('kode', $orderedCodes)
             ->pluck('nama_sample', 'kode')
             ->toArray();
@@ -2667,7 +2676,7 @@ class KernelController extends Controller
 
     private function getRippleMillLimitMap(?string $office = null): array
     {
-        return KernelMasterData::where('is_active', true)
+        return $this->activeKernelMasterDataQuery($office)
             ->whereIn('kode', array_keys($this->getRippleMillKodeOptions($office)))
             ->get()
             ->mapWithKeys(function ($item) {
@@ -2726,7 +2735,7 @@ class KernelController extends Controller
             default => self::DIRT_MOIST_KODES_YBS,
         };
 
-        $options = KernelMasterData::where('is_active', true)
+        $options = $this->activeKernelMasterDataQuery($officeCode)
             ->whereIn('kode', $orderedCodes)
             ->pluck('nama_sample', 'kode')
             ->toArray();
@@ -2743,23 +2752,27 @@ class KernelController extends Controller
 
     private function getDirtMoistLimitMap(?string $office = null): array
     {
-        $kodeOptions = $this->getDirtMoistKodeOptions($office);
-        $map = [];
+        return $this->activeKernelMasterDataQuery($office)
+            ->whereIn('kode', array_keys($this->getDirtMoistKodeOptions($office)))
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $operator = $item->limit_operator ?? 'le';
+                $value = (float) ($item->limit_value ?? 0);
 
-        foreach (array_keys($kodeOptions) as $kode) {
-            $map[$kode] = [
-                'dirty' => [
-                    'operator' => 'le',
-                    'value' => 7.99,
-                ],
-                'moist' => [
-                    'operator' => 'le',
-                    'value' => 7.99,
-                ],
-            ];
-        }
-
-        return $map;
+                return [
+                    $item->kode => [
+                        'dirty' => [
+                            'operator' => $operator,
+                            'value' => $value,
+                        ],
+                        'moist' => [
+                            'operator' => $operator,
+                            'value' => $value,
+                        ],
+                    ],
+                ];
+            })
+            ->toArray();
     }
 
     private function getPengulanganIntervalHours(string $kode, ?string $office = null): ?int
@@ -3051,6 +3064,15 @@ class KernelController extends Controller
         return $query;
     }
 
+    private function activeKernelMasterDataQuery(?string $office = null)
+    {
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? '')));
+
+        return KernelMasterData::query()
+            ->where('is_active', true)
+            ->when($officeCode !== '' && $officeCode !== 'ALL', fn($q) => $q->where('office', $officeCode));
+    }
+
     private function resolveProductionDateRange(string $startDate, string $endDate, ?string $officeFilter = null): array
     {
         $resolvedOffice = $officeFilter ?? $this->resolveOfficeFilter();
@@ -3232,11 +3254,27 @@ class KernelController extends Controller
             ->unique()
             ->values();
 
-        $masterByKode = KernelMasterData::whereIn('kode', $kodes)
-            ->get(['kode', 'nama_sample'])
-            ->keyBy('kode');
+        $offices = collect($rows)
+            ->pluck('office')
+            ->filter()
+            ->map(fn($office) => strtoupper(trim((string) $office)))
+            ->unique()
+            ->values();
 
-        return collect($rows)->map(function ($row) use ($masterByKode) {
+        $masterRows = KernelMasterData::query()
+            ->where('is_active', true)
+            ->whereIn('kode', $kodes)
+            ->when($offices->isNotEmpty(), fn($q) => $q->whereIn('office', $offices))
+            ->get(['office', 'kode', 'nama_sample']);
+
+        $masterByOfficeAndKode = $masterRows->keyBy(
+            fn($row) => strtoupper(trim((string) $row->office)) . '|' . (string) $row->kode
+        );
+
+        $masterFallbackByKode = $masterRows->groupBy('kode')
+            ->map(fn($group) => $group->first());
+
+        return collect($rows)->map(function ($row) use ($masterByOfficeAndKode, $masterFallbackByKode) {
             $createdAt = $row->created_at instanceof Carbon
                 ? $row->created_at->copy()
                 : Carbon::parse((string) $row->created_at);
@@ -3247,7 +3285,9 @@ class KernelController extends Controller
                 : $createdAt->format('H:i');
 
             $kode = (string) ($row->kode ?? '');
-            $master = $masterByKode->get($kode);
+            $officeCode = strtoupper(trim((string) ($row->office ?? '')));
+            $master = $masterByOfficeAndKode->get($officeCode . '|' . $kode)
+                ?? $masterFallbackByKode->get($kode);
 
             return [
                 'tanggal_input' => $createdAt->format('d/m/Y H:i:s'),
@@ -3274,12 +3314,31 @@ class KernelController extends Controller
             ->unique()
             ->values();
 
-        $masterByKode = KernelMasterData::whereIn('kode', $kodes)
-            ->get(['kode', 'nama_sample', 'limit_operator', 'limit_value'])
-            ->keyBy('kode');
+        $offices = collect($rows)
+            ->pluck('office')
+            ->filter()
+            ->map(fn($office) => strtoupper(trim((string) $office)))
+            ->unique()
+            ->values();
 
-        return collect($rows)->map(function ($calc) use ($masterByKode) {
-            $master = $masterByKode->get($calc->kode);
+        $masterRows = KernelMasterData::query()
+            ->where('is_active', true)
+            ->whereIn('kode', $kodes)
+            ->when($offices->isNotEmpty(), fn($q) => $q->whereIn('office', $offices))
+            ->get(['office', 'kode', 'nama_sample', 'limit_operator', 'limit_value']);
+
+        $masterByOfficeAndKode = $masterRows->keyBy(
+            fn($row) => strtoupper(trim((string) $row->office)) . '|' . (string) $row->kode
+        );
+
+        $masterFallbackByKode = $masterRows->groupBy('kode')
+            ->map(fn($group) => $group->first());
+
+        return collect($rows)->map(function ($calc) use ($masterByOfficeAndKode, $masterFallbackByKode) {
+            $kode = (string) ($calc->kode ?? '');
+            $officeCode = strtoupper(trim((string) ($calc->office ?? '')));
+            $master = $masterByOfficeAndKode->get($officeCode . '|' . $kode)
+                ?? $masterFallbackByKode->get($kode);
             $lossPercent = (float) ($calc->kernel_losses ?? 0) * 100;
             $createdAt = $calc->created_at instanceof Carbon
                 ? $calc->created_at->copy()
@@ -3312,7 +3371,9 @@ class KernelController extends Controller
 
     private function buildKernelLossesProofData(KernelCalculation $calc, string $message): array
     {
-        $master = KernelMasterData::where('kode', $calc->kode)->first();
+        $master = $this->activeKernelMasterDataQuery($calc->office)
+            ->where('kode', $calc->kode)
+            ->first();
         $lossPercent = (float) ($calc->kernel_losses ?? 0) * 100;
 
         $proof = $this->buildKernelProofBase('kernel', $message, $calc, $master);
@@ -3342,7 +3403,9 @@ class KernelController extends Controller
 
     private function buildDirtMoistProofData(KernelDirtMoistCalculation $calc, string $message): array
     {
-        $master = KernelMasterData::where('kode', $calc->kode)->first();
+        $master = $this->activeKernelMasterDataQuery($calc->office)
+            ->where('kode', $calc->kode)
+            ->first();
         $limitMap = $this->getDirtMoistLimitMap($calc->office);
         $limitConfig = $limitMap[$calc->kode] ?? ['dirty' => null, 'moist' => null];
 
@@ -3378,7 +3441,9 @@ class KernelController extends Controller
 
     private function buildQwtProofData(KernelQwt $row, string $message): array
     {
-        $master = KernelMasterData::where('kode', $row->kode)->first();
+        $master = $this->activeKernelMasterDataQuery($row->office)
+            ->where('kode', $row->kode)
+            ->first();
 
         $proof = $this->buildKernelProofBase('qwt', $message, $row, $master);
         $proof['metrics'] = [
@@ -3419,7 +3484,9 @@ class KernelController extends Controller
 
     private function buildRippleMillProofData(KernelRippleMill $row, string $message): array
     {
-        $master = KernelMasterData::where('kode', $row->kode)->first();
+        $master = $this->activeKernelMasterDataQuery($row->office)
+            ->where('kode', $row->kode)
+            ->first();
 
         $proof = $this->buildKernelProofBase('ripple_mill', $message, $row, $master);
         $proof['metrics'] = [
@@ -3444,7 +3511,9 @@ class KernelController extends Controller
 
     private function buildDestonerProofData(KernelDestoner $row, string $message): array
     {
-        $master = KernelMasterData::where('kode', $row->kode)->first();
+        $master = $this->activeKernelMasterDataQuery($row->office)
+            ->where('kode', $row->kode)
+            ->first();
 
         $proof = $this->buildKernelProofBase('destoner', $message, $row, $master);
         $proof['metrics'] = [
@@ -3624,8 +3693,8 @@ class KernelController extends Controller
             ->paginate(25, ['*'], 'destoner_page');
         $destonerRows->appends($request->except('destoner_page'));
 
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
-        $kodeOptions = KernelMasterData::getKodeDropdown();
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
+        $kodeOptions = KernelMasterData::getKodeDropdown($officeFilter);
 
         return view('kernel.laporan', compact(
             'calculations',
@@ -3670,7 +3739,7 @@ class KernelController extends Controller
             'office' => $officeFilter,
         ]);
 
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
 
         $filename = 'Laporan_Kernel_Losses_' . $startDate . '_to_' . $endDate . '.xlsx';
 
@@ -3881,8 +3950,8 @@ class KernelController extends Controller
 
         $totalRecords = (clone $query)->count();
         $rows = $query->paginate(25)->appends($request->except('page'));
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
-        $kodeOptions = KernelMasterData::getKodeDropdown();
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
+        $kodeOptions = KernelMasterData::getKodeDropdown($officeFilter);
 
         $avgDirty = KernelDirtMoistCalculation::whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
@@ -3932,7 +4001,7 @@ class KernelController extends Controller
             'office' => $officeFilter,
         ]);
 
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
         $filename = 'laporan-dirt-moist-' . $startDate . '-sd-' . $endDate . '.xlsx';
 
         return Excel::download(
@@ -3960,8 +4029,8 @@ class KernelController extends Controller
 
         $totalRecords = (clone $query)->count();
         $rows = $query->paginate(25)->appends($request->except('page'));
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
-        $kodeOptions = KernelMasterData::getKodeDropdown();
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
+        $kodeOptions = KernelMasterData::getKodeDropdown($officeFilter);
 
         $avgBnTn = KernelQwt::whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
@@ -4011,7 +4080,7 @@ class KernelController extends Controller
             'office' => $officeFilter,
         ]);
 
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
         $filename = 'laporan-qwt-fibre-press-' . $startDate . '-sd-' . $endDate . '.xlsx';
 
         return Excel::download(
@@ -4039,8 +4108,8 @@ class KernelController extends Controller
 
         $totalRecords = (clone $query)->count();
         $rows = $query->paginate(25)->appends($request->except('page'));
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
-        $kodeOptions = KernelMasterData::getKodeDropdown();
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
+        $kodeOptions = KernelMasterData::getKodeDropdown($officeFilter);
 
         $avgEfficiency = KernelRippleMill::whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
@@ -4085,7 +4154,7 @@ class KernelController extends Controller
             'office' => $officeFilter,
         ]);
 
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
         $filename = 'laporan-ripple-mill-' . $startDate . '-sd-' . $endDate . '.xlsx';
 
         return Excel::download(
@@ -4113,8 +4182,8 @@ class KernelController extends Controller
 
         $totalRecords = (clone $query)->count();
         $rows = $query->paginate(25)->appends($request->except('page'));
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
-        $kodeOptions = KernelMasterData::getKodeDropdown();
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
+        $kodeOptions = KernelMasterData::getKodeDropdown($officeFilter);
 
         $avgLossKernelTbs = KernelDestoner::whereBetween('created_at', $range)
             ->when($kode, fn($q) => $q->where('kode', $kode))
@@ -4159,7 +4228,7 @@ class KernelController extends Controller
             'office' => $officeFilter,
         ]);
 
-        $masterData = KernelMasterData::where('is_active', true)->get()->keyBy('kode');
+        $masterData = $this->activeKernelMasterDataQuery($officeFilter)->get()->keyBy('kode');
         $filename = 'laporan-destoner-' . $startDate . '-sd-' . $endDate . '.xlsx';
 
         return Excel::download(

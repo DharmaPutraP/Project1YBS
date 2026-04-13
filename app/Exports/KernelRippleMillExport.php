@@ -24,11 +24,11 @@ class KernelRippleMillExport implements FromCollection, WithHeadings, WithMappin
 
     public function __construct($data, $masterData, string $startDate, string $endDate, ?string $kode = null)
     {
-        $this->data       = $data;
+        $this->data = $data;
         $this->masterData = $masterData;
-        $this->startDate  = $startDate;
-        $this->endDate    = $endDate;
-        $this->kode       = $kode;
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+        $this->kode = $kode;
     }
 
     public function collection(): Collection
@@ -40,12 +40,23 @@ class KernelRippleMillExport implements FromCollection, WithHeadings, WithMappin
     public function headings(): array
     {
         return [
-            'NO', 'BULAN', 'TANGGAL', 'JAM', 'KODE', 'NAMA SAMPLE',
-            'INPUTED BY', 'JENIS', 'OPERATOR', 'SAMPEL BOY',
+            'NO',
+            'BULAN',
+            'TANGGAL',
+            'JAM',
+            'KODE',
+            'NAMA SAMPLE',
+            'INPUTED BY',
+            'JENIS',
+            'OPERATOR',
+            'SAMPEL BOY',
             'BERAT SAMPEL (g)',
-            'BERAT NUT UTUH (g)', 'BERAT NUT PECAH (g)',
-            'SAMPLE NUT UTUH (%)', 'SAMPLE NUT PECAH (%)',
-            'EFFICIENCY (%)', 'LIMIT EFFICIENCY',
+            'BERAT NUT UTUH (g)',
+            'BERAT NUT PECAH (g)',
+            'SAMPLE NUT UTUH (%)',
+            'SAMPLE NUT PECAH (%)',
+            'EFFICIENCY (%)',
+            'LIMIT EFFICIENCY',
         ];
     }
 
@@ -56,15 +67,21 @@ class KernelRippleMillExport implements FromCollection, WithHeadings, WithMappin
 
         $master = $this->masterData[$row->kode] ?? null;
 
-        $effVal  = (float) ($row->efficiency ?? 0);
-        $limOp   = $row->limit_operator ?? null;
-        $limV    = $row->limit_value !== null ? (float) $row->limit_value : null;
-        $effLimit = $limV !== null ? (($limOp === 'le') ? '<= ' : '> ') . number_format($limV, 4) . '%' : '-';
+        $effVal = (float) ($row->efficiency ?? 0);
+        $limOp = $row->limit_operator ?? null;
+        $limV = $row->limit_value !== null ? (float) $row->limit_value : null;
+        $effSymbol = match ($limOp) {
+            'lt' => '< ',
+            'ge' => '>= ',
+            'gt' => '> ',
+            default => '<= ',
+        };
+        $effLimit = $limV !== null ? $effSymbol . number_format($limV, 4) . '%' : '-';
 
-        $beratUtuh  = (float) ($row->berat_nut_utuh  ?? 0);
+        $beratUtuh = (float) ($row->berat_nut_utuh ?? 0);
         $beratPecah = (float) ($row->berat_nut_pecah ?? 0);
         $beratSampel = (float) ($row->berat_sampel ?? 0);
-        $pctUtuh  = $beratSampel > 0 ? round($beratUtuh  / $beratSampel * 100, 2) : 0;
+        $pctUtuh = $beratSampel > 0 ? round($beratUtuh / $beratSampel * 100, 2) : 0;
         $pctPecah = $beratSampel > 0 ? round($beratPecah / $beratSampel * 100, 2) : 0;
 
         return [
@@ -129,14 +146,14 @@ class KernelRippleMillExport implements FromCollection, WithHeadings, WithMappin
 
         // Efficiency = column P (16), limit = Q (17)
         for ($r = 5; $r <= $lastRow; $r++) {
-            $eff    = $sheet->getCell('P' . $r)->getValue();
+            $eff = $sheet->getCell('P' . $r)->getValue();
             $effLim = $sheet->getCell('Q' . $r)->getValue();
             if (is_numeric($eff) && $effLim !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $effLim, $m);
                 if (count($m) === 3) {
-                    $op  = trim($m[1]);
+                    $op = trim($m[1]);
                     $lim = (float) $m[2];
-                    $ok  = ($op === '<=' || $op === '=<') ? $eff <= $lim : $eff > $lim;
+                    $ok = ($op === '<=' || $op === '=<') ? $eff <= $lim : $eff > $lim;
                     $sheet->getStyle('P' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],

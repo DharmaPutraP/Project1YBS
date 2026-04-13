@@ -6,6 +6,7 @@ use App\Exports\PerformanceSampelBoyExport;
 use App\Models\KernelCalculation;
 use App\Models\KernelDirtMoistCalculation;
 use App\Models\KernelDestoner;
+use App\Models\KernelMasterData;
 use App\Models\KernelMesin;
 use App\Models\KernelProsses;
 use App\Models\KernelQwt;
@@ -2114,11 +2115,74 @@ class ProcessController extends Controller
     {
         $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
 
+        $machineGroupsFromMaster = KernelMasterData::query()
+            ->where('is_active', true)
+            ->where('office', $officeCode)
+            ->orderBy('kode')
+            ->get(['nama_sample'])
+            ->groupBy(function ($row): string {
+                return $this->resolveMachineGroupFromSampleName((string) $row->nama_sample);
+            })
+            ->map(function ($rows): array {
+                return $rows
+                    ->pluck('nama_sample')
+                    ->map(fn($name) => strtoupper(trim((string) $name)))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+            })
+            ->filter(fn(array $rows): bool => !empty($rows))
+            ->toArray();
+
+        if (!empty($machineGroupsFromMaster)) {
+            return $machineGroupsFromMaster;
+        }
+
         return match ($officeCode) {
             'SUN' => self::MACHINE_GROUPS_SUN,
             'SJN' => self::MACHINE_GROUPS_SJN,
             default => self::MACHINE_GROUPS_YBS,
         };
+    }
+
+    private function resolveMachineGroupFromSampleName(string $sampleName): string
+    {
+        $name = strtoupper(trim($sampleName));
+
+        if (str_starts_with($name, 'FIBRE CYCLONE')) {
+            return 'FIBRE CYCLONE';
+        }
+
+        if (str_starts_with($name, 'LTDS')) {
+            return 'LTDS';
+        }
+
+        if (str_starts_with($name, 'CLAYBATH WET SHELL')) {
+            return 'CLAYBATH WET SHELL';
+        }
+
+        if (str_starts_with($name, 'INLET KERNEL SILO')) {
+            return 'INLET KERNEL SILO';
+        }
+
+        if (str_starts_with($name, 'OUTLET KERNEL SILO')) {
+            return 'OUTLET KERNEL SILO TO BUNKER';
+        }
+
+        if (str_starts_with($name, 'PRESS')) {
+            return 'PRESS';
+        }
+
+        if (str_starts_with($name, 'RIPPLE MILL')) {
+            return 'RIPPLE MILL';
+        }
+
+        if (str_starts_with($name, 'DESTONER')) {
+            return 'DESTONER';
+        }
+
+        return 'LAINNYA';
     }
 
     private function extractOtherConditionsPayload(Request $request, ?string $inputTeam = null): array

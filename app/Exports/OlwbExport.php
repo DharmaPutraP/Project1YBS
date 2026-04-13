@@ -151,16 +151,17 @@ class OlwbExport implements FromCollection, WithHeadings, WithStyles, WithColumn
                 if (isset($kodeData[$kode])) {
                     $olwb = $kodeData[$kode]['olwb'];
                     $limit = $kodeData[$kode]['limitOLWB'];
+                    $operator = $kodeData[$kode]['limit_operator'] ?? 'le';
 
                     if ($olwb !== null && $limit > 0) {
                         $cellAddress = $this->getColumnLetter($colNum) . $rowNum;
 
-                        // Determine if value is good based on kode
-                        if ($kode == 'COT IN') {
-                            $isGood = $olwb > $limit;
-                        } else {
-                            $isGood = $olwb <= $limit;
-                        }
+                        $isGood = match ($operator) {
+                            'lt' => $olwb < $limit,
+                            'ge' => $olwb >= $limit,
+                            'gt' => $olwb > $limit,
+                            default => $olwb <= $limit,
+                        };
 
                         if ($isGood) {
                             // Green: Good

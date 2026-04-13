@@ -88,10 +88,13 @@ class OilService
      * @return array Hasil perhitungan
      * @throws Exception
      */
-    public function calculate(array $data, string $kode): array
+    public function calculate(array $data, string $kode, ?string $office = null): array
     {
         // Ambil master data dari kode
+        $officeCode = strtoupper(trim((string) $office));
+
         $masterData = OilMasterData::where('kode', $kode)
+            ->when($officeCode !== '' && $officeCode !== 'ALL', fn($q) => $q->where('office', $officeCode))
             ->where('is_active', true)
             ->first();
 
@@ -115,6 +118,7 @@ class OilService
     {
         // VLOOKUP equivalent: ambil data dari master berdasarkan kode
         $masterData = OilMasterData::where('kode', $data['kode'])
+            ->where('office', $userOffice)
             ->where('is_active', true)
             ->first();
 
@@ -207,6 +211,7 @@ class OilService
 
         // FASE 3: Ambil master data dari kode
         $masterData = OilMasterData::where('kode', $kode)
+            ->where('office', $userOffice)
             ->where('is_active', true)
             ->first();
 
@@ -395,6 +400,7 @@ class OilService
             'limitOLWB' => $limitOLWB,
             'limitOLDB' => $limitOLDB,
             'limitOL' => $limitOL,
+            'limit_operator' => $masterData->limit_operator,
             'persen' => $persen,
             'persen4' => $persen4,
         ];

@@ -596,6 +596,28 @@
                 let errorMessages = [];
                 const phase = getPhase();
 
+                const clearDynamicRowVisualErrors = () => {
+                    document.querySelectorAll('.mode1-row, .mode2-row').forEach((rowEl) => {
+                        rowEl.classList.remove('ring-2', 'ring-red-200', 'border-red-400');
+                        rowEl.querySelectorAll('input, select, textarea').forEach((el) => {
+                            el.classList.remove('border-red-400', 'bg-red-50');
+                        });
+                    });
+                };
+
+                const markDynamicRowError = (rowEl, fields = []) => {
+                    rowEl.classList.add('ring-2', 'ring-red-200', 'border-red-400');
+
+                    fields.forEach((field) => {
+                        const input = rowEl.querySelector(`[name$="[${field}]"]`);
+                        if (input) {
+                            input.classList.add('border-red-400', 'bg-red-50');
+                        }
+                    });
+                };
+
+                clearDynamicRowVisualErrors();
+
                 // Mode 1 validation
                 // HANYA cek field yang user bisa edit: kode dan operator
                 // Jenis dan Sampel Boy diabaikan karena punya default value
@@ -665,6 +687,38 @@
                     });
                 }
 
+                // Mode 1 tambahan validation (per-row)
+                const mode1Rows = document.querySelectorAll('.mode1-row');
+                mode1Rows.forEach((rowEl, idx) => {
+                    const rowNo = idx + 1;
+
+                    const getVal = (field) => {
+                        const input = rowEl.querySelector(`[name$="[${field}]"]`);
+                        return input ? String(input.value || '').trim() : '';
+                    };
+
+                    const kode = getVal('kode');
+                    const operator = getVal('operator');
+
+                    if (kode === '' && operator === '') {
+                        return;
+                    }
+
+                    const missingFields = [];
+                    if (kode === '') {
+                        missingFields.push('kode');
+                    }
+                    if (operator === '') {
+                        missingFields.push('operator');
+                    }
+
+                    if (missingFields.length > 0) {
+                        markDynamicRowError(rowEl, missingFields);
+                        errorMessages.push(`Mode Non-Angka Tambahan #${rowNo}: Kode dan Operator wajib diisi berpasangan`);
+                        hasError = true;
+                    }
+                });
+
                 // Mode 2 tambahan validation (per-row, phase-based)
                 const mode2Rows = document.querySelectorAll('.mode2-row');
                 mode2Rows.forEach((rowEl, idx) => {
@@ -692,6 +746,7 @@
                     }
 
                     if (kode === '') {
+                        markDynamicRowError(rowEl, ['kode_mode2']);
                         errorMessages.push(`Mode Angka Tambahan #${rowNo}: Kode wajib diisi jika ada input angka`);
                         hasError = true;
                         return;
@@ -700,17 +755,25 @@
                     const rowPhase = hasFinal ? 'complete' : (hasStep2 ? 'final' : 'initial');
 
                     if (rowPhase === 'initial') {
-                        if (cawanKosong === '' || beratBasah === '' || labuKosong === '') {
+                        const missingFields = [];
+                        if (cawanKosong === '') missingFields.push('cawan_kosong');
+                        if (beratBasah === '') missingFields.push('berat_basah');
+                        if (labuKosong === '') missingFields.push('labu_kosong');
+
+                        if (missingFields.length > 0) {
+                            markDynamicRowError(rowEl, ['kode_mode2', ...missingFields]);
                             errorMessages.push(`Mode Angka Tambahan #${rowNo}: Tahap 1 harus lengkap (Cawan Kosong, Berat Sampel Basah, Labu Kosong)`);
                             hasError = true;
                         }
                     } else if (rowPhase === 'final') {
                         if (cawanSampleKering === '') {
+                            markDynamicRowError(rowEl, ['kode_mode2', 'cawan_sample_kering']);
                             errorMessages.push(`Mode Angka Tambahan #${rowNo}: Tahap 2 membutuhkan Cawan + Sample Kering`);
                             hasError = true;
                         }
                     } else {
                         if (oilLabu === '') {
+                            markDynamicRowError(rowEl, ['kode_mode2', 'oil_labu']);
                             errorMessages.push(`Mode Angka Tambahan #${rowNo}: Tahap Akhir membutuhkan Oil + Labu`);
                             hasError = true;
                         }
@@ -745,9 +808,14 @@
                     // Tambahkan error di atas form
                     $('#labForm').before(errorHtml);
                     
-                    // Scroll ke atas untuk melihat error
+                    // Scroll prioritas ke row error pertama, fallback ke alert error atas
+                    const firstRowError = document.querySelector('.mode1-row.ring-red-200, .mode2-row.ring-red-200');
+                    const targetTop = firstRowError
+                        ? (firstRowError.getBoundingClientRect().top + window.pageYOffset - 120)
+                        : ($('#validation-error').offset().top - 100);
+
                     $('html, body').animate({
-                        scrollTop: $('#validation-error').offset().top - 100
+                        scrollTop: targetTop
                     }, 300);
 
                     return false;
@@ -761,21 +829,81 @@
         let mode1RowIndex = 0;
         let mode2RowIndex = 0;
 
+        const oldMode1Rows = @json(old('mode1_rows', []));
+        const oldMode2Rows = @json(old('mode2_rows', []));
+
         function bindDynamicRows() {
             const mode1Container = document.getElementById('mode1RowsContainer');
             const mode2Container = document.getElementById('mode2RowsContainer');
             const mode1Template = document.getElementById('mode1RowTemplate');
             const mode2Template = document.getElementById('mode2RowTemplate');
 
-            document.getElementById('addMode1Row')?.addEventListener('click', function () {
-                const html = mode1Template.innerHTML.replaceAll('__INDEX__', String(mode1RowIndex++));
+            function addMode1Row(rowData = {}) {
+                const index = mode1RowIndex++;
+                const html = mode1Template.innerHTML.replaceAll('__INDEX__', String(index));
                 mode1Container.insertAdjacentHTML('beforeend', html);
+
+                const rowEl = mode1Container.lastElementChild;
+                if (!rowEl) return;
+
+                const kodeEl = rowEl.querySelector(`[name="mode1_rows[${index}][kode]"]`);
+                const jenisEl = rowEl.querySelector(`[name="mode1_rows[${index}][jenis]"]`);
+                const operatorEl = rowEl.querySelector(`[name="mode1_rows[${index}][operator]"]`);
+
+                if (kodeEl && rowData.kode !== undefined && rowData.kode !== null) {
+                    kodeEl.value = String(rowData.kode);
+                }
+                if (jenisEl && rowData.jenis !== undefined && rowData.jenis !== null) {
+                    jenisEl.value = String(rowData.jenis);
+                }
+                if (operatorEl && rowData.operator !== undefined && rowData.operator !== null) {
+                    operatorEl.value = String(rowData.operator);
+                }
+            }
+
+            function addMode2Row(rowData = {}) {
+                const index = mode2RowIndex++;
+                const html = mode2Template.innerHTML.replaceAll('__INDEX__', String(index));
+                mode2Container.insertAdjacentHTML('beforeend', html);
+
+                const rowEl = mode2Container.lastElementChild;
+                if (!rowEl) return;
+
+                const fields = [
+                    'kode_mode2',
+                    'cawan_kosong',
+                    'berat_basah',
+                    'cawan_sample_kering',
+                    'labu_kosong',
+                    'oil_labu',
+                ];
+
+                fields.forEach((field) => {
+                    const input = rowEl.querySelector(`[name="mode2_rows[${index}][${field}]"]`);
+                    if (!input) return;
+
+                    const value = rowData[field];
+                    if (value !== undefined && value !== null) {
+                        input.value = String(value);
+                    }
+                });
+            }
+
+            document.getElementById('addMode1Row')?.addEventListener('click', function () {
+                addMode1Row();
             });
 
             document.getElementById('addMode2Row')?.addEventListener('click', function () {
-                const html = mode2Template.innerHTML.replaceAll('__INDEX__', String(mode2RowIndex++));
-                mode2Container.insertAdjacentHTML('beforeend', html);
+                addMode2Row();
             });
+
+            if (Array.isArray(oldMode1Rows) && oldMode1Rows.length > 0) {
+                oldMode1Rows.forEach((row) => addMode1Row(row || {}));
+            }
+
+            if (Array.isArray(oldMode2Rows) && oldMode2Rows.length > 0) {
+                oldMode2Rows.forEach((row) => addMode2Row(row || {}));
+            }
 
             document.addEventListener('click', function (event) {
                 if (event.target.classList.contains('remove-mode1-row')) {

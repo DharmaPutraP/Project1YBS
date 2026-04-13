@@ -177,25 +177,45 @@
                             $moistValue = (float) ($row->moist_percent ?? 0);
                             $dirtyLimitOperator = $row->dirty_limit_operator ?? 'le';
                             $dirtyLimitValue = $row->dirty_limit_value !== null ? (float) $row->dirty_limit_value : null;
-                            $dirtyOk = $dirtyLimitValue !== null ? ($dirtyLimitOperator === 'le' ? $dirtyValue <= $dirtyLimitValue : $dirtyValue > $dirtyLimitValue) : null;
+                            $dirtyOk = $dirtyLimitValue !== null
+                                ? match ($dirtyLimitOperator) {
+                                    'lt' => $dirtyValue < $dirtyLimitValue,
+                                    'ge' => $dirtyValue >= $dirtyLimitValue,
+                                    'gt' => $dirtyValue > $dirtyLimitValue,
+                                    default => $dirtyValue <= $dirtyLimitValue,
+                                }
+                                : null;
                             $moistLimitOperator = $row->moist_limit_operator ?? 'le';
                             $moistLimitValue = $row->moist_limit_value !== null ? (float) $row->moist_limit_value : null;
-                            $moistOk = $moistLimitValue !== null ? ($moistLimitOperator === 'le' ? $moistValue <= $moistLimitValue : $moistValue > $moistLimitValue) : null;
+                            $moistOk = $moistLimitValue !== null
+                                ? match ($moistLimitOperator) {
+                                    'lt' => $moistValue < $moistLimitValue,
+                                    'ge' => $moistValue >= $moistLimitValue,
+                                    'gt' => $moistValue > $moistLimitValue,
+                                    default => $moistValue <= $moistLimitValue,
+                                }
+                                : null;
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="sticky left-0 z-[20] bg-white border px-3 py-2 text-center">
-                                {{ ($rows->currentPage() - 1) * $rows->perPage() + $loop->iteration }}</td>
+                                {{ ($rows->currentPage() - 1) * $rows->perPage() + $loop->iteration }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[50px] z-[10] bg-white whitespace-nowrap">
-                                {{ $productionDate->format('F Y') }}</td>
+                                {{ $productionDate->format('F Y') }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[160px] z-[10] bg-white whitespace-nowrap">
-                                {{ $productionDate->format('d-m-Y') }}</td>
+                                {{ $productionDate->format('d-m-Y') }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[270px] z-[10] bg-white whitespace-nowrap">
-                                {{ $displayAt->format('H:i:s') }}</td>
+                                {{ $displayAt->format('H:i:s') }}
+                            </td>
                             <td
                                 class="border px-3 py-2 lg:sticky lg:left-[360px] z-[10] bg-white font-semibold text-blue-800 whitespace-nowrap">
-                                {{ $row->kode }}</td>
+                                {{ $row->kode }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[450px] z-[10] bg-white whitespace-nowrap">
-                                {{ $master->nama_sample ?? '-' }}</td>
+                                {{ $master->nama_sample ?? '-' }}
+                            </td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ optional($row->user)->name ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap"><span
                                     class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{{ $row->jenis ?? '-' }}</span>
@@ -203,7 +223,8 @@
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $row->operator ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $row->sampel_boy ?? '-' }}</td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_sampel ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->berat_sampel ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->berat_dirty ?? 0), 4) }}
                             </td>
                             <td class="border px-3 py-2 text-center bg-purple-50">
@@ -215,7 +236,8 @@
                             <td
                                 class="border px-3 py-2 text-center bg-orange-50 text-orange-800 font-medium whitespace-nowrap">
                                 @if($dirtyLimitValue !== null)
-                                    {{ $dirtyLimitOperator === 'le' ? '<=' : '>' }} {{ number_format($dirtyLimitValue, 4) }}%
+                                    {{ match ($dirtyLimitOperator) { 'lt' => '<', 'ge' => '>=', 'gt' => '>', default => '<='} }}
+                                    {{ number_format($dirtyLimitValue, 4) }}%
                                 @else
                                     -
                                 @endif
@@ -229,11 +251,10 @@
                             <td
                                 class="border px-3 py-2 text-center bg-orange-50 text-orange-800 font-medium whitespace-nowrap">
                                 @if($moistLimitValue !== null)
-                                    {{ $moistLimitOperator === 'le' ? '<=' : '>' }} {{ number_format($moistLimitValue, 4) }}%
+                                    {{ match ($moistLimitOperator) { 'lt' => '<', 'ge' => '>=', 'gt' => '>', default => '<='} }}
+                                    {{ number_format($moistLimitValue, 4) }}%
                                 @else
-                                    <= 6.0000%
-                                @endif
-                            </td>
+                                <= 6.0000% @endif </td>
                         </tr>
                     @empty
                         <tr>

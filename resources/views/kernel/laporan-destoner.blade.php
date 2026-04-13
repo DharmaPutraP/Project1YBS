@@ -174,24 +174,35 @@
                             $lossTbs = (float) ($row->loss_kernel_tbs ?? 0);
                             $isGood = null;
                             if ($limitOp && $limitVal !== null) {
-                                $isGood = $limitOp === 'gt' ? $lossTbs > $limitVal : $lossTbs <= $limitVal;
+                                $isGood = match ($limitOp) {
+                                    'lt' => $lossTbs < $limitVal,
+                                    'ge' => $lossTbs >= $limitVal,
+                                    'gt' => $lossTbs > $limitVal,
+                                    default => $lossTbs <= $limitVal,
+                                };
                             }
                             $limitBadge = $isGood === null ? 'bg-gray-100 text-gray-700' : ($isGood ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800');
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="sticky left-0 z-[20] bg-white border px-3 py-2 text-center">
-                                {{ ($rows->currentPage() - 1) * $rows->perPage() + $loop->iteration }}</td>
+                                {{ ($rows->currentPage() - 1) * $rows->perPage() + $loop->iteration }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[50px] z-[10] bg-white whitespace-nowrap">
-                                {{ $productionDate->format('F Y') }}</td>
+                                {{ $productionDate->format('F Y') }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[160px] z-[10] bg-white whitespace-nowrap">
-                                {{ $productionDate->format('d-m-Y') }}</td>
+                                {{ $productionDate->format('d-m-Y') }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[270px] z-[10] bg-white whitespace-nowrap">
-                                {{ $displayAt->format('H:i:s') }}</td>
+                                {{ $displayAt->format('H:i:s') }}
+                            </td>
                             <td
                                 class="border px-3 py-2 lg:sticky lg:left-[360px] z-[10] bg-white font-semibold text-blue-800 whitespace-nowrap">
-                                {{ $row->kode }}</td>
+                                {{ $row->kode }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[450px] z-[10] bg-white whitespace-nowrap">
-                                {{ $master->nama_sample ?? '-' }}</td>
+                                {{ $master->nama_sample ?? '-' }}
+                            </td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ optional($row->user)->name ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap"><span
                                     class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{{ $row->jenis ?? '-' }}</span>
@@ -199,20 +210,25 @@
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $row->operator ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $row->sampel_boy ?? '-' }}</td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_sampel ?? 0), 2) }}</td>
+                                {{ number_format((float) ($row->berat_sampel ?? 0), 2) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->konversi_kg ?? 0), 2) }}
                             </td>
                             <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->time ?? 0), 2) }}</td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->rasio_jam_kg ?? 0), 2) }}</td>
+                                {{ number_format((float) ($row->rasio_jam_kg ?? 0), 2) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->berat_nut ?? 0), 2) }}
                             </td>
                             <td class="border px-3 py-2 text-center bg-purple-50">
-                                {{ number_format((float) ($row->persen_nut ?? 0), 2) }}</td>
+                                {{ number_format((float) ($row->persen_nut ?? 0), 2) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_kernel ?? 0), 2) }}</td>
+                                {{ number_format((float) ($row->berat_kernel ?? 0), 2) }}
+                            </td>
                             <td class="border px-3 py-2 text-center bg-purple-50">
-                                {{ number_format((float) ($row->persen_kernel ?? 0), 2) }}</td>
+                                {{ number_format((float) ($row->persen_kernel ?? 0), 2) }}
+                            </td>
                             <td class="border px-3 py-2 text-center bg-red-50">
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
@@ -220,7 +236,8 @@
                                 </span>
                             </td>
                             <td class="border px-3 py-2 text-right bg-orange-50">
-                                {{ number_format((float) ($row->loss_kernel_jam ?? 0), 2) }}</td>
+                                {{ number_format((float) ($row->loss_kernel_jam ?? 0), 2) }}
+                            </td>
                             <td class="border px-3 py-2 text-center bg-orange-50">
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $limitBadge }}">
@@ -230,7 +247,8 @@
                             <td
                                 class="border px-3 py-2 text-center bg-orange-50 text-orange-800 font-medium whitespace-nowrap">
                                 @if($limitOp && $limitVal !== null)
-                                    {{ $limitOp === 'gt' ? '>' : '<=' }} {{ $limitVal }}
+                                    {{ match ($limitOp) { 'lt' => '<', 'ge' => '>=', 'gt' => '>', default => '<='} }}
+                                    {{ $limitVal }}
                                 @else
                                     -
                                 @endif

@@ -15,8 +15,10 @@ return new class extends Migration {
         Schema::create('oil_master_data', function (Blueprint $table) {
             $table->id();
 
+            $table->enum('office', ['YBS', 'SUN', 'SJN'])->default('YBS')->comment('Office/PT');
+
             // ── Identifikasi Sample ──────────────────────────────────────────
-            $table->string('kode')->unique()->comment('Kode sample (untuk dropdown & vlookup)');
+            $table->string('kode')->comment('Kode sample (untuk dropdown & vlookup)');
             $table->string('column_name')->comment('Nama kolom/kategori');
             $table->string('jenis')->nullable()->comment('Jenis sample');
 
@@ -29,6 +31,7 @@ return new class extends Migration {
             $table->decimal('limitOLWB', 8, 2)->default(0)->nullable()->comment('Limit OLWB');
             $table->decimal('limitOLDB', 8, 2)->default(0)->nullable()->comment('Limit OLDB');
             $table->decimal('limitOL', 8, 2)->default(0)->nullable()->comment('Limit Oil Losses');
+            $table->enum('limit_operator', ['le', 'lt', 'ge', 'gt'])->default('le')->comment('Operator limit OLWB (le: <=, lt: <, ge: >=, gt: >)');
 
             // ── Additional Fields ────────────────────────────────────────────
             $table->text('description')->nullable()->comment('Deskripsi tambahan');
@@ -37,6 +40,9 @@ return new class extends Migration {
             $table->timestamps();
 
             // ── Indexes ──────────────────────────────────────────────────────
+            $table->unique(['office', 'kode'], 'uq_oil_master_data_office_kode');
+            $table->index('office', 'idx_oil_master_data_office');
+            $table->index(['office', 'kode'], 'idx_oil_master_data_office_kode');
             $table->index('kode', 'idx_oil_master_data_kode');
             $table->index('is_active', 'idx_oil_master_data_is_active');
         });

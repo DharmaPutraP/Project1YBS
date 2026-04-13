@@ -38,6 +38,7 @@ class OilCalculation extends Model
         'limitOLWB',
         'limitOLDB',
         'limitOL',
+        'limit_operator',
         'persen',
         'persen4',
     ];

@@ -24,11 +24,11 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
 
     public function __construct($data, $masterData, string $startDate, string $endDate, ?string $kode = null)
     {
-        $this->data       = $data;
+        $this->data = $data;
         $this->masterData = $masterData;
-        $this->startDate  = $startDate;
-        $this->endDate    = $endDate;
-        $this->kode       = $kode;
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+        $this->kode = $kode;
     }
 
     public function collection(): Collection
@@ -40,15 +40,28 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
     public function headings(): array
     {
         return [
-            'NO', 'BULAN', 'TANGGAL', 'JAM', 'KODE', 'NAMA SAMPLE',
-            'INPUTED BY', 'JENIS', 'OPERATOR', 'SAMPEL BOY',
-            'BERAT SAMPEL (g)', 'KONVERSI KG', 'TIME',
+            'NO',
+            'BULAN',
+            'TANGGAL',
+            'JAM',
+            'KODE',
+            'NAMA SAMPLE',
+            'INPUTED BY',
+            'JENIS',
+            'OPERATOR',
+            'SAMPEL BOY',
+            'BERAT SAMPEL (g)',
+            'KONVERSI KG',
+            'TIME',
             'RASIO JAM/KG',
-            'BERAT NUT (g)', 'PERSEN NUT (%)',
-            'BERAT KERNEL (g)', 'PERSEN KERNEL (%)',
+            'BERAT NUT (g)',
+            'PERSEN NUT (%)',
+            'BERAT KERNEL (g)',
+            'PERSEN KERNEL (%)',
             'TOTAL LOSSES KERNEL',
             'LOSS KERNEL/JAM',
-            'LOSS KERNEL/TBS (%)', 'LIMIT',
+            'LOSS KERNEL/TBS (%)',
+            'LIMIT',
         ];
     }
 
@@ -60,9 +73,15 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
         $master = $this->masterData[$row->kode] ?? null;
 
         $lossVal = (float) ($row->loss_kernel_tbs ?? 0);
-        $limOp   = $row->limit_operator ?? null;
-        $limV    = $row->limit_value !== null ? (float) $row->limit_value : null;
-        $limStr  = $limV !== null ? (($limOp === 'le') ? '<= ' : '> ') . $limV . '%' : '-';
+        $limOp = $row->limit_operator ?? null;
+        $limV = $row->limit_value !== null ? (float) $row->limit_value : null;
+        $limSymbol = match ($limOp) {
+            'lt' => '< ',
+            'ge' => '>= ',
+            'gt' => '> ',
+            default => '<= ',
+        };
+        $limStr = $limV !== null ? $limSymbol . $limV . '%' : '-';
 
         return [
             $counter,
@@ -131,15 +150,15 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
 
         // Loss Kernel/TBS = column U (21), limit = V (22)
         for ($r = 5; $r <= $lastRow; $r++) {
-            $loss    = $sheet->getCell('U' . $r)->getValue();
+            $loss = $sheet->getCell('U' . $r)->getValue();
             $limCell = $sheet->getCell('V' . $r)->getValue();
             if (is_numeric($loss) && $limCell !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $limCell, $m);
                 if (count($m) === 3) {
-                    $op  = trim($m[1]);
+                    $op = trim($m[1]);
                     $lim = (float) $m[2];
                     // For destoner losses: "le" (<=) means IN limit (good = green)
-                    $ok  = ($op === '<=' || $op === '=<') ? $loss <= $lim : $loss > $lim;
+                    $ok = ($op === '<=' || $op === '=<') ? $loss <= $lim : $loss > $lim;
                     $sheet->getStyle('U' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],

@@ -24,10 +24,10 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
 
     public function __construct(array $dataByDate, $allKodes, string $startDate, string $endDate, array $columnGroups = [])
     {
-        $this->dataByDate   = $dataByDate;
-        $this->allKodes     = $allKodes;
-        $this->startDate    = $startDate;
-        $this->endDate      = $endDate;
+        $this->dataByDate = $dataByDate;
+        $this->allKodes = $allKodes;
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
         $this->columnGroups = $columnGroups;
 
         $this->flatColumns = [];
@@ -74,9 +74,9 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
 
     public function styles(Worksheet $sheet)
     {
-        $totalCols  = (!empty($this->flatColumns) ? count($this->flatColumns) : count($this->allKodes)) + 1;
+        $totalCols = (!empty($this->flatColumns) ? count($this->flatColumns) : count($this->allKodes)) + 1;
         $lastColumn = $this->getColumnLetter($totalCols);
-        $hasGroups  = !empty($this->columnGroups);
+        $hasGroups = !empty($this->columnGroups);
         $insertRows = $hasGroups ? 4 : 3;
 
         $sheet->insertNewRowBefore(1, $insertRows);
@@ -84,41 +84,42 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
         $sheet->setCellValue('A1', 'REKAP RATA-RATA KERNEL LOSSES (%)');
         $sheet->mergeCells('A1:' . $lastColumn . '1');
 
-        $sheet->setCellValue('A2',
+        $sheet->setCellValue(
+            'A2',
             'Periode: ' . Carbon::parse($this->startDate)->format('d-m-Y') .
-            ' s/d '     . Carbon::parse($this->endDate)->format('d-m-Y')
+            ' s/d ' . Carbon::parse($this->endDate)->format('d-m-Y')
         );
         $sheet->mergeCells('A2:' . $lastColumn . '2');
 
         // Title styling
         $sheet->getStyle('A1')->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 16],
+            'font' => ['bold' => true, 'size' => 16],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical'   => Alignment::VERTICAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
             ],
         ]);
 
         // Period info styling
         $sheet->getStyle('A2')->applyFromArray([
-            'font'      => ['italic' => true, 'size' => 11],
+            'font' => ['italic' => true, 'size' => 11],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
 
         $groupColors = [
             'KERNEL LOSSES' => 'F59E0B',
-            '%Dirty'        => 'FB923C',
-            '%Moist'        => '60A5FA',
-            'BN / TN'       => '4ADE80',
-            'Efficiency'    => 'A78BFA',
-            'DESTONER 1'    => 'F472B6',
-            'DESTONER 2'    => 'FB7185',
+            '%Dirty' => 'FB923C',
+            '%Moist' => '60A5FA',
+            'BN / TN' => '4ADE80',
+            'Efficiency' => 'A78BFA',
+            'DESTONER 1' => 'F472B6',
+            'DESTONER 2' => 'FB7185',
         ];
 
         if ($hasGroups) {
             $groupHeaderRow = $insertRows;
-            $subHeaderRow   = $insertRows + 1;
-            $dataStartRow   = $insertRows + 2;
+            $subHeaderRow = $insertRows + 1;
+            $dataStartRow = $insertRows + 2;
 
             // Merge Tanggal across both header rows
             $sheet->setCellValue('A' . $groupHeaderRow, 'TANGGAL');
@@ -126,17 +127,17 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
             $sheet->getStyle('A' . $groupHeaderRow . ':A' . $subHeaderRow)->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => [
-                    'fillType'   => Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => '4F46E5'],
                 ],
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical'   => Alignment::VERTICAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
                 ],
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color'       => ['rgb' => '000000'],
+                        'color' => ['rgb' => '000000'],
                     ],
                 ],
             ]);
@@ -146,7 +147,7 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
             foreach ($this->columnGroups as $group) {
                 $colCount = count($group['columns']);
                 $startCol = $this->getColumnLetter($colOffset);
-                $endCol   = $this->getColumnLetter($colOffset + $colCount - 1);
+                $endCol = $this->getColumnLetter($colOffset + $colCount - 1);
 
                 $sheet->setCellValue($startCol . $groupHeaderRow, $group['name']);
                 if ($colCount > 1) {
@@ -157,17 +158,17 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
                 $sheet->getStyle($startCol . $groupHeaderRow . ':' . $endCol . $groupHeaderRow)->applyFromArray([
                     'font' => ['bold' => true, 'size' => 11],
                     'fill' => [
-                        'fillType'   => Fill::FILL_SOLID,
+                        'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => $bgColor],
                     ],
                     'alignment' => [
                         'horizontal' => Alignment::HORIZONTAL_CENTER,
-                        'vertical'   => Alignment::VERTICAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
                     ],
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
-                            'color'       => ['rgb' => '000000'],
+                            'color' => ['rgb' => '000000'],
                         ],
                     ],
                 ]);
@@ -180,18 +181,18 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
             $sheet->getStyle('B' . $subHeaderRow . ':' . $lastColumn . $subHeaderRow)->applyFromArray([
                 'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => [
-                    'fillType'   => Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => '4F46E5'],
                 ],
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical'   => Alignment::VERTICAL_CENTER,
-                    'wrapText'   => true,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
                 ],
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color'       => ['rgb' => '000000'],
+                        'color' => ['rgb' => '000000'],
                     ],
                 ],
             ]);
@@ -202,18 +203,18 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
             $sheet->getStyle('A4:' . $lastColumn . '4')->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => [
-                    'fillType'   => Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => '4F46E5'],
                 ],
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical'   => Alignment::VERTICAL_CENTER,
-                    'wrapText'   => true,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
                 ],
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color'       => ['rgb' => '000000'],
+                        'color' => ['rgb' => '000000'],
                     ],
                 ],
             ]);
@@ -228,7 +229,7 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color'       => ['rgb' => 'CCCCCC'],
+                        'color' => ['rgb' => 'CCCCCC'],
                     ],
                 ],
             ]);
@@ -247,13 +248,18 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
             foreach ($columns as $col) {
                 $kode = $col['kode'];
                 if (isset($kodeData[$kode])) {
-                    $pct    = $kodeData[$kode]['avg_losses'] * 100;
-                    $limOp  = $kodeData[$kode]['limit_operator'];
+                    $pct = $kodeData[$kode]['avg_losses'] * 100;
+                    $limOp = $kodeData[$kode]['limit_operator'];
                     $limVal = $kodeData[$kode]['limit_value'];
 
                     if ($limVal !== null) {
-                        $isGood = ($limOp === 'le') ? ($pct <= $limVal) : ($pct > $limVal);
-                        $cell   = $this->getColumnLetter($colNum) . $rowNum;
+                        $isGood = match ($limOp) {
+                            'lt' => $pct < $limVal,
+                            'ge' => $pct >= $limVal,
+                            'gt' => $pct > $limVal,
+                            default => $pct <= $limVal,
+                        };
+                        $cell = $this->getColumnLetter($colNum) . $rowNum;
 
                         if ($isGood) {
                             $sheet->getStyle($cell)->applyFromArray([
@@ -289,7 +295,7 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
     public function columnWidths(): array
     {
         $widths = ['A' => 12];
-        $count  = !empty($this->flatColumns) ? count($this->flatColumns) : count($this->allKodes);
+        $count = !empty($this->flatColumns) ? count($this->flatColumns) : count($this->allKodes);
         for ($i = 2; $i <= $count + 1; $i++) {
             $widths[$this->getColumnLetter($i)] = 16;
         }
@@ -300,9 +306,9 @@ class KernelRekapExport implements FromCollection, WithHeadings, WithStyles, Wit
     {
         $letter = '';
         while ($n > 0) {
-            $rem    = ($n - 1) % 26;
+            $rem = ($n - 1) % 26;
             $letter = chr(65 + $rem) . $letter;
-            $n      = (int)(($n - 1) / 26);
+            $n = (int) (($n - 1) / 26);
         }
         return $letter;
     }

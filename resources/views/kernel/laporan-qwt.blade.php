@@ -186,25 +186,45 @@
                             $moistValue = (float) ($row->moisture ?? 0);
                             $bnTnLimitOperator = $row->bn_tn_limit_operator ?? 'le';
                             $bnTnLimitValue = $row->bn_tn_limit_value !== null ? (float) $row->bn_tn_limit_value : null;
-                            $bnTnOk = $bnTnLimitValue !== null ? ($bnTnLimitOperator === 'le' ? $bnTnValue <= $bnTnLimitValue : $bnTnValue > $bnTnLimitValue) : null;
+                            $bnTnOk = $bnTnLimitValue !== null
+                                ? match ($bnTnLimitOperator) {
+                                    'lt' => $bnTnValue < $bnTnLimitValue,
+                                    'ge' => $bnTnValue >= $bnTnLimitValue,
+                                    'gt' => $bnTnValue > $bnTnLimitValue,
+                                    default => $bnTnValue <= $bnTnLimitValue,
+                                }
+                                : null;
                             $moistLimitOperator = $row->moist_limit_operator ?? 'le';
                             $moistLimitValue = $row->moist_limit_value !== null ? (float) $row->moist_limit_value : null;
-                            $moistOk = $moistLimitValue !== null ? ($moistLimitOperator === 'le' ? $moistValue <= $moistLimitValue : $moistValue > $moistLimitValue) : null;
+                            $moistOk = $moistLimitValue !== null
+                                ? match ($moistLimitOperator) {
+                                    'lt' => $moistValue < $moistLimitValue,
+                                    'ge' => $moistValue >= $moistLimitValue,
+                                    'gt' => $moistValue > $moistLimitValue,
+                                    default => $moistValue <= $moistLimitValue,
+                                }
+                                : null;
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="sticky left-0 z-[20] bg-white border px-3 py-2 text-center">
-                                {{ ($rows->currentPage() - 1) * $rows->perPage() + $loop->iteration }}</td>
+                                {{ ($rows->currentPage() - 1) * $rows->perPage() + $loop->iteration }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[50px] z-[10] bg-white whitespace-nowrap">
-                                {{ $productionDate->format('F Y') }}</td>
+                                {{ $productionDate->format('F Y') }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[160px] z-[10] bg-white whitespace-nowrap">
-                                {{ $productionDate->format('d-m-Y') }}</td>
+                                {{ $productionDate->format('d-m-Y') }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[270px] z-[10] bg-white whitespace-nowrap">
-                                {{ $displayAt->format('H:i:s') }}</td>
+                                {{ $displayAt->format('H:i:s') }}
+                            </td>
                             <td
                                 class="border px-3 py-2 lg:sticky lg:left-[360px] z-[10] bg-white font-semibold text-blue-800 whitespace-nowrap">
-                                {{ $row->kode }}</td>
+                                {{ $row->kode }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[450px] z-[10] bg-white whitespace-nowrap">
-                                {{ $master->nama_sample ?? '-' }}</td>
+                                {{ $master->nama_sample ?? '-' }}
+                            </td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ optional($row->user)->name ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap"><span
                                     class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{{ $row->jenis ?? '-' }}</span>
@@ -212,25 +232,33 @@
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $row->operator ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $row->sampel_boy ?? '-' }}</td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->sampel_setelah_kuarter ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->sampel_setelah_kuarter ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_nut_utuh ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->berat_nut_utuh ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_nut_pecah ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->berat_nut_pecah ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_kernel_utuh ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->berat_kernel_utuh ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_kernel_pecah ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->berat_kernel_pecah ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_cangkang ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->berat_cangkang ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->berat_batu ?? 0), 4) }}
                             </td>
                             <td class="border px-3 py-2 text-right">{{ number_format((float) ($row->berat_fiber ?? 0), 4) }}
                             </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->berat_broken_nut ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->berat_broken_nut ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->total_berat_nut ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->total_berat_nut ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-center bg-purple-50">
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $bnTnOk === null ? 'bg-gray-100 text-gray-700' : ($bnTnOk ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') }}">
@@ -240,7 +268,8 @@
                             <td
                                 class="border px-3 py-2 text-center bg-orange-50 text-orange-800 font-medium whitespace-nowrap">
                                 @if($bnTnLimitValue !== null)
-                                    {{ $bnTnLimitOperator === 'le' ? '<=' : '>' }} {{ number_format($bnTnLimitValue, 4) }}%
+                                    {{ match ($bnTnLimitOperator) { 'lt' => '<', 'ge' => '>=', 'gt' => '>', default => '<='} }}
+                                    {{ number_format($bnTnLimitValue, 4) }}%
                                 @else
                                     -
                                 @endif
@@ -254,17 +283,21 @@
                             <td
                                 class="border px-3 py-2 text-center bg-orange-50 text-orange-800 font-medium whitespace-nowrap">
                                 @if($moistLimitValue !== null)
-                                    {{ $moistLimitOperator === 'le' ? '<=' : '>' }} {{ number_format($moistLimitValue, 4) }}%
+                                    {{ match ($moistLimitOperator) { 'lt' => '<', 'ge' => '>=', 'gt' => '>', default => '<='} }}
+                                    {{ number_format($moistLimitValue, 4) }}%
                                 @else
                                     -
                                 @endif
                             </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->ampere_screw ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->ampere_screw ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->tekanan_hydraulic ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->tekanan_hydraulic ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($row->kecepatan_screw ?? 0), 4) }}</td>
+                                {{ number_format((float) ($row->kecepatan_screw ?? 0), 4) }}
+                            </td>
                         </tr>
                     @empty
                         <tr>

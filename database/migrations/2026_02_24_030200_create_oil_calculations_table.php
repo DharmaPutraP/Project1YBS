@@ -46,6 +46,7 @@ return new class extends Migration {
             $table->decimal('limitOLWB', 15, 6)->nullable()->comment('Limit OLWB');
             $table->decimal('limitOLDB', 15, 6)->nullable()->comment('Limit OLDB');
             $table->decimal('limitOL', 15, 6)->nullable()->comment('Limit Oil Losses');
+            $table->enum('limit_operator', ['le', 'lt', 'ge', 'gt'])->nullable()->comment('Operator limit OLWB dari master data');
             $table->decimal('persen', 15, 6)->nullable()->comment('Persen untuk kalkulasi');
             $table->decimal('persen4', 15, 6)->nullable()->comment('Persen 4');
 

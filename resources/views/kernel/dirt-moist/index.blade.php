@@ -60,11 +60,13 @@
                 <div class="flex-1 w-full">
                     <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Office/PT</label>
                     @if(auth()->user()->office)
-                        <div class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-700">
+                        <div
+                            class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-700">
                             {{ auth()->user()->office }}
                         </div>
                     @else
-                        <select name="office" class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <select name="office"
+                            class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                             <option value="all" {{ $officeFilter == 'all' ? 'selected' : '' }}>-- Semua Office --</option>
                             <option value="YBS" {{ $officeFilter == 'YBS' ? 'selected' : '' }}>YBS</option>
                             <option value="SUN" {{ $officeFilter == 'SUN' ? 'selected' : '' }}>SUN</option>
@@ -152,18 +154,29 @@
                                 $dirtyLimitOperator = $row->dirty_limit_operator ?? 'le';
                                 $dirtyLimitValue = $row->dirty_limit_value !== null ? (float) $row->dirty_limit_value : null;
                                 $dirtyOk = $dirtyLimitValue !== null
-                                    ? ($dirtyLimitOperator === 'le' ? $dirtyValue <= $dirtyLimitValue : $dirtyValue > $dirtyLimitValue)
+                                    ? match ($dirtyLimitOperator) {
+                                        'lt' => $dirtyValue < $dirtyLimitValue,
+                                        'ge' => $dirtyValue >= $dirtyLimitValue,
+                                        'gt' => $dirtyValue > $dirtyLimitValue,
+                                        default => $dirtyValue <= $dirtyLimitValue,
+                                    }
                                     : null;
 
                                 $moistLimitOperator = $row->moist_limit_operator;
                                 $moistLimitValue = $row->moist_limit_value !== null ? (float) $row->moist_limit_value : null;
                                 $moistOk = $moistLimitValue !== null
-                                    ? ($moistLimitOperator === 'le' ? $moistValue <= $moistLimitValue : $moistValue > $moistLimitValue)
+                                    ? match ($moistLimitOperator) {
+                                        'lt' => $moistValue < $moistLimitValue,
+                                        'ge' => $moistValue >= $moistLimitValue,
+                                        'gt' => $moistValue > $moistLimitValue,
+                                        default => $moistValue <= $moistLimitValue,
+                                    }
                                     : null;
                             @endphp
                             <tr class="hover:bg-blue-50">
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $displayAt->format('d/m/Y H:i') }}</td>
+                                    {{ $displayAt->format('d/m/Y H:i') }}
+                                </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                     {{ $row->rounded_time ? $row->rounded_time->format('H:i') : $row->created_at->format('H:i') }}
                                 </td>
@@ -174,14 +187,17 @@
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row->operator ?? '-' }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row->sampel_boy ?? '-' }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-center">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $row->pengulangan ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700' }}">
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $row->pengulangan ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700' }}">
                                         {{ $row->pengulangan ? 'Ya' : 'Tidak' }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
-                                    {{ number_format((float) ($row->berat_sampel ?? 0), 2) }}</td>
+                                    {{ number_format((float) ($row->berat_sampel ?? 0), 2) }}
+                                </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
-                                    {{ number_format((float) ($row->berat_dirty ?? 0), 2) }}</td>
+                                    {{ number_format((float) ($row->berat_dirty ?? 0), 2) }}
+                                </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-center">
                                     <span
                                         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $dirtyOk === null ? 'bg-gray-100 text-gray-700' : ($dirtyOk ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') }}">
@@ -191,7 +207,8 @@
                                 <td
                                     class="px-4 py-3 whitespace-nowrap text-center text-xs font-semibold bg-orange-50 text-orange-800">
                                     @if($dirtyLimitValue !== null)
-                                        {{ $dirtyLimitOperator === 'le' ? '≤' : '>' }} {{ number_format($dirtyLimitValue, 2) }}%
+                                        {{ match ($dirtyLimitOperator) { 'lt' => '<', 'ge' => '≥', 'gt' => '>', default => '≤'} }}
+                                        {{ number_format($dirtyLimitValue, 2) }}%
                                     @else
                                         -
                                     @endif
@@ -205,7 +222,8 @@
                                 <td
                                     class="px-4 py-3 whitespace-nowrap text-center text-xs font-semibold bg-orange-50 text-orange-800">
                                     @if($moistLimitValue !== null)
-                                        {{ $moistLimitOperator === 'le' ? '≤' : '>' }} {{ number_format($moistLimitValue, 2) }}%
+                                        {{ match ($moistLimitOperator) { 'lt' => '<', 'ge' => '≥', 'gt' => '>', default => '≤'} }}
+                                        {{ number_format($moistLimitValue, 2) }}%
                                     @else
                                         ≤ 6.00%
                                     @endif
@@ -218,19 +236,22 @@
                                                     class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition"
                                                     title="Edit">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                     </svg>
                                                 </a>
                                             @endcan
                                             @can('delete kernel losses')
-                                                <form action="{{ route('kernel.dirt-moist.destroy', $row->id) }}" method="POST" class="delete-form" data-item-name="Data {{ $row->kode ?? 'ini' }}">
+                                                <form action="{{ route('kernel.dirt-moist.destroy', $row->id) }}" method="POST"
+                                                    class="delete-form" data-item-name="Data {{ $row->kode ?? 'ini' }}">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit"
                                                         class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-red-200 text-red-600 hover:bg-red-50 transition"
                                                         title="Hapus">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                         </svg>
                                                     </button>
                                                 </form>

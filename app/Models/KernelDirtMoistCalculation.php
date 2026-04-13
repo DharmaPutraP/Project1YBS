@@ -22,6 +22,7 @@ class KernelDirtMoistCalculation extends Model
         'operator',
         'sampel_boy',
         'pengulangan',
+        'remarks',
         'berat_sampel',
         'berat_dirty',
         'dirty_to_sampel',

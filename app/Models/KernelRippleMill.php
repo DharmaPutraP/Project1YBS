@@ -22,6 +22,7 @@ class KernelRippleMill extends Model
         'operator',
         'sampel_boy',
         'pengulangan',
+        'remarks',
         'berat_sampel',
         'berat_nut_utuh',
         'berat_nut_pecah',

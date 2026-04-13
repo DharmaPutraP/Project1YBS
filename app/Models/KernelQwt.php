@@ -22,6 +22,7 @@ class KernelQwt extends Model
         'operator',
         'sampel_boy',
         'pengulangan',
+        'remarks',
         'sampel_setelah_kuarter',
         'berat_nut_utuh',
         'berat_nut_pecah',

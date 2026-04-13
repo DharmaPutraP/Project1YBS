@@ -22,6 +22,7 @@ class KernelCalculation extends Model
         'operator',
         'sampel_boy',
         'pengulangan',
+        'remarks',
         'berat_sampel',
         'nut_utuh_nut',
         'nut_utuh_kernel',

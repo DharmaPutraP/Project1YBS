@@ -47,7 +47,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         @foreach($group['items'] as $item)
                             @php $kode = $item['kode']; @endphp
-                            <div class="border border-rose-200 rounded-lg p-4 bg-white/85 shadow-sm space-y-3">
+                            <div class="border border-rose-200 rounded-lg p-4 bg-white/85 shadow-sm space-y-3" data-kernel-row>
                                 <div class="flex items-center justify-between gap-3">
                                     <h4 class="text-sm font-semibold text-gray-900">{{ $item['label'] }}</h4>
                                     <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">{{ $kode }}</span>
@@ -56,9 +56,14 @@
                                 <input type="hidden" name="rows[{{ $kode }}][kode]" value="{{ $kode }}">
 
                                 <label class="inline-flex items-center gap-2 text-xs font-medium text-gray-700">
-                                    <input type="checkbox" name="rows[{{ $kode }}][pengulangan]" value="1" {{ old("rows.$kode.pengulangan") ? 'checked' : '' }} class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <input type="checkbox" name="rows[{{ $kode }}][pengulangan]" value="1" {{ old("rows.$kode.pengulangan") ? 'checked' : '' }} data-remarks-toggle class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                                     <span>Data sampel ulang</span>
                                 </label>
+
+                                <div class="space-y-1 {{ old("rows.$kode.pengulangan") ? '' : 'hidden' }}" data-remarks-wrapper>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Remarks</label>
+                                    <textarea name="rows[{{ $kode }}][remarks]" rows="3" placeholder="Tulis catatan sampel ulang" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">{{ old("rows.$kode.remarks") }}</textarea>
+                                </div>
 
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Jenis</label>
@@ -120,9 +125,21 @@
             roundedTime.disabled = !dispatch.checked;
         }
 
+        function toggleRemarksField(checkbox) {
+            const card = checkbox.closest('[data-kernel-row]');
+            const wrapper = card?.querySelector('[data-remarks-wrapper]');
+            if (wrapper) {
+                wrapper.classList.toggle('hidden', !checkbox.checked);
+            }
+        }
+
         updateClock();
         setInterval(updateClock, 1000);
         document.getElementById('kegiatan_dispek')?.addEventListener('change', toggleRoundedTimeInput);
+        document.querySelectorAll('[data-remarks-toggle]').forEach(checkbox => {
+            checkbox.addEventListener('change', () => toggleRemarksField(checkbox));
+            toggleRemarksField(checkbox);
+        });
         toggleRoundedTimeInput();
     </script>
 </x-layouts.app>

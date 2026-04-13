@@ -21,6 +21,7 @@ class KernelDestoner extends Model
         'operator',
         'sampel_boy',
         'pengulangan',
+        'remarks',
         'berat_sampel',
         'time',
         'berat_nut',

@@ -371,7 +371,7 @@
             </template>
 
             <template id="mode2RowTemplate">
-                <div class="mode2-row border border-green-200 bg-white rounded-lg p-4 space-y-3">
+                <div class="mode2-row border-2 border-green-200 bg-white rounded-lg p-5 space-y-4">
                     <div class="flex items-center justify-between">
                         <h4 class="text-sm font-semibold text-green-900">Mode Angka Tambahan</h4>
                         <button type="button" class="remove-mode2-row text-xs text-red-600 hover:text-red-800">Hapus</button>
@@ -385,31 +385,46 @@
                                 <option value="{{ $kodeValue }}">{{ $kodeName }}</option>
                             @endforeach
                         </select>
+                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Description. Description hanya untuk informasi.</p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Cawan Kosong</label>
-                            <input type="number" step="0.000001" name="mode2_rows[__INDEX__][cawan_kosong]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                            <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap 1</div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Cawan Kosong</label>
+                                    <input type="number" step="0.000001" name="mode2_rows[__INDEX__][cawan_kosong]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Berat Sampel Basah</label>
+                                    <input type="number" step="0.000001" name="mode2_rows[__INDEX__][berat_basah]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Labu Kosong</label>
+                                    <input type="number" step="0.000001" name="mode2_rows[__INDEX__][labu_kosong]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Berat Sampel Basah</label>
-                            <input type="number" step="0.000001" name="mode2_rows[__INDEX__][berat_basah]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Cawan + Sample Kering</label>
-                            <input type="number" step="0.000001" name="mode2_rows[__INDEX__][cawan_sample_kering]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
-                        </div>
-                    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Labu Kosong</label>
-                            <input type="number" step="0.000001" name="mode2_rows[__INDEX__][labu_kosong]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                            <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap 2</div>
+                            <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Cawan + Sample Kering</label>
+                                    <input type="number" step="0.000001" name="mode2_rows[__INDEX__][cawan_sample_kering]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                                </div>
+                            </div>
                         </div>
+
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Oil + Labu</label>
-                            <input type="number" step="0.000001" name="mode2_rows[__INDEX__][oil_labu]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                            <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap Akhir</div>
+                            <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Oil + Labu</label>
+                                    <input type="number" step="0.000001" name="mode2_rows[__INDEX__][oil_labu]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" placeholder="0.000000">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -649,6 +664,58 @@
                         }
                     });
                 }
+
+                // Mode 2 tambahan validation (per-row, phase-based)
+                const mode2Rows = document.querySelectorAll('.mode2-row');
+                mode2Rows.forEach((rowEl, idx) => {
+                    const rowNo = idx + 1;
+
+                    const getVal = (field) => {
+                        const input = rowEl.querySelector(`[name$="[${field}]"]`);
+                        return input ? String(input.value || '').trim() : '';
+                    };
+
+                    const kode = getVal('kode_mode2');
+                    const cawanKosong = getVal('cawan_kosong');
+                    const beratBasah = getVal('berat_basah');
+                    const cawanSampleKering = getVal('cawan_sample_kering');
+                    const labuKosong = getVal('labu_kosong');
+                    const oilLabu = getVal('oil_labu');
+
+                    const hasStep1 = cawanKosong !== '' || beratBasah !== '' || labuKosong !== '';
+                    const hasStep2 = cawanSampleKering !== '';
+                    const hasFinal = oilLabu !== '';
+                    const hasAnyNumeric = hasStep1 || hasStep2 || hasFinal;
+
+                    if (!hasAnyNumeric && kode === '') {
+                        return;
+                    }
+
+                    if (kode === '') {
+                        errorMessages.push(`Mode Angka Tambahan #${rowNo}: Kode wajib diisi jika ada input angka`);
+                        hasError = true;
+                        return;
+                    }
+
+                    const rowPhase = hasFinal ? 'complete' : (hasStep2 ? 'final' : 'initial');
+
+                    if (rowPhase === 'initial') {
+                        if (cawanKosong === '' || beratBasah === '' || labuKosong === '') {
+                            errorMessages.push(`Mode Angka Tambahan #${rowNo}: Tahap 1 harus lengkap (Cawan Kosong, Berat Sampel Basah, Labu Kosong)`);
+                            hasError = true;
+                        }
+                    } else if (rowPhase === 'final') {
+                        if (cawanSampleKering === '') {
+                            errorMessages.push(`Mode Angka Tambahan #${rowNo}: Tahap 2 membutuhkan Cawan + Sample Kering`);
+                            hasError = true;
+                        }
+                    } else {
+                        if (oilLabu === '') {
+                            errorMessages.push(`Mode Angka Tambahan #${rowNo}: Tahap Akhir membutuhkan Oil + Labu`);
+                            hasError = true;
+                        }
+                    }
+                });
 
                 // Tampilkan error jika ada
                 if (hasError) {

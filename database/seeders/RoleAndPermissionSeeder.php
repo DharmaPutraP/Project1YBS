@@ -96,6 +96,20 @@ class RoleAndPermissionSeeder extends Seeder
             'roles' => ['Sampel Boy Oil Losses', 'Sampel Boy Kernel Losses'],
         ],
         [
+            'name' => 'Dwika Raja Syahputra Purba',
+            'username' => 'Purba',
+            'office' => 'SUN',
+            'password' => 'purba',
+            'roles' => ['analis'],
+        ],
+        [
+            'name' => 'Surya Baihaqi',
+            'username' => 'Surya',
+            'office' => 'SUN',
+            'password' => 'surya',
+            'roles' => ['analis'],
+        ],
+        [
             'name' => 'Silvyana Novira',
             'username' => 'Vira',
             'office' => 'YBS',

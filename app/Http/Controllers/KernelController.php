@@ -35,7 +35,7 @@ class KernelController extends Controller
 
     // Kernel Losses kode groups by office
     private const KERNEL_LOSSES_KODES_YBS = ['FC1', 'FC2', 'L1', 'L2', 'L3', 'L4', 'CWS', 'CWS2', 'CWS3'];
-    private const KERNEL_LOSSES_KODES_SUN = ['FC1', 'FC2', 'L1', 'L2', 'CWS','CWS2'];
+    private const KERNEL_LOSSES_KODES_SUN = ['FC1', 'FC2', 'L1', 'L2', 'CWS', 'CWS2'];
     private const KERNEL_LOSSES_KODES_SJN = self::KERNEL_LOSSES_KODES_YBS;
 
     // Dirt & Moist kode groups by office
@@ -1648,7 +1648,7 @@ class KernelController extends Controller
 
         $limitMap = $this->getDestonerLimitMap($userOffice);
 
-        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $limitMap) {
+        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $limitMap, $requiredFields) {
             $rowErrors = [];
             $savedRows = [];
 
@@ -1894,7 +1894,7 @@ class KernelController extends Controller
         $officeFilter = $this->resolveOfficeFilter($request);
 
         [$allKodesData, $dataByDate] = $this->buildRekapData($startDate, $endDate, $officeFilter);
-        $columnGroups = $this->getKernelColumnGroups();
+        $columnGroups = $this->getKernelColumnGroups($officeFilter);
         $masterMap = collect($allKodesData)->keyBy('kode');
 
         return view('kernel.rekap', compact('allKodesData', 'dataByDate', 'startDate', 'endDate', 'columnGroups', 'masterMap', 'officeFilter'));
@@ -1911,7 +1911,7 @@ class KernelController extends Controller
         $officeFilter = $this->resolveOfficeFilter($request);
 
         [$allKodesData, $dataByDate] = $this->buildRekapData($startDate, $endDate, $officeFilter);
-        $columnGroups = $this->getKernelColumnGroups();
+        $columnGroups = $this->getKernelColumnGroups($officeFilter);
 
         $this->logExport('Rekap Kernel Losses', [
             'start_date' => $startDate,
@@ -1931,7 +1931,10 @@ class KernelController extends Controller
 
     private function buildRekapData(string $startDate, string $endDate, string $officeFilter): array
     {
+        $allowedKodes = $this->getKernelOfficeAllowedCodes($officeFilter);
+
         $allKodesData = KernelMasterData::where('is_active', true)
+            ->whereIn('kode', $allowedKodes)
             ->orderBy('kode')
             ->get()
             ->map(function ($m) {
@@ -1983,9 +1986,11 @@ class KernelController extends Controller
         return [$allKodesData, $dataByDate];
     }
 
-    private function getKernelColumnGroups(): array
+    private function getKernelColumnGroups(?string $office = null): array
     {
-        return [
+        $allowedKodes = array_flip($this->getKernelOfficeAllowedCodes($office));
+
+        $groups = [
             [
                 'name' => 'KERNEL LOSSES',
                 'color' => 'bg-amber-100 text-amber-800',
@@ -2073,6 +2078,20 @@ class KernelController extends Controller
                 ],
             ],
         ];
+
+        return collect($groups)
+            ->map(function (array $group) use ($allowedKodes) {
+                $columns = array_values(array_filter($group['columns'], function (array $column) use ($allowedKodes) {
+                    return isset($allowedKodes[$column['kode']]);
+                }));
+
+                $group['columns'] = $columns;
+
+                return $group;
+            })
+            ->filter(fn(array $group) => !empty($group['columns']))
+            ->values()
+            ->toArray();
     }
 
     public function performance(Request $request)
@@ -2141,9 +2160,11 @@ class KernelController extends Controller
     private function buildPerformanceData(string $startDate, string $endDate, string $officeFilter): array
     {
         $bobotConfigs = KernelBobotConfig::all()->keyBy('jenis');
+        $allowedKodes = $this->getKernelOfficeAllowedCodes($officeFilter);
 
         // Get all active kodes that have a matching bobot config
         $allKodesData = KernelMasterData::where('is_active', true)
+            ->whereIn('kode', $allowedKodes)
             ->get()
             ->reject(function ($m) {
                 return str_starts_with(strtoupper((string) $m->kode), 'D');
@@ -2282,6 +2303,48 @@ class KernelController extends Controller
         return [$reportData, $allKodesData, $operators, $operatorActivities, $reportDates, $dailyPerformance, $individualRecords, $operatorDailyPerformance];
     }
 
+    private function getKernelOfficeAllowedCodes(?string $office = null): array
+    {
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
+
+        $codeSets = match ($officeCode) {
+            'SUN' => [
+                self::KERNEL_LOSSES_KODES_SUN,
+                self::DIRT_MOIST_KODES_SUN,
+                self::QWT_KODES_SUN,
+                self::RIPPLE_MILL_KODES_SUN,
+                self::DESTONER_KODES_SUN,
+            ],
+            'SJN' => [
+                self::KERNEL_LOSSES_KODES_SJN,
+                self::DIRT_MOIST_KODES_SJN,
+                self::QWT_KODES_SJN,
+                self::RIPPLE_MILL_KODES_SJN,
+                self::DESTONER_KODES_SJN,
+            ],
+            'ALL' => [
+                self::KERNEL_LOSSES_KODES_YBS,
+                self::DIRT_MOIST_KODES_YBS,
+                self::QWT_KODES_YBS,
+                self::RIPPLE_MILL_KODES_YBS,
+                self::DESTONER_KODES_YBS,
+            ],
+            default => [
+                self::KERNEL_LOSSES_KODES_YBS,
+                self::DIRT_MOIST_KODES_YBS,
+                self::QWT_KODES_YBS,
+                self::RIPPLE_MILL_KODES_YBS,
+                self::DESTONER_KODES_YBS,
+            ],
+        };
+
+        return collect($codeSets)
+            ->flatten()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     private function mapKodeToKernelConfig(string $kode, $bobotConfigs)
     {
         $prefix = preg_replace('/[0-9]+$/', '', $kode);
@@ -2345,7 +2408,7 @@ class KernelController extends Controller
     private function getKernelLossesFormGroups(array $kodeOptions, ?string $office = null): array
     {
         $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
-        
+
         // Determine available codes based on office
         $availableCodes = match ($officeCode) {
             'SUN' => self::KERNEL_LOSSES_KODES_SUN,
@@ -2353,7 +2416,7 @@ class KernelController extends Controller
             'ALL' => self::KERNEL_LOSSES_KODES_YBS,
             default => self::KERNEL_LOSSES_KODES_YBS,
         };
-        
+
         $groups = [
             ['title' => 'Fibre Cyclone', 'codes' => ['FC1', 'FC2']],
             ['title' => 'LTDS', 'codes' => ['L1', 'L2', 'L3', 'L4']],
@@ -2414,7 +2477,7 @@ class KernelController extends Controller
     private function getDirtMoistFormGroups(array $kodeOptions, ?string $office = null): array
     {
         $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
-        
+
         // Determine available codes based on office
         $availableCodes = match ($officeCode) {
             'SUN' => self::DIRT_MOIST_KODES_SUN,
@@ -2422,7 +2485,7 @@ class KernelController extends Controller
             'ALL' => self::DIRT_MOIST_KODES_YBS,
             default => self::DIRT_MOIST_KODES_YBS,
         };
-        
+
         $groups = [
             ['title' => 'Inlet Kernel Silo', 'codes' => ['IN1', 'IN2', 'IN3', 'IN4', 'IN5']],
             ['title' => 'Outlet Kernel Silo To Bunker', 'codes' => ['OUT1', 'OUT2', 'OUT3', 'OUT4', 'OUT5']],
@@ -2449,7 +2512,7 @@ class KernelController extends Controller
     private function getQwtFormGroups(array $kodeOptions, ?string $office = null): array
     {
         $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
-        
+
         // Determine available codes based on office
         $availableCodes = match ($officeCode) {
             'SUN' => self::QWT_KODES_SUN,
@@ -2457,7 +2520,7 @@ class KernelController extends Controller
             'ALL' => self::QWT_KODES_YBS,
             default => self::QWT_KODES_YBS,
         };
-        
+
         $groups = [
             ['title' => 'Press 1 - 9', 'codes' => ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9']],
         ];
@@ -2545,7 +2608,7 @@ class KernelController extends Controller
     private function getDestonerFormGroups(array $kodeOptions, ?string $office = null): array
     {
         $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
-        
+
         // Determine available codes based on office
         $availableCodes = match ($officeCode) {
             'SUN' => self::DESTONER_KODES_SUN,
@@ -2553,7 +2616,7 @@ class KernelController extends Controller
             'ALL' => self::DESTONER_KODES_YBS,
             default => self::DESTONER_KODES_YBS,
         };
-        
+
         $groups = [
             ['title' => 'Destoner', 'codes' => ['D1', 'D2']],
         ];
@@ -2621,7 +2684,7 @@ class KernelController extends Controller
     private function getRippleMillFormGroups(array $kodeOptions, ?string $office = null): array
     {
         $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
-        
+
         // Determine available codes based on office
         $availableCodes = match ($officeCode) {
             'SUN' => self::RIPPLE_MILL_KODES_SUN,
@@ -2629,7 +2692,7 @@ class KernelController extends Controller
             'ALL' => self::RIPPLE_MILL_KODES_YBS,
             default => self::RIPPLE_MILL_KODES_YBS,
         };
-        
+
         $groups = [
             ['title' => 'Ripple Mill No. 1 - 7', 'codes' => ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7']],
         ];

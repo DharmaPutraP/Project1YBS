@@ -113,7 +113,7 @@ class OilController extends Controller
         $oilRecords->appends($request->only(['start_date', 'end_date', 'kode', 'office']));
 
         // Get all kode options for filter dropdown
-        $kodeOptions = OilMasterData::getKodeDropdown();
+        $kodeOptions = OilMasterData::getKodeDropdown(Auth::user()->office);
 
         return view('oil.index', compact('oilLosses', 'oilRecords', 'statistics', 'kodeOptions', 'startDate', 'endDate', 'officeFilter'));
     }
@@ -129,7 +129,7 @@ class OilController extends Controller
         }
 
         // Get dropdown options from master data
-        $kodeOptions = OilMasterData::getKodeDropdown();
+        $kodeOptions = OilMasterData::getKodeDropdown(Auth::user()->office);
         $jenisOptions = OilMasterData::getJenisDropdown();
         $operatorOptions = $this->getOperatorOptionsByOffice(Auth::user()->office);
 
@@ -205,7 +205,19 @@ class OilController extends Controller
             'oil_labu.required' => 'Oil + Labu wajib diisi jika Anda mengisi Mode Angka',
         ]);
 
+        // Server-side safety: enforce phase completeness for main Mode Angka payload.
+        $this->assertMode2RowPhaseCompleteness([
+            'kode_mode2' => $validated['kode_mode2'] ?? null,
+            'cawan_kosong' => $validated['cawan_kosong'] ?? null,
+            'berat_basah' => $validated['berat_basah'] ?? null,
+            'cawan_sample_kering' => $validated['cawan_sample_kering'] ?? null,
+            'labu_kosong' => $validated['labu_kosong'] ?? null,
+            'oil_labu' => $validated['oil_labu'] ?? null,
+        ], 'Mode Angka utama');
+
         try {
+            DB::beginTransaction();
+
             $savedMode1 = [];
             $savedMode2 = [];
             $messages = [];
@@ -285,6 +297,8 @@ class OilController extends Controller
                 $savedMode2,
             );
 
+            DB::commit();
+
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
@@ -299,6 +313,8 @@ class OilController extends Controller
                 ->with('success_proof', $proofData);
 
         } catch (Exception $e) {
+            DB::rollBack();
+
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
             }
@@ -350,6 +366,8 @@ class OilController extends Controller
             ->filter(fn($row) => is_array($row));
 
         foreach ($mode2Rows as $row) {
+            $this->assertMode2RowPhaseCompleteness($row, 'Mode Angka tambahan');
+
             $kodeMode2 = trim((string) ($row['kode_mode2'] ?? ''));
             $numericFields = ['cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'];
             $hasAnyValue = collect($numericFields)->contains(function ($field) use ($row) {
@@ -387,6 +405,68 @@ class OilController extends Controller
             'mode2' => $savedMode2,
             'messages' => $messages,
         ];
+    }
+
+    private function assertMode2RowPhaseCompleteness(array $row, string $contextLabel): void
+    {
+        $kodeMode2 = trim((string) ($row['kode_mode2'] ?? ''));
+        $numericFields = ['cawan_kosong', 'berat_basah', 'cawan_sample_kering', 'labu_kosong', 'oil_labu'];
+
+        $hasAnyNumeric = collect($numericFields)->contains(function ($field) use ($row) {
+            $value = $row[$field] ?? null;
+            return $value !== null && $value !== '';
+        });
+
+        if (!$hasAnyNumeric && $kodeMode2 === '') {
+            return;
+        }
+
+        if ($kodeMode2 === '') {
+            throw new Exception("{$contextLabel}: Kode wajib diisi jika ada input angka.");
+        }
+
+        $phase = $this->detectMode2PhaseFromArray($row);
+
+        if ($phase === 'initial') {
+            foreach (['cawan_kosong', 'berat_basah', 'labu_kosong'] as $field) {
+                if (($row[$field] ?? null) === null || ($row[$field] ?? '') === '') {
+                    throw new Exception("{$contextLabel}: Tahap 1 harus lengkap (Cawan Kosong, Berat Sampel Basah, Labu Kosong). Kode: {$kodeMode2}.");
+                }
+            }
+        } elseif ($phase === 'final') {
+            if (($row['cawan_sample_kering'] ?? null) === null || ($row['cawan_sample_kering'] ?? '') === '') {
+                throw new Exception("{$contextLabel}: Tahap 2 membutuhkan Cawan + Sampel Kering. Kode: {$kodeMode2}.");
+            }
+        } elseif ($phase === 'complete') {
+            if (($row['oil_labu'] ?? null) === null || ($row['oil_labu'] ?? '') === '') {
+                throw new Exception("{$contextLabel}: Tahap Akhir membutuhkan Oil + Labu. Kode: {$kodeMode2}.");
+            }
+        }
+    }
+
+    private function detectMode2PhaseFromArray(array $row): string
+    {
+        $hasStep1 = collect(['cawan_kosong', 'berat_basah', 'labu_kosong'])->contains(function ($field) use ($row) {
+            $value = $row[$field] ?? null;
+            return $value !== null && $value !== '';
+        });
+
+        $hasStep2 = ($row['cawan_sample_kering'] ?? null) !== null && ($row['cawan_sample_kering'] ?? '') !== '';
+        $hasFinal = ($row['oil_labu'] ?? null) !== null && ($row['oil_labu'] ?? '') !== '';
+
+        if ($hasFinal) {
+            return 'complete';
+        }
+
+        if ($hasStep2) {
+            return 'final';
+        }
+
+        if ($hasStep1) {
+            return 'initial';
+        }
+
+        return 'initial';
     }
 
     /**
@@ -442,7 +522,7 @@ class OilController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk edit data oil losses.');
         }
 
-        $kodeOptions = OilMasterData::getKodeDropdown();
+        $kodeOptions = OilMasterData::getKodeDropdown(Auth::user()->office);
         $jenisOptions = OilMasterData::getJenisDropdown();
         $operatorOptions = $this->getOperatorOptionsByOffice($oilCalculation->office);
 
@@ -652,7 +732,7 @@ class OilController extends Controller
         }
 
         // Get dropdown options
-        $kodeOptions = OilMasterData::getKodeDropdown();
+        $kodeOptions = OilMasterData::getKodeDropdown(Auth::user()->office);
         $jenisOptions = OilMasterData::getJenisDropdown();
         $operatorOptions = $this->getOperatorOptionsByOffice($oilRecord->office);
 
@@ -1457,7 +1537,7 @@ class OilController extends Controller
 
         return [
             'tanggal_input' => $record->created_at->format('d/m/Y H:i:s'),
-            'kode_label' => OilMasterData::getKodeDisplay($record->kode, $record->pivot ?: $masterData?->pivot),
+            'kode_label' => OilMasterData::getKodeDisplay($record->kode, $record->pivot ?: $masterData?->pivot, $record->office),
             'jenis' => $record->jenis,
             'operator' => $record->operator,
             'sampel_boy' => $record->sampel_boy,
@@ -1477,7 +1557,7 @@ class OilController extends Controller
             'phase' => $calculation->phase,
             'status' => $calculation->status,
             'tanggal_input' => $calculation->created_at->format('d/m/Y H:i:s'),
-            'kode_label' => OilMasterData::getKodeDisplay($calculation->kode, $masterData?->pivot),
+            'kode_label' => OilMasterData::getKodeDisplay($calculation->kode, $masterData?->pivot, $calculation->office),
             'kode' => $calculation->kode,
             'cawan_kosong' => $calculation->cawan_kosong,
             'berat_basah' => $calculation->berat_basah,

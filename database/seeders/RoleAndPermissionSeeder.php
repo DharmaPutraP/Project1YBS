@@ -98,7 +98,7 @@ class RoleAndPermissionSeeder extends Seeder
         [
             'name' => 'Dwika Raja Syahputra Purba',
             'username' => 'Purba',
-            'office' => 'SUN',
+            'office' => 'YBS',
             'password' => 'purba',
             'roles' => ['analis'],
         ],

@@ -379,7 +379,7 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Kode</label>
-                        <select name="mode2_rows[__INDEX__][kode_mode2]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                        <select name="mode2_rows[__INDEX__][kode_mode2]" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm select2-kode-dynamic">
                             <option value="">-- Pilih Kode --</option>
                             @foreach($kodeOptions as $kodeValue => $kodeName)
                                 <option value="{{ $kodeValue }}">{{ $kodeName }}</option>
@@ -838,6 +838,35 @@
             const mode1Template = document.getElementById('mode1RowTemplate');
             const mode2Template = document.getElementById('mode2RowTemplate');
 
+            function initMode2KodeSelect2(scopeEl) {
+                if (!window.jQuery || typeof window.jQuery.fn.select2 !== 'function') {
+                    return;
+                }
+
+                const $targets = window.jQuery(scopeEl).find('select.select2-kode-dynamic');
+                $targets.each(function () {
+                    const $el = window.jQuery(this);
+                    if ($el.hasClass('select2-hidden-accessible')) {
+                        return;
+                    }
+
+                    $el.select2({
+                        placeholder: '-- Pilih atau ketik untuk cari --',
+                        allowClear: true,
+                        width: '100%',
+                        theme: 'default',
+                        language: {
+                            noResults: function () {
+                                return 'Tidak ditemukan';
+                            },
+                            searching: function () {
+                                return 'Mencari...';
+                            }
+                        }
+                    });
+                });
+            }
+
             function addMode1Row(rowData = {}) {
                 const index = mode1RowIndex++;
                 const html = mode1Template.innerHTML.replaceAll('__INDEX__', String(index));
@@ -868,6 +897,8 @@
 
                 const rowEl = mode2Container.lastElementChild;
                 if (!rowEl) return;
+
+                initMode2KodeSelect2(rowEl);
 
                 const fields = [
                     'kode_mode2',

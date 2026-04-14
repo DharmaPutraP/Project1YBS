@@ -1,16 +1,75 @@
 <x-layouts.app title="Input Data Destoner">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container--default .select2-selection--single {
+            height: auto !important;
+            padding: 0.5rem 1rem !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.5rem !important;
+            font-size: 0.875rem !important;
+            line-height: 1.25rem !important;
+            transition: all 0.15s !important;
+        }
+
+        .select2-container--default .select2-selection--single:focus,
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            outline: none !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding: 0 !important;
+            line-height: inherit !important;
+            color: #374151 !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: #9ca3af !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100% !important;
+            right: 0.75rem !important;
+        }
+
+        .select2-dropdown {
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.5rem !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .select2-results__option {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.875rem !important;
+        }
+
+        .select2-results__option--highlighted {
+            background-color: #3b82f6 !important;
+        }
+
+        .select2-container--default.border-red-400 .select2-selection--single {
+            border-color: #f87171 !important;
+            background-color: #fef2f2 !important;
+        }
+    </style>
     <x-ui.card title="Input Data Destoner">
         <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
             <div class="flex items-start">
-                <svg class="w-5 h-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg class="w-5 h-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div class="flex-1">
                     <h4 class="text-sm font-semibold text-indigo-900 mb-1">Jam Pengambilan Checklist</h4>
-                    <p class="text-sm text-indigo-800">Isi jam pengambilan saat checklist. Jam ini dipakai untuk validasi interval dan jam proses.</p>
+                    <p class="text-sm text-indigo-800">Isi jam pengambilan saat checklist. Jam ini dipakai untuk
+                        validasi interval dan jam proses.</p>
                     <div class="mt-2 p-3 bg-white rounded border border-indigo-200">
                         <div class="text-xs text-indigo-700">Waktu Saat Ini (Preview):</div>
-                        <div class="text-lg font-bold text-indigo-900" id="currentDateTime">{{ now()->format('d/m/Y H:i:s') }}</div>
+                        <div class="text-lg font-bold text-indigo-900" id="currentDateTime">
+                            {{ now()->format('d/m/Y H:i:s') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -32,11 +91,14 @@
 
             <div class="border-2 border-blue-200 bg-blue-50 rounded-lg p-4">
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <input type="checkbox" name="kegiatan_dispek" id="kegiatan_dispek" value="1" {{ old('kegiatan_dispek') ? 'checked' : '' }} class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <input type="checkbox" name="kegiatan_dispek" id="kegiatan_dispek" value="1" {{ old('kegiatan_dispek') ? 'checked' : '' }}
+                        class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                     <span>Ada kegiatan dispatch</span>
                 </label>
                 <label for="rounded_time" class="block text-sm font-medium text-gray-700 mb-2">Jam Pengambilan</label>
-                <input type="time" name="rounded_time" id="rounded_time" value="{{ old('rounded_time', now()->format('H:i')) }}" {{ old('kegiatan_dispek') ? '' : 'disabled' }} class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rounded_time') border-red-400 bg-red-50 @enderror">
+                <input type="time" name="rounded_time" id="rounded_time"
+                    value="{{ old('rounded_time', now()->format('H:i')) }}" {{ old('kegiatan_dispek') ? '' : 'disabled' }}
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rounded_time') border-red-400 bg-red-50 @enderror">
                 @error('rounded_time')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 <p class="mt-1 text-xs text-gray-500">Jam manual hanya aktif jika kegiatan dispatch dicentang.</p>
             </div>
@@ -56,18 +118,22 @@
                                 <input type="hidden" name="rows[{{ $kode }}][kode]" value="{{ $kode }}">
 
                                 <label class="inline-flex items-center gap-2 text-xs font-medium text-gray-700">
-                                    <input type="checkbox" name="rows[{{ $kode }}][pengulangan]" value="1" {{ old("rows.$kode.pengulangan") ? 'checked' : '' }} data-remarks-toggle class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <input type="checkbox" name="rows[{{ $kode }}][pengulangan]" value="1" {{ old("rows.$kode.pengulangan") ? 'checked' : '' }} data-remarks-toggle
+                                        class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                                     <span>Data sampel ulang</span>
                                 </label>
 
                                 <div class="space-y-1 {{ old("rows.$kode.pengulangan") ? '' : 'hidden' }}" data-remarks-wrapper>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Remarks</label>
-                                    <textarea name="rows[{{ $kode }}][remarks]" rows="3" placeholder="Tulis catatan sampel ulang" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">{{ old("rows.$kode.remarks") }}</textarea>
+                                    <textarea name="rows[{{ $kode }}][remarks]" rows="3"
+                                        placeholder="Tulis catatan sampel ulang"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">{{ old("rows.$kode.remarks") }}</textarea>
                                 </div>
 
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Jenis</label>
-                                    <select name="rows[{{ $kode }}][jenis]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <select name="rows[{{ $kode }}][jenis]"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                         <option value="">-- Pilih Jenis --</option>
                                         @foreach($jenisOptions as $jenisValue => $jenisLabel)
                                             <option value="{{ $jenisValue }}" {{ old("rows.$kode.jenis", 'TBS') == $jenisValue ? 'selected' : '' }}>{{ $jenisLabel }}</option>
@@ -78,21 +144,32 @@
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Operator</label>
                                     @if(!empty($operatorOptions))
-                                        <select name="rows[{{ $kode }}][operator]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                        <select name="rows[{{ $kode }}][operator]"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                             <option value="">-- Pilih Operator --</option>
                                             @foreach($operatorOptions as $operatorName)
                                                 <option value="{{ $operatorName }}" {{ old("rows.$kode.operator") == $operatorName ? 'selected' : '' }}>{{ $operatorName }}</option>
                                             @endforeach
                                         </select>
                                     @else
-                                        <input type="text" name="rows[{{ $kode }}][operator]" value="{{ old("rows.$kode.operator") }}" placeholder="Nama operator" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                        <input type="text" name="rows[{{ $kode }}][operator]"
+                                            value="{{ old("rows.$kode.operator") }}" placeholder="Nama operator"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                     @endif
                                 </div>
 
-                                <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_sampel]" value="{{ old("rows.$kode.berat_sampel") }}" placeholder="Berat Sampel (gram)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                                <input type="number" step="0.0001" name="rows[{{ $kode }}][time]" value="{{ old("rows.$kode.time") }}" placeholder="Time (detik)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                                <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_nut]" value="{{ old("rows.$kode.berat_nut") }}" placeholder="Berat Nut (gram)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                                <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_kernel]" value="{{ old("rows.$kode.berat_kernel") }}" placeholder="Berat Kernel (gram)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_sampel]"
+                                    value="{{ old("rows.$kode.berat_sampel") }}" placeholder="Berat Sampel (gram)"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input type="number" step="0.0001" name="rows[{{ $kode }}][time]"
+                                    value="{{ old("rows.$kode.time") }}" placeholder="Time (detik)"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_nut]"
+                                    value="{{ old("rows.$kode.berat_nut") }}" placeholder="Berat Nut (gram)"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_kernel]"
+                                    value="{{ old("rows.$kode.berat_kernel") }}" placeholder="Berat Kernel (gram)"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             </div>
                         @endforeach
                     </div>
@@ -100,13 +177,35 @@
             @endforeach
 
             <div class="flex flex-wrap justify-end gap-3 pt-6 border-t border-gray-200">
-                <a href="{{ route('kernel.destoner.index') }}" class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium">Batal</a>
-                <button type="submit" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium shadow-sm">Simpan Semua Data</button>
+                <a href="{{ route('kernel.destoner.index') }}"
+                    class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium">Batal</a>
+                <button type="submit"
+                    class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium shadow-sm">Simpan
+                    Semua Data</button>
             </div>
         </form>
     </x-ui.card>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
+        $(document).ready(function () {
+            $('select[name$="[operator]"]').select2({
+                placeholder: '-- Pilih Operator --',
+                allowClear: true,
+                width: '100%',
+                minimumResultsForSearch: 0,
+                language: {
+                    noResults: function () {
+                        return 'Tidak ditemukan';
+                    },
+                    searching: function () {
+                        return 'Mencari...';
+                    }
+                }
+            });
+        });
+
         function updateClock() {
             const now = new Date();
             const pad = n => String(n).padStart(2, '0');

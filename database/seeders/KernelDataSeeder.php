@@ -12,8 +12,8 @@ class KernelDataSeeder extends Seeder
         $officeData = [
             'YBS' => [
                 // ── Fibre Cyclone ──────────────────────────────────────────────────
-                ['kode' => 'FC1', 'nama_sample' => 'FIBRE CYCLONE1', 'limit_operator' => 'le', 'limit_value' => 1.450],
-                ['kode' => 'FC2', 'nama_sample' => 'FIBRE CYCLONE2', 'limit_operator' => 'le', 'limit_value' => 1.450],
+                ['kode' => 'FC1', 'nama_sample' => 'FIBRE CYCLONE1', 'limit_operator' => 'le', 'limit_value' => 1.50],
+                ['kode' => 'FC2', 'nama_sample' => 'FIBRE CYCLONE2', 'limit_operator' => 'le', 'limit_value' => 1.50],
 
                 // ── LTDS ───────────────────────────────────────────────────────────
                 ['kode' => 'L1', 'nama_sample' => 'LTDS 1', 'limit_operator' => 'le', 'limit_value' => 1.000],

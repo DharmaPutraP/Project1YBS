@@ -64,7 +64,7 @@ class OilMasterDataSeeder extends Seeder
                 // EFFLUENT & OTHERS
                 // ═══════════════════════════════════════════════════════════════════
                 // ['kode' => 'LP', 'column_name' => 'LIGHT PHASE', 'jenis' => 'LIGHT PHASE', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Light Phase', 'is_active' => true],
-                ['kode' => 'FE', 'column_name' => 'FINAL EFFLUENT', 'jenis' => 'EFFLUENT', 'persen' => 0.5, 'persen4' => 0, 'pivot' => 'EFFLUENT', 'limitOLWB' => 0.70, 'limitOLDB' => null, 'limitOL' => 0.5, 'description' => 'Final Effluent', 'is_active' => true],
+                ['kode' => 'FE', 'column_name' => 'FINAL EFFLUENT', 'jenis' => 'EFFLUENT', 'persen' => 0.5, 'persen4' => 0, 'pivot' => 'EFFLUENT', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => 0.5, 'description' => 'Final Effluent', 'is_active' => true],
                 // ['kode' => 'ST', 'column_name' => 'SLUDGE TANK', 'jenis' => 'SLUDGE', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Sludge Tank', 'is_active' => true],
                 // ['kode' => 'JK1', 'column_name' => 'JANJANGAN KOSONG 1', 'jenis' => 'JANJANGAN', 'persen' => 0, 'persen4' => 0, 'pivot' => '', 'limitOLWB' => null, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Janjangan Kosong 1', 'is_active' => true],
 

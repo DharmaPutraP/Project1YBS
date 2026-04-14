@@ -1456,7 +1456,7 @@ class ProcessController extends Controller
 
     private function resolveCodesByMachineName(string $machineName): array
     {
-        if (preg_match('/^FIBRE CYCLONE\s+(\d+)$/', $machineName, $match)) {
+        if (preg_match('/^FIBRE\s*CYCLONE\s*(\d+)$/', $machineName, $match)) {
             return ['FC' . $match[1]];
         }
 
@@ -1464,16 +1464,16 @@ class ProcessController extends Controller
             return ['L' . $match[1]];
         }
 
-        if (preg_match('/^CLAYBATH WET SHELL\s+(\d+)$/', $machineName, $match)) {
+        if (preg_match('/^CLAYBATH\s*WET\s*SHELL\s*(\d+)$/', $machineName, $match)) {
             $index = $match[1];
             return $index === '1' ? ['CWS', 'CWS1'] : ['CWS' . $index];
         }
 
-        if (preg_match('/^INLET KERNEL SILO\s+(\d+)$/', $machineName, $match)) {
+        if (preg_match('/^INLET\s*KERNEL\s*SILO\s*(\d+)$/', $machineName, $match)) {
             return ['IN' . $match[1]];
         }
 
-        if (preg_match('/^OUTLET KERNEL SILO\s+(\d+)\s+TO BUNKER$/', $machineName, $match)) {
+        if (preg_match('/^OUTLET\s*KERNEL\s*SILO\s*(\d+)\s*TO\s*BUNKER$/', $machineName, $match)) {
             return ['OUT' . $match[1]];
         }
 
@@ -1481,7 +1481,7 @@ class ProcessController extends Controller
             return ['P' . $match[1]];
         }
 
-        if (preg_match('/^RIPPLE MILL NO\.\s*(\d+)$/', $machineName, $match)) {
+        if (preg_match('/^RIPPLE\s*MILL\s*(?:NO\.?\s*)?(\d+)$/', $machineName, $match)) {
             return ['R' . $match[1]];
         }
 

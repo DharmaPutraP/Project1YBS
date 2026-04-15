@@ -281,7 +281,7 @@
                                         Limit</th>
                                     <th
                                         class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
-                                        Input By</th>
+                                        Remarks</th>
                                     @canany(['edit kernel losses', 'delete kernel losses'])
                                         <th
                                             class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
@@ -386,8 +386,8 @@
                                                 -
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $row->user->name ?? '-' }}
+                                        <td class="px-4 py-3 text-sm text-gray-600 whitespace-normal max-w-xs break-words">
+                                            {{ $row->remarks ?? '-' }}
                                         </td>
                                         @canany(['edit kernel losses', 'delete kernel losses'])
                                             <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">

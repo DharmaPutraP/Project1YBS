@@ -137,6 +137,8 @@
                             <th
                                 class="px-4 py-3 text-center text-xs font-medium text-orange-700 uppercase tracking-wider bg-orange-50">
                                 Limit</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                Remarks</th>
                             @canany(['edit kernel losses', 'delete kernel losses'])
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                     Aksi</th>
@@ -227,6 +229,9 @@
                                     @else
                                         ≤ 6.00%
                                     @endif
+                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-600 whitespace-normal max-w-xs break-words">
+                                    {{ $row->remarks ?? '-' }}
                                 </td>
                                 @canany(['edit kernel losses', 'delete kernel losses'])
                                     <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">

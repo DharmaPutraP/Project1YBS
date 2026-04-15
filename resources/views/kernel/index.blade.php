@@ -280,7 +280,7 @@
                                         class="px-4 py-3 text-center text-xs font-medium text-orange-700 uppercase tracking-wider bg-orange-50">
                                         Limit</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                        Input By</th>
+                                        Remarks</th>
                                     @canany(['edit kernel losses', 'delete kernel losses'])
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                             Aksi</th>
@@ -371,8 +371,8 @@
                                             class="px-4 py-3 whitespace-nowrap text-center text-xs font-semibold bg-orange-50 text-orange-800">
                                             {{ $master ? $master->limit_label : '-' }}
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $calc->user->name }}
+                                        <td class="px-4 py-3 text-sm text-gray-600 whitespace-normal max-w-xs break-words">
+                                            {{ $calc->remarks ?? '-' }}
                                         </td>
                                         @canany(['edit kernel losses', 'delete kernel losses'])
                                             <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">

@@ -9,6 +9,9 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
         <div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-indigo-500">
             <p class="text-xs md:text-sm text-gray-500 font-medium">Total Records</p>
+            <td class="px-4 py-3 text-sm text-gray-600 whitespace-normal max-w-xs break-words">
+                {{ $row->remarks ?? '-' }}
+            </td>
             <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ $statistics['total_records'] }}</p>
         </div>
         <div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-green-500">
@@ -145,6 +148,8 @@
                             <th
                                 class="px-4 py-3 text-center text-xs font-medium text-orange-700 uppercase tracking-wider bg-orange-50">
                                 Limit</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                Remarks</th>
                             <th class="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                                 Ampere Screw</th>
                             <th class="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">

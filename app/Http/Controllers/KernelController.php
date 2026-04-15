@@ -2809,14 +2809,19 @@ class KernelController extends Controller
             return;
         }
 
+        $currentHour = (int) $referenceTime->format('H');
+        $processDates = [$referenceTime->toDateString()];
+        if ($currentHour < 7) {
+            array_unshift($processDates, $referenceTime->copy()->subDay()->toDateString());
+        }
+
         $processRows = KernelProsses::query()
             ->with('mesin')
-            ->whereDate('process_date', $referenceTime->toDateString())
+            ->whereIn('process_date', $processDates)
             ->where('office', $office)
             ->get();
 
         if ($processRows->isEmpty()) {
-            $currentHour = (int) $referenceTime->format('H');
             if ($currentHour >= 7) {
                 // After 07:00, allow next cycle input even when process schedule is not set yet.
                 return;

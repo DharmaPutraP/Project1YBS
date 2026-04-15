@@ -3759,11 +3759,13 @@ class KernelController extends Controller
         $endDate = $request->input('end_date', now()->toDateString());
         $kode = $request->input('kode');
         $officeFilter = $this->resolveOfficeFilter($request);
+        $range = $this->resolveVisibleDateRange($startDate, $endDate, $officeFilter);
 
-        $data = $this->getUnifiedKernelReportRecords($startDate, $endDate, $officeFilter)
-            ->when($kode, function ($collection) use ($kode) {
-                return $collection->where('kode', $kode);
-            })
+        $data = KernelCalculation::with('user')
+            ->whereBetween('created_at', $range)
+            ->when($kode, fn($q) => $q->where('kode', $kode))
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
+            ->get()
             ->sortBy('created_at')
             ->values();
 

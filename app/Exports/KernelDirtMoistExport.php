@@ -49,6 +49,8 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
             'JENIS',
             'OPERATOR',
             'SAMPEL BOY',
+            'KEGIATAN DISPATCH',
+            'REMARKS',
             'BERAT SAMPEL (g)',
             'BERAT DIRTY (g)',
             'DIRTY TO SAMPEL (%)',
@@ -99,6 +101,8 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
             $row->jenis ?? '-',
             $row->operator ?? '-',
             $row->sampel_boy ?? '-',
+            ($row->kegiatan_dispek ?? false) ? 'Ya' : 'Tidak',
+            $row->remarks ?? '-',
             (float) ($row->berat_sampel ?? 0),
             (float) ($row->berat_dirty ?? 0),
             round($dirtyVal, 4),
@@ -113,7 +117,7 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
         $sheet->insertNewRowBefore(1, 3);
 
         $sheet->setCellValue('A1', 'LAPORAN DATA DIRT & MOIST');
-        $sheet->mergeCells('A1:P1');
+        $sheet->mergeCells('A1:R1');
 
         $filterInfo = 'Periode: ' . Carbon::parse($this->startDate)->format('d-m-Y')
             . ' s/d ' . Carbon::parse($this->endDate)->format('d-m-Y');
@@ -121,7 +125,7 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
             $filterInfo .= ' | Kode: ' . $this->kode;
         }
         $sheet->setCellValue('A2', $filterInfo);
-        $sheet->mergeCells('A2:P2');
+        $sheet->mergeCells('A2:R2');
 
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 16],
@@ -134,30 +138,30 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
 
         $lastRow = $sheet->getHighestRow();
 
-        $sheet->getStyle('A4:P4')->applyFromArray([
+        $sheet->getStyle('A4:R4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
         ]);
-        $sheet->getStyle('A4:P' . $lastRow)->applyFromArray([
+        $sheet->getStyle('A4:R' . $lastRow)->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
         ]);
-        $sheet->getStyle('K5:P' . $lastRow)->applyFromArray([
+        $sheet->getStyle('M5:R' . $lastRow)->applyFromArray([
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
         ]);
 
-        // Conditional colour for DIRTY column (M) and MOIST column (O)
+        // Conditional colour for DIRTY column (O) and MOIST column (Q)
         for ($r = 5; $r <= $lastRow; $r++) {
-            $dirty = $sheet->getCell('M' . $r)->getValue();
-            $dirtyLim = $sheet->getCell('N' . $r)->getValue();
+            $dirty = $sheet->getCell('O' . $r)->getValue();
+            $dirtyLim = $sheet->getCell('P' . $r)->getValue();
             if (is_numeric($dirty) && $dirtyLim !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $dirtyLim, $m);
                 if (count($m) === 3) {
                     $op = trim($m[1]);
                     $lim = (float) $m[2];
                     $ok = ($op === '<=' || $op === '=<') ? $dirty <= $lim : $dirty > $lim;
-                    $sheet->getStyle('M' . $r)->applyFromArray($ok ? [
+                    $sheet->getStyle('O' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],
                     ] : [
@@ -167,15 +171,15 @@ class KernelDirtMoistExport implements FromCollection, WithHeadings, WithMapping
                 }
             }
 
-            $moist = $sheet->getCell('O' . $r)->getValue();
-            $moistLim = $sheet->getCell('P' . $r)->getValue();
+            $moist = $sheet->getCell('Q' . $r)->getValue();
+            $moistLim = $sheet->getCell('R' . $r)->getValue();
             if (is_numeric($moist) && $moistLim !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $moistLim, $m);
                 if (count($m) === 3) {
                     $op = trim($m[1]);
                     $lim = (float) $m[2];
                     $ok = ($op === '<=' || $op === '=<') ? $moist <= $lim : $moist > $lim;
-                    $sheet->getStyle('O' . $r)->applyFromArray($ok ? [
+                    $sheet->getStyle('Q' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],
                     ] : [

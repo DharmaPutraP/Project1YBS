@@ -24,11 +24,11 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
 
     public function __construct($data, $masterData, string $startDate, string $endDate, ?string $kode = null)
     {
-        $this->data       = $data;
+        $this->data = $data;
         $this->masterData = $masterData;
-        $this->startDate  = $startDate;
-        $this->endDate    = $endDate;
-        $this->kode       = $kode;
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+        $this->kode = $kode;
     }
 
     public function collection()
@@ -50,6 +50,8 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
             'JENIS',
             'OPERATOR',
             'SAMPEL BOY',
+            'KEGIATAN DISPATCH',
+            'REMARKS',
             'BERAT SAMPEL (g)',
             'NUT UTUH - NUT (g)',
             'NUT UTUH - KERNEL (g)',
@@ -71,7 +73,7 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
         static $counter = 0;
         $counter++;
 
-        $master     = $this->masterData[$row->kode] ?? null;
+        $master = $this->masterData[$row->kode] ?? null;
         $lossPercent = $row->kernel_losses !== null ? round($row->kernel_losses * 100, 4) : '-';
 
         return [
@@ -86,6 +88,8 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
             $row->jenis ?? '-',
             $row->operator ?? '-',
             $row->sampel_boy ?? '-',
+            ($row->kegiatan_dispek ?? false) ? 'Ya' : 'Tidak',
+            $row->remarks ?? '-',
             $row->berat_sampel !== null ? (float) $row->berat_sampel : '-',
             $row->nut_utuh_nut !== null ? (float) $row->nut_utuh_nut : '-',
             $row->nut_utuh_kernel !== null ? (float) $row->nut_utuh_kernel : '-',
@@ -108,7 +112,7 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
         $sheet->insertNewRowBefore(1, 3);
 
         $sheet->setCellValue('A1', 'LAPORAN DATA KERNEL LOSSES');
-        $sheet->mergeCells('A1:X1');
+        $sheet->mergeCells('A1:Z1');
 
         $filterInfo = 'Periode: ' . Carbon::parse($this->startDate)->format('d-m-Y')
             . ' s/d ' . Carbon::parse($this->endDate)->format('d-m-Y');
@@ -116,14 +120,14 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
             $filterInfo .= ' | Kode: ' . $this->kode;
         }
         $sheet->setCellValue('A2', $filterInfo);
-        $sheet->mergeCells('A2:X2');
+        $sheet->mergeCells('A2:Z2');
 
         // Title style
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 16],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical'   => Alignment::VERTICAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
             ],
         ]);
 
@@ -134,13 +138,13 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
         ]);
 
         // Header row (row 4 after inserting 3)
-        $sheet->getStyle('A4:X4')->applyFromArray([
+        $sheet->getStyle('A4:Z4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical'   => Alignment::VERTICAL_CENTER,
-                'wrapText'   => true,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
             ],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
         ]);
@@ -148,25 +152,25 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
         $lastRow = $sheet->getHighestRow();
 
         // All data borders
-        $sheet->getStyle('A4:X' . $lastRow)->applyFromArray([
+        $sheet->getStyle('A4:Z' . $lastRow)->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
         ]);
 
-        // Right-align numeric columns L-X
-        $sheet->getStyle('L5:X' . $lastRow)->applyFromArray([
+        // Right-align numeric columns N-Z
+        $sheet->getStyle('N5:Z' . $lastRow)->applyFromArray([
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
         ]);
 
-        // Conditional color for KERNEL LOSSES column (V = col 22)
+        // Conditional color for KERNEL LOSSES column (Y = col 25)
         for ($row = 5; $row <= $lastRow; $row++) {
             $kodeVal = $sheet->getCell('E' . $row)->getValue();
-            $lossVal = $sheet->getCell('W' . $row)->getValue();
+            $lossVal = $sheet->getCell('Y' . $row)->getValue();
 
             if ($kodeVal && isset($this->masterData[$kodeVal]) && is_numeric($lossVal)) {
-                $master   = $this->masterData[$kodeVal];
+                $master = $this->masterData[$kodeVal];
                 $exceeded = $master->isExceeded((float) $lossVal);
 
-                $sheet->getStyle('W' . $row)->applyFromArray($exceeded ? [
+                $sheet->getStyle('Y' . $row)->applyFromArray($exceeded ? [
                     'font' => ['color' => ['rgb' => 'dc2626'], 'bold' => true],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'fee2e2']],
                 ] : [

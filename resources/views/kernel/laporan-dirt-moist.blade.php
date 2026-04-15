@@ -139,7 +139,7 @@
         </div>
 
         <div class="relative overflow-x-auto overflow-y-auto max-h-[600px] border rounded-lg">
-            <table class="min-w-[1800px] text-xs text-gray-700 divide-y divide-gray-200">
+            <table class="min-w-[2150px] text-xs text-gray-700 divide-y divide-gray-200">
                 <thead class="bg-blue-50 sticky top-0 z-40">
                     <tr>
                         <th class="sticky top-0 left-0 z-[60] bg-blue-50 border px-3 py-3 w-[50px] text-center">NO</th>
@@ -154,6 +154,8 @@
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">JENIS</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">OPERATOR</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">SAMPEL BOY</th>
+                        <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">KEGIATAN DISPATCH</th>
+                        <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">REMARKS</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">BERAT SAMPEL (g)</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">BERAT DIRTY (g)</th>
                         <th class="sticky top-0 z-20 bg-purple-100 border px-3 py-3 text-purple-700">DIRTY TO SAMPEL (%)
@@ -222,6 +224,13 @@
                             </td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $row->operator ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $row->sampel_boy ?? '-' }}</td>
+                            <td class="border px-3 py-2 text-center whitespace-nowrap">
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ ($row->kegiatan_dispek ?? false) ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700' }}">
+                                    {{ ($row->kegiatan_dispek ?? false) ? 'Ya' : 'Tidak' }}
+                                </span>
+                            </td>
+                            <td class="border px-3 py-2 max-w-[220px] break-words">{{ $row->remarks ?? '-' }}</td>
                             <td class="border px-3 py-2 text-right">
                                 {{ number_format((float) ($row->berat_sampel ?? 0), 4) }}
                             </td>
@@ -258,7 +267,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="16" class="px-4 py-16 text-center text-sm text-gray-400">Belum ada data laporan
+                            <td colspan="18" class="px-4 py-16 text-center text-sm text-gray-400">Belum ada data laporan
                                 Dirt &amp; Moist untuk periode ini.</td>
                         </tr>
                     @endforelse

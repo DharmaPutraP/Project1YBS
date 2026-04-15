@@ -36,7 +36,7 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
         return collect($this->data);
     }
 
-    // Total 27 columns  A..AA
+    // Total 29 columns  A..AC
     public function headings(): array
     {
         return [
@@ -50,6 +50,8 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
             'JENIS',
             'OPERATOR',
             'SAMPEL BOY',
+            'KEGIATAN DISPATCH',
+            'REMARKS',
             'SAMPEL SETELAH KUARTER',
             'BERAT NUT UTUH (g)',
             'BERAT NUT PECAH (g)',
@@ -111,6 +113,8 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
             $row->jenis ?? '-',
             $row->operator ?? '-',
             $row->sampel_boy ?? '-',
+            ($row->kegiatan_dispek ?? false) ? 'Ya' : 'Tidak',
+            $row->remarks ?? '-',
             (float) ($row->sampel_setelah_kuarter ?? 0),
             (float) ($row->berat_nut_utuh ?? 0),
             (float) ($row->berat_nut_pecah ?? 0),
@@ -136,7 +140,7 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
         $sheet->insertNewRowBefore(1, 3);
 
         $sheet->setCellValue('A1', 'LAPORAN DATA QWT FIBRE PRESS');
-        $sheet->mergeCells('A1:AA1');
+        $sheet->mergeCells('A1:AC1');
 
         $filterInfo = 'Periode: ' . Carbon::parse($this->startDate)->format('d-m-Y')
             . ' s/d ' . Carbon::parse($this->endDate)->format('d-m-Y');
@@ -144,7 +148,7 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
             $filterInfo .= ' | Kode: ' . $this->kode;
         }
         $sheet->setCellValue('A2', $filterInfo);
-        $sheet->mergeCells('A2:AA2');
+        $sheet->mergeCells('A2:AC2');
 
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 16],
@@ -157,31 +161,31 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
 
         $lastRow = $sheet->getHighestRow();
 
-        $sheet->getStyle('A4:AA4')->applyFromArray([
+        $sheet->getStyle('A4:AC4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
         ]);
-        $sheet->getStyle('A4:AA' . $lastRow)->applyFromArray([
+        $sheet->getStyle('A4:AC' . $lastRow)->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
         ]);
-        $sheet->getStyle('K5:AA' . $lastRow)->applyFromArray([
+        $sheet->getStyle('M5:AC' . $lastRow)->applyFromArray([
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
         ]);
 
-        // BN/TN = column U (21), limit = V (22)
-        // Moisture = column W (23), limit = X (24)
+        // BN/TN = column W (23), limit = X (24)
+        // Moisture = column Y (25), limit = Z (26)
         for ($r = 5; $r <= $lastRow; $r++) {
-            $bntn = $sheet->getCell('U' . $r)->getValue();
-            $bntnLim = $sheet->getCell('V' . $r)->getValue();
+            $bntn = $sheet->getCell('W' . $r)->getValue();
+            $bntnLim = $sheet->getCell('X' . $r)->getValue();
             if (is_numeric($bntn) && $bntnLim !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $bntnLim, $m);
                 if (count($m) === 3) {
                     $op = trim($m[1]);
                     $lim = (float) $m[2];
                     $ok = ($op === '<=' || $op === '=<') ? $bntn <= $lim : $bntn > $lim;
-                    $sheet->getStyle('U' . $r)->applyFromArray($ok ? [
+                    $sheet->getStyle('W' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],
                     ] : [
@@ -191,15 +195,15 @@ class KernelQwtExport implements FromCollection, WithHeadings, WithMapping, With
                 }
             }
 
-            $moist = $sheet->getCell('W' . $r)->getValue();
-            $moistLim = $sheet->getCell('X' . $r)->getValue();
+            $moist = $sheet->getCell('Y' . $r)->getValue();
+            $moistLim = $sheet->getCell('Z' . $r)->getValue();
             if (is_numeric($moist) && $moistLim !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $moistLim, $m);
                 if (count($m) === 3) {
                     $op = trim($m[1]);
                     $lim = (float) $m[2];
                     $ok = ($op === '<=' || $op === '=<') ? $moist <= $lim : $moist > $lim;
-                    $sheet->getStyle('W' . $r)->applyFromArray($ok ? [
+                    $sheet->getStyle('Y' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],
                     ] : [

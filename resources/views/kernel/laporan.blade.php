@@ -131,7 +131,7 @@
         </div>
 
         <div class="relative overflow-x-auto overflow-y-auto max-h-[600px] border rounded-lg">
-            <table class="min-w-[2500px] text-xs text-gray-700 divide-y divide-gray-200">
+            <table class="min-w-[2800px] text-xs text-gray-700 divide-y divide-gray-200">
                 <thead class="bg-blue-50 sticky top-0 z-40">
                     <tr>
                         <th class="sticky top-0 left-0 z-[60] bg-blue-50 border px-3 py-3 w-[50px] text-center">NO</th>
@@ -146,6 +146,8 @@
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">JENIS</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">OPERATOR</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">SAMPEL BOY</th>
+                        <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">KEGIATAN DISPATCH</th>
+                        <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">REMARKS</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">BERAT SAMPEL (g)</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">NUT UTUH - NUT (g)</th>
                         <th class="sticky top-0 z-20 bg-blue-50 border px-3 py-3">NUT UTUH - KERNEL (g)</th>
@@ -182,56 +184,81 @@
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="sticky left-0 z-[20] bg-white border px-3 py-2 text-center">
-                                {{ ($calculations->currentPage() - 1) * $calculations->perPage() + $loop->iteration }}</td>
+                                {{ ($calculations->currentPage() - 1) * $calculations->perPage() + $loop->iteration }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[50px] z-[10] bg-white whitespace-nowrap">
-                                {{ $productionDate->format('F Y') }}</td>
+                                {{ $productionDate->format('F Y') }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[160px] z-[10] bg-white whitespace-nowrap">
-                                {{ $productionDate->format('d-m-Y') }}</td>
+                                {{ $productionDate->format('d-m-Y') }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[270px] z-[10] bg-white whitespace-nowrap">
-                                {{ $displayAt->format('H:i:s') }}</td>
+                                {{ $displayAt->format('H:i:s') }}
+                            </td>
                             <td
                                 class="border px-3 py-2 lg:sticky lg:left-[360px] z-[10] bg-white font-semibold text-blue-800 whitespace-nowrap">
-                                {{ $calc->kode }}</td>
+                                {{ $calc->kode }}
+                            </td>
                             <td class="border px-3 py-2 lg:sticky lg:left-[450px] z-[10] bg-white whitespace-nowrap">
-                                {{ $master->nama_sample ?? '-' }}</td>
+                                {{ $master->nama_sample ?? '-' }}
+                            </td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ optional($calc->user)->name ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap"><span
                                     class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{{ $calc->jenis ?? '-' }}</span>
                             </td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $calc->operator ?? '-' }}</td>
                             <td class="border px-3 py-2 whitespace-nowrap">{{ $calc->sampel_boy ?? '-' }}</td>
+                            <td class="border px-3 py-2 text-center whitespace-nowrap">
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ ($calc->kegiatan_dispek ?? false) ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700' }}">
+                                    {{ ($calc->kegiatan_dispek ?? false) ? 'Ya' : 'Tidak' }}
+                                </span>
+                            </td>
+                            <td class="border px-3 py-2 max-w-[240px] break-words">{{ $calc->remarks ?? '-' }}</td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($calc->berat_sampel ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->berat_sampel ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($calc->nut_utuh_nut ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->nut_utuh_nut ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($calc->nut_utuh_kernel ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->nut_utuh_kernel ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($calc->nut_pecah_nut ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->nut_pecah_nut ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($calc->nut_pecah_kernel ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->nut_pecah_kernel ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($calc->kernel_utuh ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->kernel_utuh ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right">
-                                {{ number_format((float) ($calc->kernel_pecah ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->kernel_pecah ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right bg-purple-50">
-                                {{ number_format((float) ($calc->kernel_to_sampel_nut_utuh ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->kernel_to_sampel_nut_utuh ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right bg-purple-50">
-                                {{ number_format((float) ($calc->kernel_to_sampel_nut_pecah ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->kernel_to_sampel_nut_pecah ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right bg-purple-50">
-                                {{ number_format((float) ($calc->kernel_utuh_to_sampel ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->kernel_utuh_to_sampel ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-right bg-purple-50">
-                                {{ number_format((float) ($calc->kernel_pecah_to_sampel ?? 0), 4) }}</td>
+                                {{ number_format((float) ($calc->kernel_pecah_to_sampel ?? 0), 4) }}
+                            </td>
                             <td class="border px-3 py-2 text-center"><span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs {{ $lossBadge }}">{{ number_format($lossPercent, 4) }}%</span>
                             </td>
                             <td
                                 class="border px-3 py-2 text-center bg-orange-50 text-orange-800 font-medium whitespace-nowrap">
-                                {{ $master ? $master->limit_label : '-' }}</td>
+                                {{ $master ? $master->limit_label : '-' }}
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="23" class="px-4 py-16 text-center text-sm text-gray-400">Belum ada data laporan
+                            <td colspan="25" class="px-4 py-16 text-center text-sm text-gray-400">Belum ada data laporan
                                 kernel losses untuk periode ini.</td>
                         </tr>
                     @endforelse

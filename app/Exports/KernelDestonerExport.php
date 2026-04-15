@@ -36,7 +36,7 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
         return collect($this->data);
     }
 
-    // 22 columns  A..V
+    // 24 columns  A..X
     public function headings(): array
     {
         return [
@@ -50,6 +50,8 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
             'JENIS',
             'OPERATOR',
             'SAMPEL BOY',
+            'KEGIATAN DISPATCH',
+            'REMARKS',
             'BERAT SAMPEL (g)',
             'KONVERSI KG',
             'TIME',
@@ -94,6 +96,8 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
             $row->jenis ?? '-',
             $row->operator ?? '-',
             $row->sampel_boy ?? '-',
+            ($row->kegiatan_dispek ?? false) ? 'Ya' : 'Tidak',
+            $row->remarks ?? '-',
             round((float) ($row->berat_sampel ?? 0), 2),
             round((float) ($row->konversi_kg ?? 0), 2),
             $row->time ?? '-',
@@ -114,7 +118,7 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
         $sheet->insertNewRowBefore(1, 3);
 
         $sheet->setCellValue('A1', 'LAPORAN DATA DESTONER');
-        $sheet->mergeCells('A1:V1');
+        $sheet->mergeCells('A1:X1');
 
         $filterInfo = 'Periode: ' . Carbon::parse($this->startDate)->format('d-m-Y')
             . ' s/d ' . Carbon::parse($this->endDate)->format('d-m-Y');
@@ -122,7 +126,7 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
             $filterInfo .= ' | Kode: ' . $this->kode;
         }
         $sheet->setCellValue('A2', $filterInfo);
-        $sheet->mergeCells('A2:V2');
+        $sheet->mergeCells('A2:X2');
 
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 16],
@@ -135,23 +139,23 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
 
         $lastRow = $sheet->getHighestRow();
 
-        $sheet->getStyle('A4:V4')->applyFromArray([
+        $sheet->getStyle('A4:X4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
         ]);
-        $sheet->getStyle('A4:V' . $lastRow)->applyFromArray([
+        $sheet->getStyle('A4:X' . $lastRow)->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
         ]);
-        $sheet->getStyle('K5:V' . $lastRow)->applyFromArray([
+        $sheet->getStyle('M5:X' . $lastRow)->applyFromArray([
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
         ]);
 
-        // Loss Kernel/TBS = column U (21), limit = V (22)
+        // Loss Kernel/TBS = column W (23), limit = X (24)
         for ($r = 5; $r <= $lastRow; $r++) {
-            $loss = $sheet->getCell('U' . $r)->getValue();
-            $limCell = $sheet->getCell('V' . $r)->getValue();
+            $loss = $sheet->getCell('W' . $r)->getValue();
+            $limCell = $sheet->getCell('X' . $r)->getValue();
             if (is_numeric($loss) && $limCell !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $limCell, $m);
                 if (count($m) === 3) {
@@ -159,7 +163,7 @@ class KernelDestonerExport implements FromCollection, WithHeadings, WithMapping,
                     $lim = (float) $m[2];
                     // For destoner losses: "le" (<=) means IN limit (good = green)
                     $ok = ($op === '<=' || $op === '=<') ? $loss <= $lim : $loss > $lim;
-                    $sheet->getStyle('U' . $r)->applyFromArray($ok ? [
+                    $sheet->getStyle('W' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],
                     ] : [

@@ -27,6 +27,7 @@ return [
             'FEBRI',
             'Fitra',
             'HARIZON',
+            'Hafiz',
             'IRVAN ROYNALDI',
             'RAMBI',
             'RIAN IDRIS',

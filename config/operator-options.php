@@ -176,13 +176,7 @@ return [
             'WEWEN SAPUTRA',
             'WIKKI SAMUEL SILITONGA',
             'ALFAJRI',
-            'AGUNG ANANDHA',
-            'KRISDIANTO WIBISONO',
-            'SURYA HANDANI K',
-            'IRWANDA',
-            'PRANS HARDIANSYAH SIMANJUNTAK',
-            'EKA ARDIANSYAH LUBIS',
-            'PANTAS JEKSON LIBERTO TAMPUBOLON'
+            'AGUNG ANANDHA'
         ],
         'SJN' => [],
     ],
@@ -342,13 +336,7 @@ return [
             'WEWEN SAPUTRA',
             'WIKKI SAMUEL SILITONGA',
             'ALFAJRI',
-            'AGUNG ANANDHA',
-            'KRISDIANTO WIBISONO',
-            'SURYA HANDANI K',
-            'IRWANDA',
-            'PRANS HARDIANSYAH SIMANJUNTAK',
-            'EKA ARDIANSYAH LUBIS',
-            'PANTAS JEKSON LIBERTO TAMPUBOLON'
+            'AGUNG ANANDHA'
         ],
         'SUN' => [
             'Ramanda',
@@ -528,13 +516,7 @@ return [
             'WEWEN SAPUTRA',
             'WIKKI SAMUEL SILITONGA',
             'ALFAJRI',
-            'AGUNG ANANDHA',
-            'KRISDIANTO WIBISONO',
-            'SURYA HANDANI K',
-            'IRWANDA',
-            'PRANS HARDIANSYAH SIMANJUNTAK',
-            'EKA ARDIANSYAH LUBIS',
-            'PANTAS JEKSON LIBERTO TAMPUBOLON'
+            'AGUNG ANANDHA'
         ],
         'SUN' => [
             'Ramanda',
@@ -714,13 +696,7 @@ return [
             'WEWEN SAPUTRA',
             'WIKKI SAMUEL SILITONGA',
             'ALFAJRI',
-            'AGUNG ANANDHA',
-            'KRISDIANTO WIBISONO',
-            'SURYA HANDANI K',
-            'IRWANDA',
-            'PRANS HARDIANSYAH SIMANJUNTAK',
-            'EKA ARDIANSYAH LUBIS',
-            'PANTAS JEKSON LIBERTO TAMPUBOLON'
+            'AGUNG ANANDHA'
         ],
         'SUN' => [
             'Ramanda',
@@ -900,13 +876,7 @@ return [
             'WEWEN SAPUTRA',
             'WIKKI SAMUEL SILITONGA',
             'ALFAJRI',
-            'AGUNG ANANDHA',
-            'KRISDIANTO WIBISONO',
-            'SURYA HANDANI K',
-            'IRWANDA',
-            'PRANS HARDIANSYAH SIMANJUNTAK',
-            'EKA ARDIANSYAH LUBIS',
-            'PANTAS JEKSON LIBERTO TAMPUBOLON'
+            'AGUNG ANANDHA'
         ],
         'SUN' => [
             'Ramanda',
@@ -1086,13 +1056,7 @@ return [
             'WEWEN SAPUTRA',
             'WIKKI SAMUEL SILITONGA',
             'ALFAJRI',
-            'AGUNG ANANDHA',
-            'KRISDIANTO WIBISONO',
-            'SURYA HANDANI K',
-            'IRWANDA',
-            'PRANS HARDIANSYAH SIMANJUNTAK',
-            'EKA ARDIANSYAH LUBIS',
-            'PANTAS JEKSON LIBERTO TAMPUBOLON'
+            'AGUNG ANANDHA'
         ],
         'SUN' => [
             'Ramanda',

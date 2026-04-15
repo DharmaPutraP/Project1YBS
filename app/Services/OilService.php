@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\OilCalculation;
 use App\Models\OilMasterData;
 use App\Models\OilRecord;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -148,7 +149,7 @@ class OilService
     }
 
     /**
-     * Simpan data numeric (Mode 2: hanya 1 per kode per hari per office)
+     * Simpan data numeric (Mode 2: hanya 1 per kode per hari produksi per office)
      * 
      * FASE 1: Validasi kode_mode2 harus diisi
      * FASE 2: Cek apakah kombinasi (office + tanggal + kode) sudah ada -> TOLAK jika sudah ada
@@ -197,16 +198,16 @@ class OilService
         $existingCompletedBatch = OilCalculation::where('office', $userOffice)
             ->where('kode', $kode)
             ->where('status', 'complete')
-            ->whereDate('created_at', today())
+            ->whereBetween('created_at', $this->resolveProductionRangeFor($this->resolveProductionDateKey(Carbon::now())))
             ->latest('id')
             ->first();
 
         if ($phase === 'initial' && $existingCompletedBatch && !$existingOpenBatch) {
-            throw new Exception("Kode '{$kode}' untuk office {$userOffice} hari ini sudah selesai diproses. Gunakan kode lain atau buka data yang sudah ada untuk koreksi.");
+            throw new Exception("Kode '{$kode}' untuk office {$userOffice} pada hari produksi ini (07:00-06:59) sudah selesai diproses. Gunakan kode lain atau buka data yang sudah ada untuk koreksi.");
         }
 
         if ($phase === 'complete' && $existingCompletedBatch && !$existingOpenBatch) {
-            throw new Exception("Kode '{$kode}' untuk office {$userOffice} hari ini sudah ada. Setiap kode hanya boleh diinput sekali per hari per office.");
+            throw new Exception("Kode '{$kode}' untuk office {$userOffice} pada hari produksi ini (07:00-06:59) sudah ada. Setiap kode hanya boleh diinput sekali per hari produksi per office.");
         }
 
         // FASE 3: Ambil master data dari kode
@@ -486,5 +487,23 @@ class OilService
         }
 
         return 'initial';
+    }
+
+    private function resolveProductionRangeFor(string $productionDate): array
+    {
+        $start = Carbon::parse($productionDate)->setTime(7, 0, 0);
+        $end = Carbon::parse($productionDate)->addDay()->setTime(6, 59, 59);
+
+        return [$start, $end];
+    }
+
+    private function resolveProductionDateKey(Carbon $timestamp): string
+    {
+        $productionDate = $timestamp->copy();
+        if ((int) $productionDate->format('H') < 7) {
+            $productionDate->subDay();
+        }
+
+        return $productionDate->format('Y-m-d');
     }
 }

@@ -2854,6 +2854,10 @@ class KernelController extends Controller
                     continue;
                 }
 
+                if ($currentHour >= 7 && $this->isEarlyMorningCarryOverWindow($startMinutes, $endMinutes)) {
+                    continue;
+                }
+
                 $windows[] = [
                     'start' => $startMinutes,
                     'end' => $endMinutes,
@@ -2889,6 +2893,11 @@ class KernelController extends Controller
         throw ValidationException::withMessages([
             'kode' => "Warning: Jam saat submit ({$referenceTime->format('H:i')}) di luar jam mesin hidup untuk kode {$kode}. Jam yang diizinkan: {$availableWindows}.",
         ]);
+    }
+
+    private function isEarlyMorningCarryOverWindow(int $startMinutes, int $endMinutes): bool
+    {
+        return $startMinutes < 420 && $endMinutes <= 420;
     }
 
     private function normalizeMachineCode(string $code): string

@@ -46,7 +46,6 @@ class ReportController extends Controller
                     ->whereNull('u.deleted_at');
             })
             ->whereNull('c.deleted_at')
-            ->where('c.status', 'complete')
             ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
@@ -92,7 +91,6 @@ class ReportController extends Controller
                     ->whereNull('u.deleted_at');
             })
             ->whereNull('c.deleted_at')
-            ->where('c.status', 'complete')
             ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
@@ -340,7 +338,6 @@ class ReportController extends Controller
                     ->whereNull('u.deleted_at');
             })
             ->whereNull('c.deleted_at')
-            ->where('c.status', 'complete')
             ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
@@ -379,7 +376,6 @@ class ReportController extends Controller
                     ->whereNull('u.deleted_at');
             })
             ->whereNull('c.deleted_at')
-            ->where('c.status', 'complete')
             ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))

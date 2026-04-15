@@ -18,6 +18,7 @@ class KernelDestoner extends Model
         'kode',
         'jenis',
         'rounded_time',
+        'kegiatan_dispek',
         'operator',
         'sampel_boy',
         'pengulangan',
@@ -39,6 +40,7 @@ class KernelDestoner extends Model
 
     protected $casts = [
         'rounded_time' => 'datetime',
+        'kegiatan_dispek' => 'boolean',
         'pengulangan' => 'boolean',
         'berat_sampel' => 'float',
         'time' => 'float',

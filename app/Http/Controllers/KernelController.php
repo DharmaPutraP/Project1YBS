@@ -223,7 +223,7 @@ class KernelController extends Controller
             ]);
         }
 
-        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave) {
+        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $isKegiatanDispek) {
             $rowErrors = [];
             $savedRows = [];
 
@@ -232,21 +232,23 @@ class KernelController extends Controller
                 $isPengulangan = (bool) ($row['pengulangan'] ?? false);
 
                 try {
-                    $this->validatePengulanganWindow(
-                        KernelCalculation::class,
-                        $kode,
-                        $userOffice,
-                        $isPengulangan,
-                        'Kernel Losses',
-                        $roundedTime
-                    );
+                    if (!$isKegiatanDispek) {
+                        $this->validatePengulanganWindow(
+                            KernelCalculation::class,
+                            $kode,
+                            $userOffice,
+                            $isPengulangan,
+                            'Kernel Losses',
+                            $roundedTime
+                        );
 
-                    $this->validateMachineWindowForKernelInput(
-                        $kode,
-                        $userOffice,
-                        $roundedTime,
-                        'Kernel Losses'
-                    );
+                        $this->validateMachineWindowForKernelInput(
+                            $kode,
+                            $userOffice,
+                            $roundedTime,
+                            'Kernel Losses'
+                        );
+                    }
                 } catch (ValidationException $e) {
                     $firstMessage = collect($e->errors())->flatten()->first();
                     $rowErrors['rows.' . $kode . '.kode'] = $firstMessage ?: "Validasi untuk kode {$kode} gagal.";
@@ -279,6 +281,7 @@ class KernelController extends Controller
                     'user_id' => Auth::id(),
                     'office' => $userOffice,
                     'rounded_time' => $roundedTime,
+                    'kegiatan_dispek' => $isKegiatanDispek,
                     'kode' => $kode,
                     'jenis' => $row['jenis'] ?? null,
                     'operator' => $row['operator'] ?? null,
@@ -582,7 +585,7 @@ class KernelController extends Controller
 
         $limitMap = $this->getDirtMoistLimitMap($userOffice);
 
-        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $limitMap, $requiredFields) {
+        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $limitMap, $requiredFields, $isKegiatanDispek) {
             $rowErrors = [];
             $savedRows = [];
 
@@ -610,21 +613,23 @@ class KernelController extends Controller
                 $isPengulangan = (bool) ($row['pengulangan'] ?? false);
 
                 try {
-                    $this->validatePengulanganWindow(
-                        KernelDirtMoistCalculation::class,
-                        $kode,
-                        $userOffice,
-                        $isPengulangan,
-                        'Dirt & Moist',
-                        $roundedTime
-                    );
+                    if (!$isKegiatanDispek) {
+                        $this->validatePengulanganWindow(
+                            KernelDirtMoistCalculation::class,
+                            $kode,
+                            $userOffice,
+                            $isPengulangan,
+                            'Dirt & Moist',
+                            $roundedTime
+                        );
 
-                    $this->validateMachineWindowForKernelInput(
-                        $kode,
-                        $userOffice,
-                        $roundedTime,
-                        'Dirt & Moist'
-                    );
+                        $this->validateMachineWindowForKernelInput(
+                            $kode,
+                            $userOffice,
+                            $roundedTime,
+                            'Dirt & Moist'
+                        );
+                    }
                 } catch (ValidationException $e) {
                     $firstMessage = collect($e->errors())->flatten()->first();
                     $rowErrors['rows.' . $kode . '.kode'] = $firstMessage ?: "Validasi untuk kode {$kode} gagal.";
@@ -642,6 +647,7 @@ class KernelController extends Controller
                     'user_id' => Auth::id(),
                     'office' => $userOffice,
                     'rounded_time' => $roundedTime,
+                    'kegiatan_dispek' => $isKegiatanDispek,
                     'kode' => $kode,
                     'jenis' => $row['jenis'] ?? null,
                     'operator' => $row['operator'] ?? null,
@@ -941,7 +947,7 @@ class KernelController extends Controller
 
         $limitMap = $this->getQwtLimitMap($userOffice);
 
-        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $limitMap, $requiredFields) {
+        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $limitMap, $requiredFields, $isKegiatanDispek) {
             $rowErrors = [];
             $savedRows = [];
 
@@ -964,21 +970,23 @@ class KernelController extends Controller
                 $isPengulangan = (bool) ($row['pengulangan'] ?? false);
 
                 try {
-                    $this->validatePengulanganWindow(
-                        KernelQwt::class,
-                        $kode,
-                        $userOffice,
-                        $isPengulangan,
-                        'QWT Fibre Press',
-                        $roundedTime
-                    );
+                    if (!$isKegiatanDispek) {
+                        $this->validatePengulanganWindow(
+                            KernelQwt::class,
+                            $kode,
+                            $userOffice,
+                            $isPengulangan,
+                            'QWT Fibre Press',
+                            $roundedTime
+                        );
 
-                    $this->validateMachineWindowForKernelInput(
-                        $kode,
-                        $userOffice,
-                        $roundedTime,
-                        'QWT Fibre Press'
-                    );
+                        $this->validateMachineWindowForKernelInput(
+                            $kode,
+                            $userOffice,
+                            $roundedTime,
+                            'QWT Fibre Press'
+                        );
+                    }
                 } catch (ValidationException $e) {
                     $firstMessage = collect($e->errors())->flatten()->first();
                     $rowErrors['rows.' . $kode . '.kode'] = $firstMessage ?: "Validasi untuk kode {$kode} gagal.";
@@ -1010,6 +1018,7 @@ class KernelController extends Controller
                     'user_id' => Auth::id(),
                     'office' => $userOffice,
                     'rounded_time' => $roundedTime,
+                    'kegiatan_dispek' => $isKegiatanDispek,
                     'kode' => $kode,
                     'jenis' => $row['jenis'] ?? null,
                     'operator' => $row['operator'] ?? null,
@@ -1319,7 +1328,7 @@ class KernelController extends Controller
 
         $limitMap = $this->getRippleMillLimitMap($userOffice);
 
-        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $limitMap, $requiredFields) {
+        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $limitMap, $requiredFields, $isKegiatanDispek) {
             $rowErrors = [];
             $savedRows = [];
 
@@ -1342,21 +1351,23 @@ class KernelController extends Controller
                 $isPengulangan = (bool) ($row['pengulangan'] ?? false);
 
                 try {
-                    $this->validatePengulanganWindow(
-                        KernelRippleMill::class,
-                        $kode,
-                        $userOffice,
-                        $isPengulangan,
-                        'Ripple Mill',
-                        $roundedTime
-                    );
+                    if (!$isKegiatanDispek) {
+                        $this->validatePengulanganWindow(
+                            KernelRippleMill::class,
+                            $kode,
+                            $userOffice,
+                            $isPengulangan,
+                            'Ripple Mill',
+                            $roundedTime
+                        );
 
-                    $this->validateMachineWindowForKernelInput(
-                        $kode,
-                        $userOffice,
-                        $roundedTime,
-                        'Ripple Mill'
-                    );
+                        $this->validateMachineWindowForKernelInput(
+                            $kode,
+                            $userOffice,
+                            $roundedTime,
+                            'Ripple Mill'
+                        );
+                    }
                 } catch (ValidationException $e) {
                     $firstMessage = collect($e->errors())->flatten()->first();
                     $rowErrors['rows.' . $kode . '.kode'] = $firstMessage ?: "Validasi untuk kode {$kode} gagal.";
@@ -1375,6 +1386,7 @@ class KernelController extends Controller
                     'user_id' => Auth::id(),
                     'office' => $userOffice,
                     'rounded_time' => $roundedTime,
+                    'kegiatan_dispek' => $isKegiatanDispek,
                     'kode' => $kode,
                     'jenis' => $row['jenis'] ?? null,
                     'operator' => $row['operator'] ?? null,
@@ -1648,7 +1660,7 @@ class KernelController extends Controller
 
         $limitMap = $this->getDestonerLimitMap($userOffice);
 
-        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $limitMap, $requiredFields) {
+        return DB::transaction(function () use ($request, $userOffice, $roundedTime, $rowsToSave, $limitMap, $requiredFields, $isKegiatanDispek) {
             $rowErrors = [];
             $savedRows = [];
 
@@ -1671,21 +1683,23 @@ class KernelController extends Controller
                 $isPengulangan = (bool) ($row['pengulangan'] ?? false);
 
                 try {
-                    $this->validatePengulanganWindow(
-                        KernelDestoner::class,
-                        $kode,
-                        $userOffice,
-                        $isPengulangan,
-                        'Destoner',
-                        $roundedTime
-                    );
+                    if (!$isKegiatanDispek) {
+                        $this->validatePengulanganWindow(
+                            KernelDestoner::class,
+                            $kode,
+                            $userOffice,
+                            $isPengulangan,
+                            'Destoner',
+                            $roundedTime
+                        );
 
-                    $this->validateMachineWindowForKernelInput(
-                        $kode,
-                        $userOffice,
-                        $roundedTime,
-                        'Destoner'
-                    );
+                        $this->validateMachineWindowForKernelInput(
+                            $kode,
+                            $userOffice,
+                            $roundedTime,
+                            'Destoner'
+                        );
+                    }
                 } catch (ValidationException $e) {
                     $firstMessage = collect($e->errors())->flatten()->first();
                     $rowErrors['rows.' . $kode . '.kode'] = $firstMessage ?: "Validasi untuk kode {$kode} gagal.";
@@ -1709,6 +1723,7 @@ class KernelController extends Controller
                     'user_id' => Auth::id(),
                     'office' => $userOffice,
                     'rounded_time' => $roundedTime,
+                    'kegiatan_dispek' => $isKegiatanDispek,
                     'kode' => $kode,
                     'jenis' => $row['jenis'] ?? null,
                     'operator' => $row['operator'],

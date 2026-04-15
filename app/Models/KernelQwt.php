@@ -17,6 +17,7 @@ class KernelQwt extends Model
         'user_id',
         'office',
         'rounded_time',
+        'kegiatan_dispek',
         'kode',
         'jenis',
         'operator',
@@ -46,6 +47,7 @@ class KernelQwt extends Model
 
     protected $casts = [
         'rounded_time' => 'datetime',
+        'kegiatan_dispek' => 'boolean',
         'pengulangan' => 'boolean',
         'sampel_setelah_kuarter' => 'decimal:4',
         'berat_nut_utuh' => 'decimal:4',

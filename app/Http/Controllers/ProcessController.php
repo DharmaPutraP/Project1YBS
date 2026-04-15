@@ -412,6 +412,24 @@ class ProcessController extends Controller
             'team_2_other_conditions' => [],
         ]);
 
+        if ($roleFlags['can_manage_machine_data']) {
+            $machinePayload = $this->extractMachinePayload($request, $inputTeam, $office);
+            if (!empty($machinePayload)) {
+                $process->mesin()->createMany($machinePayload);
+            }
+
+            $otherConditionsByTeam = $this->extractOtherConditionsPayload($request, $inputTeam);
+            if ($inputTeam === 'Tim 1') {
+                $process->update([
+                    'team_1_other_conditions' => $otherConditionsByTeam['Tim 1'] ?? [],
+                ]);
+            } else {
+                $process->update([
+                    'team_2_other_conditions' => $otherConditionsByTeam['Tim 2'] ?? [],
+                ]);
+            }
+        }
+
         return redirect()
             ->route('process.index')
             ->with('success', 'Informasi proses ' . $inputTeam . ' berhasil disimpan.');

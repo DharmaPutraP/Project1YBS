@@ -2816,8 +2816,14 @@ class KernelController extends Controller
             ->get();
 
         if ($processRows->isEmpty()) {
+            $currentHour = (int) $referenceTime->format('H');
+            if ($currentHour >= 7) {
+                // After 07:00, allow next cycle input even when process schedule is not set yet.
+                return;
+            }
+
             throw ValidationException::withMessages([
-                'kode' => "Warning: Informasi proses untuk tanggal {$referenceTime->format('d/m/Y')} office {$office} belum tersedia. Input {$moduleName} belum bisa disimpan.",
+                'kode' => "Warning: Informasi proses untuk tanggal {$referenceTime->format('d/m/Y')} office {$office} belum tersedia. Input {$moduleName} belum bisa disimpan sebelum jam 07:00.",
             ]);
         }
 

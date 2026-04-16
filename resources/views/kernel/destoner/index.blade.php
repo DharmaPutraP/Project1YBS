@@ -245,6 +245,9 @@
                                         Pengulangan</th>
                                     <th
                                         class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                                        Kegiatan Dispatch</th>
+                                    <th
+                                        class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
                                         Berat Sampel (gram)</th>
                                     <th
                                         class="px-4 py-3 text-center text-xs font-medium text-blue-700 uppercase tracking-wider bg-blue-100 whitespace-nowrap">
@@ -337,6 +340,12 @@
                                             <span
                                                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $row->pengulangan ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700' }}">
                                                 {{ $row->pengulangan ? 'Ya' : 'Tidak' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ ($row->kegiatan_dispek ?? false) ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700' }}">
+                                                {{ ($row->kegiatan_dispek ?? false) ? 'Ya' : 'Tidak' }}
                                             </span>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">

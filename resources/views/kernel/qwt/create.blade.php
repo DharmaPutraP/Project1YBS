@@ -302,6 +302,24 @@
 
         updateClock();
         setInterval(updateClock, 1000);
+
+        const qwtForm = document.getElementById('qwtForm');
+        if (qwtForm) {
+            let isConfirmedSubmit = false;
+            qwtForm.addEventListener('submit', async function (e) {
+                if (isConfirmedSubmit) {
+                    return;
+                }
+
+                e.preventDefault();
+                const confirmed = await window.confirmSave(this);
+                if (confirmed) {
+                    isConfirmedSubmit = true;
+                    this.submit();
+                }
+            });
+        }
+
         document.getElementById('kegiatan_dispek')?.addEventListener('change', toggleRoundedTimeInput);
         document.querySelectorAll('[data-remarks-toggle]').forEach(checkbox => {
             checkbox.addEventListener('change', () => toggleRemarksField(checkbox));

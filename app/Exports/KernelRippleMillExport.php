@@ -36,7 +36,7 @@ class KernelRippleMillExport implements FromCollection, WithHeadings, WithMappin
         return collect($this->data);
     }
 
-    // 19 columns  A..S
+    // 20 columns  A..T
     public function headings(): array
     {
         return [
@@ -50,6 +50,7 @@ class KernelRippleMillExport implements FromCollection, WithHeadings, WithMappin
             'JENIS',
             'OPERATOR',
             'SAMPEL BOY',
+            'PENGULANGAN',
             'KEGIATAN DISPATCH',
             'REMARKS',
             'BERAT SAMPEL (g)',
@@ -97,6 +98,7 @@ class KernelRippleMillExport implements FromCollection, WithHeadings, WithMappin
             $row->jenis ?? '-',
             $row->operator ?? '-',
             $row->sampel_boy ?? '-',
+            ($row->pengulangan ?? false) ? 'Ya' : 'Tidak',
             ($row->kegiatan_dispek ?? false) ? 'Ya' : 'Tidak',
             $row->remarks ?? '-',
             $beratSampel,
@@ -114,7 +116,7 @@ class KernelRippleMillExport implements FromCollection, WithHeadings, WithMappin
         $sheet->insertNewRowBefore(1, 3);
 
         $sheet->setCellValue('A1', 'LAPORAN DATA RIPPLE MILL');
-        $sheet->mergeCells('A1:S1');
+        $sheet->mergeCells('A1:T1');
 
         $filterInfo = 'Periode: ' . Carbon::parse($this->startDate)->format('d-m-Y')
             . ' s/d ' . Carbon::parse($this->endDate)->format('d-m-Y');
@@ -122,7 +124,7 @@ class KernelRippleMillExport implements FromCollection, WithHeadings, WithMappin
             $filterInfo .= ' | Kode: ' . $this->kode;
         }
         $sheet->setCellValue('A2', $filterInfo);
-        $sheet->mergeCells('A2:S2');
+        $sheet->mergeCells('A2:T2');
 
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 16],
@@ -135,30 +137,30 @@ class KernelRippleMillExport implements FromCollection, WithHeadings, WithMappin
 
         $lastRow = $sheet->getHighestRow();
 
-        $sheet->getStyle('A4:S4')->applyFromArray([
+        $sheet->getStyle('A4:T4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
         ]);
-        $sheet->getStyle('A4:S' . $lastRow)->applyFromArray([
+        $sheet->getStyle('A4:T' . $lastRow)->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
         ]);
-        $sheet->getStyle('M5:S' . $lastRow)->applyFromArray([
+        $sheet->getStyle('N5:T' . $lastRow)->applyFromArray([
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
         ]);
 
-        // Efficiency = column R (18), limit = S (19)
+        // Efficiency = column S (19), limit = T (20)
         for ($r = 5; $r <= $lastRow; $r++) {
-            $eff = $sheet->getCell('R' . $r)->getValue();
-            $effLim = $sheet->getCell('S' . $r)->getValue();
+            $eff = $sheet->getCell('S' . $r)->getValue();
+            $effLim = $sheet->getCell('T' . $r)->getValue();
             if (is_numeric($eff) && $effLim !== '-') {
                 preg_match('/([<>]=?)\s*([\d.]+)/', (string) $effLim, $m);
                 if (count($m) === 3) {
                     $op = trim($m[1]);
                     $lim = (float) $m[2];
                     $ok = ($op === '<=' || $op === '=<') ? $eff <= $lim : $eff > $lim;
-                    $sheet->getStyle('R' . $r)->applyFromArray($ok ? [
+                    $sheet->getStyle('S' . $r)->applyFromArray($ok ? [
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],
                     ] : [

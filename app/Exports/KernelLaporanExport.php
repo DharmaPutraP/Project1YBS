@@ -50,6 +50,7 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
             'JENIS',
             'OPERATOR',
             'SAMPEL BOY',
+            'PENGULANGAN',
             'KEGIATAN DISPATCH',
             'REMARKS',
             'BERAT SAMPEL (g)',
@@ -88,6 +89,7 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
             $row->jenis ?? '-',
             $row->operator ?? '-',
             $row->sampel_boy ?? '-',
+            ($row->pengulangan ?? false) ? 'Ya' : 'Tidak',
             ($row->kegiatan_dispek ?? false) ? 'Ya' : 'Tidak',
             $row->remarks ?? '-',
             $row->berat_sampel !== null ? (float) $row->berat_sampel : '-',
@@ -112,7 +114,7 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
         $sheet->insertNewRowBefore(1, 3);
 
         $sheet->setCellValue('A1', 'LAPORAN DATA KERNEL LOSSES');
-        $sheet->mergeCells('A1:Z1');
+        $sheet->mergeCells('A1:AA1');
 
         $filterInfo = 'Periode: ' . Carbon::parse($this->startDate)->format('d-m-Y')
             . ' s/d ' . Carbon::parse($this->endDate)->format('d-m-Y');
@@ -120,7 +122,7 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
             $filterInfo .= ' | Kode: ' . $this->kode;
         }
         $sheet->setCellValue('A2', $filterInfo);
-        $sheet->mergeCells('A2:Z2');
+        $sheet->mergeCells('A2:AA2');
 
         // Title style
         $sheet->getStyle('A1')->applyFromArray([
@@ -138,7 +140,7 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
         ]);
 
         // Header row (row 4 after inserting 3)
-        $sheet->getStyle('A4:Z4')->applyFromArray([
+        $sheet->getStyle('A4:AA4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
             'alignment' => [
@@ -152,25 +154,25 @@ class KernelLaporanExport implements FromCollection, WithHeadings, WithMapping, 
         $lastRow = $sheet->getHighestRow();
 
         // All data borders
-        $sheet->getStyle('A4:Z' . $lastRow)->applyFromArray([
+        $sheet->getStyle('A4:AA' . $lastRow)->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
         ]);
 
-        // Right-align numeric columns N-Z
-        $sheet->getStyle('N5:Z' . $lastRow)->applyFromArray([
+        // Right-align numeric columns O-AA
+        $sheet->getStyle('O5:AA' . $lastRow)->applyFromArray([
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
         ]);
 
-        // Conditional color for KERNEL LOSSES column (Y = col 25)
+        // Conditional color for KERNEL LOSSES column (Z = col 26)
         for ($row = 5; $row <= $lastRow; $row++) {
             $kodeVal = $sheet->getCell('E' . $row)->getValue();
-            $lossVal = $sheet->getCell('Y' . $row)->getValue();
+            $lossVal = $sheet->getCell('Z' . $row)->getValue();
 
             if ($kodeVal && isset($this->masterData[$kodeVal]) && is_numeric($lossVal)) {
                 $master = $this->masterData[$kodeVal];
                 $exceeded = $master->isExceeded((float) $lossVal);
 
-                $sheet->getStyle('Y' . $row)->applyFromArray($exceeded ? [
+                $sheet->getStyle('Z' . $row)->applyFromArray($exceeded ? [
                     'font' => ['color' => ['rgb' => 'dc2626'], 'bold' => true],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'fee2e2']],
                 ] : [

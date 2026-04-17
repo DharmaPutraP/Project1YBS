@@ -27,8 +27,6 @@ class ReportController extends Controller
         $userOffice = Auth()->user()->office;
         $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
-        [$startDateTime, $endDateTime] = $this->resolveProductionRange($startDate, $endDate);
-
         /**
          * ======================================================
          * 1️⃣ CALCULATION + RECORD
@@ -38,7 +36,7 @@ class ReportController extends Controller
             ->join('oil_records as r', function ($join) {
                 $join->on('c.kode', '=', 'r.kode')
                     ->on('c.user_id', '=', 'r.user_id')
-                    ->on('c.created_at', '=', 'r.created_at')
+                    ->on('c.tanggal_sampel', '=', 'r.tanggal_sampel')
                     ->whereNull('r.deleted_at');
             })
             ->leftJoin('users as u', function ($join) {
@@ -46,13 +44,14 @@ class ReportController extends Controller
                     ->whereNull('u.deleted_at');
             })
             ->whereNull('c.deleted_at')
-            ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
+            ->whereBetween('c.tanggal_sampel', [$startDate, $endDate])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
             ->select([
                 DB::raw('1 as priority'),
                 'c.created_at',
                 DB::raw('COALESCE(GREATEST(c.updated_at, r.updated_at), c.updated_at, r.updated_at, c.created_at) as updated_at'),
+                'c.tanggal_sampel',
                 'c.kode',
                 'c.office',
                 'u.name as user_name',
@@ -92,7 +91,7 @@ class ReportController extends Controller
                     ->whereNull('u.deleted_at');
             })
             ->whereNull('c.deleted_at')
-            ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
+            ->whereBetween('c.tanggal_sampel', [$startDate, $endDate])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
             ->whereNotExists(function ($q) {
@@ -100,13 +99,14 @@ class ReportController extends Controller
                     ->from('oil_records as r')
                     ->whereColumn('r.kode', 'c.kode')
                     ->whereColumn('r.user_id', 'c.user_id')
-                    ->whereColumn('r.created_at', 'c.created_at')
+                    ->whereColumn('r.tanggal_sampel', 'c.tanggal_sampel')
                     ->whereNull('r.deleted_at');
             })
             ->select([
                 DB::raw('2 as priority'),
                 'c.created_at',
                 'c.updated_at',
+                'c.tanggal_sampel',
                 'c.kode',
                 'c.office',
                 'u.name as user_name',
@@ -146,7 +146,7 @@ class ReportController extends Controller
                     ->whereNull('u.deleted_at');
             })
             ->whereNull('r.deleted_at')
-            ->whereBetween('r.created_at', [$startDateTime, $endDateTime])
+            ->whereBetween('r.tanggal_sampel', [$startDate, $endDate])
             ->when($kode, fn($q) => $q->where('r.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('r.office', $officeFilter))
             ->whereNotExists(function ($q) {
@@ -154,13 +154,14 @@ class ReportController extends Controller
                     ->from('oil_calculations as c')
                     ->whereColumn('c.kode', 'r.kode')
                     ->whereColumn('c.user_id', 'r.user_id')
-                    ->whereColumn('c.created_at', 'r.created_at')
+                    ->whereColumn('c.tanggal_sampel', 'r.tanggal_sampel')
                     ->whereNull('c.deleted_at');
             })
             ->select([
                 DB::raw('3 as priority'),
                 'r.created_at',
                 'r.updated_at',
+                'r.tanggal_sampel',
                 'r.kode',
                 'r.office',
                 'u.name as user_name',
@@ -207,6 +208,7 @@ class ReportController extends Controller
 
         $reports = DB::query()
             ->fromSub($unionQuery, 'reports')
+            ->orderBy('tanggal_sampel', 'asc')
             ->orderBy('created_at', 'asc')
             ->orderBy('kode', 'asc')
             ->orderBy('priority', 'asc')
@@ -327,13 +329,11 @@ class ReportController extends Controller
         $userOffice = Auth()->user()->office;
         $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
-        [$startDateTime, $endDateTime] = $this->resolveProductionRange($startDate, $endDate);
-
         $calculationWithRecord = DB::table('oil_calculations as c')
             ->join('oil_records as r', function ($join) {
                 $join->on('c.kode', '=', 'r.kode')
                     ->on('c.user_id', '=', 'r.user_id')
-                    ->on('c.created_at', '=', 'r.created_at')
+                    ->on('c.tanggal_sampel', '=', 'r.tanggal_sampel')
                     ->whereNull('r.deleted_at');
             })
             ->leftJoin('users as u', function ($join) {
@@ -341,13 +341,14 @@ class ReportController extends Controller
                     ->whereNull('u.deleted_at');
             })
             ->whereNull('c.deleted_at')
-            ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
+            ->whereBetween('c.tanggal_sampel', [$startDate, $endDate])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
             ->select([
                 DB::raw('1 as priority'),
                 'c.created_at',
                 DB::raw('COALESCE(GREATEST(c.updated_at, r.updated_at), c.updated_at, r.updated_at, c.created_at) as updated_at'),
+                'c.tanggal_sampel',
                 'c.kode',
                 'c.office',
                 'u.name as user_name',
@@ -380,7 +381,7 @@ class ReportController extends Controller
                     ->whereNull('u.deleted_at');
             })
             ->whereNull('c.deleted_at')
-            ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
+            ->whereBetween('c.tanggal_sampel', [$startDate, $endDate])
             ->when($kode, fn($q) => $q->where('c.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('c.office', $officeFilter))
             ->whereNotExists(function ($q) {
@@ -388,13 +389,14 @@ class ReportController extends Controller
                     ->from('oil_records as r')
                     ->whereColumn('r.kode', 'c.kode')
                     ->whereColumn('r.user_id', 'c.user_id')
-                    ->whereColumn('r.created_at', 'c.created_at')
+                    ->whereColumn('r.tanggal_sampel', 'c.tanggal_sampel')
                     ->whereNull('r.deleted_at');
             })
             ->select([
                 DB::raw('2 as priority'),
                 'c.created_at',
                 'c.updated_at',
+                'c.tanggal_sampel',
                 'c.kode',
                 'c.office',
                 'u.name as user_name',
@@ -427,7 +429,7 @@ class ReportController extends Controller
                     ->whereNull('u.deleted_at');
             })
             ->whereNull('r.deleted_at')
-            ->whereBetween('r.created_at', [$startDateTime, $endDateTime])
+            ->whereBetween('r.tanggal_sampel', [$startDate, $endDate])
             ->when($kode, fn($q) => $q->where('r.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('r.office', $officeFilter))
             ->whereNotExists(function ($q) {
@@ -435,13 +437,14 @@ class ReportController extends Controller
                     ->from('oil_calculations as c')
                     ->whereColumn('c.kode', 'r.kode')
                     ->whereColumn('c.user_id', 'r.user_id')
-                    ->whereColumn('c.created_at', 'r.created_at')
+                    ->whereColumn('c.tanggal_sampel', 'r.tanggal_sampel')
                     ->whereNull('c.deleted_at');
             })
             ->select([
                 DB::raw('3 as priority'),
                 'r.created_at',
                 'r.updated_at',
+                'r.tanggal_sampel',
                 'r.kode',
                 'u.name as user_name',
                 'r.pivot',
@@ -473,6 +476,7 @@ class ReportController extends Controller
 
         $exportQuery = DB::query()
             ->fromSub($unionQuery, 'reports')
+            ->orderBy('tanggal_sampel', 'asc')
             ->orderBy('created_at', 'asc')
             ->orderBy('kode', 'asc')
             ->orderBy('priority', 'asc');

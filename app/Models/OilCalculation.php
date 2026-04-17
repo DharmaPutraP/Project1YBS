@@ -18,6 +18,7 @@ class OilCalculation extends Model
         'office',       // Office/PT (YBS, SUN, SJN)
         'oil_master_id',
         'kode',
+        'tanggal_sampel',
         'phase',
         'status',
         'initial_user_id',
@@ -44,6 +45,7 @@ class OilCalculation extends Model
     ];
 
     protected $casts = [
+        'tanggal_sampel' => 'date:Y-m-d',
         'phase' => 'string',
         'status' => 'string',
         'cawan_kosong' => 'decimal:6',
@@ -115,6 +117,6 @@ class OilCalculation extends Model
      */
     public function scopeForDate($query, $date)
     {
-        return $query->whereDate('created_at', $date);
+        return $query->whereDate('tanggal_sampel', $date);
     }
 }

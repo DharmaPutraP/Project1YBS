@@ -63,6 +63,7 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
             'TANGGAL',
             'JAM',
             'TGL & JAM AKHIR INPUT',
+            'TANGGAL SAMPEL',
             'KODE',
             'INPUTED BY',
             'NAMA PIVOT',
@@ -103,6 +104,7 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
             Carbon::parse($row->created_at)->format('d-m-Y'),
             Carbon::parse($row->created_at)->format('H:i:s'),
             $row->updated_at ? Carbon::parse($row->updated_at)->format('d-m-Y H:i:s') : '-',
+            $row->tanggal_sampel ? Carbon::parse($row->tanggal_sampel)->format('d-m-Y') : '-',
             $row->kode ?? '-',
             $row->user_name ?? '-',
             $row->pivot ?? '-',
@@ -140,7 +142,7 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
 
         $title = 'LAPORAN DATA OIL LOSSES';
         $sheet->setCellValue('A1', $title);
-        $sheet->mergeCells('A1:AB1');
+        $sheet->mergeCells('A1:AC1');
 
         $filterInfo = 'Periode: ' . Carbon::parse($this->startDate)->format('d-m-Y') .
             ' s/d ' . Carbon::parse($this->endDate)->format('d-m-Y');
@@ -148,7 +150,7 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
             $filterInfo .= ' | Kode: ' . $this->kode;
         }
         $sheet->setCellValue('A2', $filterInfo);
-        $sheet->mergeCells('A2:AB2');
+        $sheet->mergeCells('A2:AC2');
 
         // Style title
         $sheet->getStyle('A1')->applyFromArray([
@@ -174,7 +176,7 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         ]);
 
         // Style header row (now row 4 after inserting 3 rows)
-        $sheet->getStyle('A4:AB4')->applyFromArray([
+        $sheet->getStyle('A4:AC4')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -197,7 +199,7 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
 
         // Add borders to all data cells
         $lastRow = $sheet->getHighestRow();
-        $sheet->getStyle('A4:AB' . $lastRow)->applyFromArray([
+        $sheet->getStyle('A4:AC' . $lastRow)->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
@@ -207,7 +209,7 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         ]);
 
         // Align numeric columns to right (columns L-AB)
-        $sheet->getStyle('L5:AB' . $lastRow)->applyFromArray([
+        $sheet->getStyle('M5:AC' . $lastRow)->applyFromArray([
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_RIGHT,
             ],
@@ -216,60 +218,60 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         // Apply conditional formatting for OLWB, OLDB, and OIL LOSSES
         // Starting from row 5 (row 4 is header, rows 1-3 are title/info)
         for ($row = 5; $row <= $lastRow; $row++) {
-            // OLWB (column V) vs LIMIT OLWB (column W)
-            $olwbValue = $sheet->getCell('V' . $row)->getValue();
-            $limitOLWBValue = $sheet->getCell('W' . $row)->getValue();
+            // OLWB (column W) vs LIMIT OLWB (column X)
+            $olwbValue = $sheet->getCell('W' . $row)->getValue();
+            $limitOLWBValue = $sheet->getCell('X' . $row)->getValue();
 
             if ($olwbValue !== '-' && $limitOLWBValue !== '-' && is_numeric($olwbValue) && is_numeric($limitOLWBValue)) {
                 if ((float) $olwbValue <= (float) $limitOLWBValue) {
                     // Green: Good
-                    $sheet->getStyle('V' . $row)->applyFromArray([
+                    $sheet->getStyle('W' . $row)->applyFromArray([
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true], // green-600
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']], // green-100
                     ]);
                 } elseif ((float) $limitOLWBValue > 0) {
                     // Red: Bad
-                    $sheet->getStyle('V' . $row)->applyFromArray([
+                    $sheet->getStyle('W' . $row)->applyFromArray([
                         'font' => ['color' => ['rgb' => 'dc2626'], 'bold' => true], // red-600
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'fee2e2']], // red-100
                     ]);
                 }
             }
 
-            // OLDB (column X) vs LIMIT OLDB (column Y)
-            $oldbValue = $sheet->getCell('X' . $row)->getValue();
-            $limitOLDBValue = $sheet->getCell('Y' . $row)->getValue();
+            // OLDB (column Y) vs LIMIT OLDB (column Z)
+            $oldbValue = $sheet->getCell('Y' . $row)->getValue();
+            $limitOLDBValue = $sheet->getCell('Z' . $row)->getValue();
 
             if ($oldbValue !== '-' && $limitOLDBValue !== '-' && is_numeric($oldbValue) && is_numeric($limitOLDBValue)) {
                 if ((float) $oldbValue <= (float) $limitOLDBValue) {
                     // Green: Good
-                    $sheet->getStyle('X' . $row)->applyFromArray([
+                    $sheet->getStyle('Y' . $row)->applyFromArray([
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],
                     ]);
                 } elseif ((float) $limitOLDBValue > 0) {
                     // Red: Bad
-                    $sheet->getStyle('X' . $row)->applyFromArray([
+                    $sheet->getStyle('Y' . $row)->applyFromArray([
                         'font' => ['color' => ['rgb' => 'dc2626'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'fee2e2']],
                     ]);
                 }
             }
 
-            // OIL LOSSES (column Z) vs LIMIT OL (column AA)
-            $oilLossesValue = $sheet->getCell('Z' . $row)->getValue();
-            $limitOLValue = $sheet->getCell('AA' . $row)->getValue();
+            // OIL LOSSES (column AA) vs LIMIT OL (column AB)
+            $oilLossesValue = $sheet->getCell('AA' . $row)->getValue();
+            $limitOLValue = $sheet->getCell('AB' . $row)->getValue();
 
             if ($oilLossesValue !== '-' && $limitOLValue !== '-' && is_numeric($oilLossesValue) && is_numeric($limitOLValue)) {
                 if ((float) $oilLossesValue <= (float) $limitOLValue) {
                     // Green: Good
-                    $sheet->getStyle('Z' . $row)->applyFromArray([
+                    $sheet->getStyle('AA' . $row)->applyFromArray([
                         'font' => ['color' => ['rgb' => '16a34a'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'dcfce7']],
                     ]);
                 } elseif ((float) $limitOLValue > 0) {
                     // Red: Bad
-                    $sheet->getStyle('Z' . $row)->applyFromArray([
+                    $sheet->getStyle('AA' . $row)->applyFromArray([
                         'font' => ['color' => ['rgb' => 'dc2626'], 'bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'fee2e2']],
                     ]);
@@ -283,17 +285,14 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         $dataEndRow = $sheet->getHighestRow();
 
         if ($dataEndRow >= $dataStartRow) {
-            // 4 decimal places: columns L-Q (cawan_kosong, cawan_sample_basah, cawan_sample_kering, sampel_setelah_oven, labu_kosong, oil_labu)
-            $sheet->getStyle('L' . $dataStartRow . ':Q' . $dataEndRow)->getNumberFormat()->setFormatCode('0.0000;(0.0000)');
+            // 4 decimal places: columns M-T (numeric weights and oil values)
+            $sheet->getStyle('M' . $dataStartRow . ':T' . $dataEndRow)->getNumberFormat()->setFormatCode('0.0000;(0.0000)');
 
-            // 4 decimal places: columns R-S (oil_labu, minyak)
-            $sheet->getStyle('R' . $dataStartRow . ':S' . $dataEndRow)->getNumberFormat()->setFormatCode('0.0000;(0.0000)');
-
-            // 2 decimal places: columns T-AB (moist, dmwm, olwb, limitOLWB, oldb, limitOLDB, oil_losses, limitOL, persen4)
-            $sheet->getStyle('T' . $dataStartRow . ':AB' . $dataEndRow)->getNumberFormat()->setFormatCode('0.00;(0.00)');
+            // 2 decimal places: columns U-AC (percentages and limits)
+            $sheet->getStyle('U' . $dataStartRow . ':AC' . $dataEndRow)->getNumberFormat()->setFormatCode('0.00;(0.00)');
         }
 
-        $sheet->freezePane('L5');
+        $sheet->freezePane('M5');
 
         return $sheet;
     }
@@ -309,29 +308,30 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
             'C' => 12,  // TANGGAL
             'D' => 10,  // JAM
             'E' => 22,  // TGL & JAM AKHIR INPUT
-            'F' => 12,  // KODE
-            'G' => 18,  // INPUTED BY
-            'H' => 15,  // NAMA PIVOT
-            'I' => 15,  // OPERATOR
-            'J' => 15,  // SAMPEL BOY
-            'K' => 12,  // JENIS OLAH
-            'L' => 14,  // CAWAN KOSONG
-            'M' => 13,  // BERAT BASAH
-            'N' => 14,  // CAWAN + BASAH
-            'O' => 15,  // CAWAN + KERING
-            'P' => 14,  // SETELAH OVEN
-            'Q' => 13,  // LABU KOSONG
-            'R' => 12,  // OIL + LABU
-            'S' => 12,  // MINYAK
-            'T' => 11,  // MOIST (%)
-            'U' => 11,  // DM/WM (%)
-            'V' => 11,  // OLWB (%)
-            'W' => 11,  // LIMIT OLWB (%)
-            'X' => 11,  // OLDB (%)
-            'Y' => 11,  // LIMIT OLDB (%)
-            'Z' => 12,  // OIL LOSSES
-            'AA' => 11, // LIMIT OL
-            'AB' => 11, // PERSEN 4
+            'F' => 13,  // TANGGAL SAMPEL
+            'G' => 12,  // KODE
+            'H' => 18,  // INPUTED BY
+            'I' => 15,  // NAMA PIVOT
+            'J' => 15,  // OPERATOR
+            'K' => 15,  // SAMPEL BOY
+            'L' => 12,  // JENIS OLAH
+            'M' => 14,  // CAWAN KOSONG
+            'N' => 13,  // BERAT BASAH
+            'O' => 14,  // CAWAN + BASAH
+            'P' => 15,  // CAWAN + KERING
+            'Q' => 14,  // SETELAH OVEN
+            'R' => 13,  // LABU KOSONG
+            'S' => 12,  // OIL + LABU
+            'T' => 12,  // MINYAK
+            'U' => 11,  // MOIST (%)
+            'V' => 11,  // DMWM (%)
+            'W' => 11,  // OLWB (%)
+            'X' => 11,  // LIMIT OLWB (%)
+            'Y' => 11,  // OLDB (%)
+            'Z' => 11,  // LIMIT OLDB (%)
+            'AA' => 12, // OIL LOSSES
+            'AB' => 11, // LIMIT OL
+            'AC' => 11, // PERSEN 4
         ];
     }
 }

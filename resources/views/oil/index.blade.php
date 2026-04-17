@@ -299,6 +299,9 @@
                                         Tgl & Jam Akhir Input
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        Tanggal Sampel
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Kode
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -311,8 +314,8 @@
                                         Sampel Boy
                                     </th>
                                     <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                                                                                                                        Parameter Lain
-                                                                                                                                                    </th> -->
+                                                                                                                                                                Parameter Lain
+                                                                                                                                                            </th> -->
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Input By
                                     </th>
@@ -330,6 +333,9 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ $record->updated_at ? $record->updated_at->format('d/m/Y H:i:s') : '-' }}
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {{ $record->tanggal_sampel?->format('d/m/Y') ?? '-' }}
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-900">
                                             {{ $record->kode ?? '-' }}
                                         </td>
@@ -346,8 +352,8 @@
                                             {{ $record->sampel_boy ?? '-' }}
                                         </td>
                                         <!-- <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                                                                                                                                                                                            {{ $record->parameter_lain ?? '-' }}
-                                                                                                                                                                                                                        </td> -->
+                                                                                                                                                                                                                                        {{ $record->parameter_lain ?? '-' }}
+                                                                                                                                                                                                                                    </td> -->
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $record->user->name }}
                                         </td>
@@ -419,6 +425,9 @@
                                         Tgl & Jam Akhir Input
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        Tanggal Sampel
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Kode
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -452,6 +461,9 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ $oilLoss->updated_at ? $oilLoss->updated_at->format('d/m/Y H:i:s') : '-' }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {{ $oilLoss->tanggal_sampel?->format('d/m/Y') ?? '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-purple-900">
                                             {{ $oilLoss->kode }}
@@ -614,7 +626,8 @@
                             <h1 class="text-3xl font-bold text-slate-900">Bukti Input Data Oil Losses</h1>
                             <p class="mt-3 text-lg font-semibold text-emerald-900">{{ $successProof['message'] }}</p>
                             <p class="mt-2 text-base text-emerald-800">Waktu bukti dibuat:
-                                {{ $successProof['generated_at'] }}</p>
+                                {{ $successProof['generated_at'] }}
+                            </p>
                         </div>
                         <div class="min-w-[260px] rounded-xl bg-white/80 p-4 text-base text-emerald-900">
                             <div><span class="font-semibold">User login:</span> {{ auth()->user()->name }}</div>
@@ -638,6 +651,8 @@
                                     <tr>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal
                                             Input</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal
+                                            Sampel</th>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Kode</th>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Jenis
                                         </th>
@@ -653,6 +668,7 @@
                                     @foreach($mode1Entries as $proofMode1)
                                         <tr>
                                             <td class="px-5 py-4">{{ $proofMode1['tanggal_input'] }}</td>
+                                            <td class="px-5 py-4">{{ $proofMode1['tanggal_sampel'] ?? '-' }}</td>
                                             <td class="px-5 py-4 font-semibold text-blue-900">{{ $proofMode1['kode_label'] }}</td>
                                             <td class="px-5 py-4">{{ $proofMode1['jenis'] ?? '-' }}</td>
                                             <td class="px-5 py-4">{{ $proofMode1['operator'] ?? '-' }}</td>
@@ -695,13 +711,15 @@
                                     @foreach($mode2Entries as $proofMode2Export)
                                         <tr>
                                             <td class="px-5 py-4 font-semibold text-purple-900">
-                                                {{ $proofMode2Export['kode_label'] }}</td>
+                                                {{ $proofMode2Export['kode_label'] }}
+                                            </td>
                                             <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['cawan_kosong'], 6) }}
                                             </td>
                                             <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['berat_basah'], 6) }}
                                             </td>
                                             <td class="px-5 py-4">
-                                                {{ number_format((float) $proofMode2Export['cawan_sample_kering'], 6) }}</td>
+                                                {{ number_format((float) $proofMode2Export['cawan_sample_kering'], 6) }}
+                                            </td>
                                             <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['labu_kosong'], 6) }}
                                             </td>
                                             <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['oil_labu'], 6) }}</td>
@@ -717,6 +735,8 @@
                                     <tr>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal
                                             Input</th>
+                                        <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal
+                                            Sampel</th>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Kode</th>
                                         <th class="px-5 py-4 text-left text-sm font-semibold uppercase tracking-wider">Moist (%)
                                         </th>
@@ -752,8 +772,10 @@
                                         @endphp
                                         <tr>
                                             <td class="px-5 py-4">{{ $proofMode2Export['tanggal_input'] }}</td>
+                                            <td class="px-5 py-4">{{ $proofMode2Export['tanggal_sampel'] ?? '-' }}</td>
                                             <td class="px-5 py-4 font-semibold text-purple-900">
-                                                {{ $proofMode2Export['kode_label'] }}</td>
+                                                {{ $proofMode2Export['kode_label'] }}
+                                            </td>
                                             <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['moist'], 4) }}</td>
                                             <td class="px-5 py-4">{{ number_format((float) $proofMode2Export['dmwm'], 4) }}</td>
                                             <td class="px-5 py-4">
@@ -850,7 +872,8 @@
                             <div>
                                 <p class="text-sm font-semibold text-emerald-900">{{ $successProof['message'] }}</p>
                                 <p class="mt-1 text-sm text-emerald-800">Waktu bukti dibuat:
-                                    {{ $successProof['generated_at'] }}</p>
+                                    {{ $successProof['generated_at'] }}
+                                </p>
                                 <p class="mt-1 text-xs text-emerald-700">Tips mobile: gunakan tombol Unduh Gambar untuk
                                     bukti 1 file JPG tanpa perlu screenshot panjang.</p>
                             </div>
@@ -875,6 +898,8 @@
                                         <tr>
                                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
                                                 Tanggal Input</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                                                Tanggal Sampel</th>
                                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode
                                             </th>
                                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Jenis
@@ -891,8 +916,11 @@
                                         @foreach($mode1Entries as $proofMode1)
                                             <tr>
                                                 <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['tanggal_input'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['tanggal_sampel'] ?? '-' }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap font-semibold text-blue-900">
-                                                    {{ $proofMode1['kode_label'] }}</td>
+                                                    {{ $proofMode1['kode_label'] }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['jenis'] ?? '-' }}</td>
                                                 <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['operator'] ?? '-' }}</td>
                                                 <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode1['sampel_boy'] ?? '-' }}</td>
@@ -935,17 +963,23 @@
                                         @foreach($mode2Entries as $proofMode2)
                                             <tr>
                                                 <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">
-                                                    {{ $proofMode2['kode_label'] }}</td>
+                                                    {{ $proofMode2['kode_label'] }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
-                                                    {{ number_format((float) $proofMode2['cawan_kosong'], 6) }}</td>
+                                                    {{ number_format((float) $proofMode2['cawan_kosong'], 6) }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
-                                                    {{ number_format((float) $proofMode2['berat_basah'], 6) }}</td>
+                                                    {{ number_format((float) $proofMode2['berat_basah'], 6) }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
-                                                    {{ number_format((float) $proofMode2['cawan_sample_kering'], 6) }}</td>
+                                                    {{ number_format((float) $proofMode2['cawan_sample_kering'], 6) }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
-                                                    {{ number_format((float) $proofMode2['labu_kosong'], 6) }}</td>
+                                                    {{ number_format((float) $proofMode2['labu_kosong'], 6) }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
-                                                    {{ number_format((float) $proofMode2['oil_labu'], 6) }}</td>
+                                                    {{ number_format((float) $proofMode2['oil_labu'], 6) }}
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -958,6 +992,8 @@
                                         <tr>
                                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
                                                 Tanggal Input</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                                                Tanggal Sampel</th>
                                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Kode
                                             </th>
                                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Moist
@@ -996,12 +1032,17 @@
                                             @endphp
                                             <tr>
                                                 <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode2['tanggal_input'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">{{ $proofMode2['tanggal_sampel'] ?? '-' }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap font-semibold text-purple-900">
-                                                    {{ $proofMode2['kode_label'] }}</td>
+                                                    {{ $proofMode2['kode_label'] }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
-                                                    {{ number_format((float) $proofMode2['moist'], 4) }}</td>
+                                                    {{ number_format((float) $proofMode2['moist'], 4) }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
-                                                    {{ number_format((float) $proofMode2['dmwm'], 4) }}</td>
+                                                    {{ number_format((float) $proofMode2['dmwm'], 4) }}
+                                                </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
                                                     <span @class([
                                                         'font-semibold',

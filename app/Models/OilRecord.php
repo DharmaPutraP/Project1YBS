@@ -18,6 +18,7 @@ class OilRecord extends Model
         'office',       // Office/PT (YBS, SUN, SJN)
         'oil_master_id',
         'kode',
+        'tanggal_sampel',
         'column_name',
         'pivot',
         'jenis',
@@ -27,7 +28,7 @@ class OilRecord extends Model
     ];
 
     protected $casts = [
-        // Using created_at for timestamp
+        'tanggal_sampel' => 'date:Y-m-d',
     ];
 
     /**
@@ -47,10 +48,10 @@ class OilRecord extends Model
     }
 
     /**
-     * Scope untuk filter berdasarkan tanggal created_at.
+     * Scope untuk filter berdasarkan tanggal sampel.
      */
     public function scopeForDate($query, $date)
     {
-        return $query->whereDate('created_at', $date);
+        return $query->whereDate('tanggal_sampel', $date);
     }
 }

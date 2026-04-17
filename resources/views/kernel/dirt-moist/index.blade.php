@@ -79,6 +79,7 @@
                     <label for="start_date" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal
                         Mulai</label>
                     <input type="date" id="start_date" name="start_date" value="{{ $startDate }}"
+                        max="{{ now()->toDateString() }}"
                         class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
 
@@ -86,6 +87,7 @@
                     <label for="end_date" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal
                         Akhir</label>
                     <input type="date" id="end_date" name="end_date" value="{{ $endDate }}"
+                        max="{{ now()->toDateString() }}"
                         class="w-full px-3 md:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
 

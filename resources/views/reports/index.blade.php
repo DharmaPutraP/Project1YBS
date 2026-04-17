@@ -113,10 +113,13 @@
                         <th class="sticky top-0 lg:left-[180px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">TANGGAL
                         </th>
                         <th class="sticky top-0 lg:left-[300px] z-[50] bg-blue-50 border px-4 py-3 w-[100px]">JAM</th>
-                        <th class="sticky top-0 lg:left-[400px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">TGL & JAM AKHIR
+                        <th class="sticky top-0 lg:left-[400px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">TGL & JAM
+                            AKHIR
                             INPUT</th>
-                        <th class="sticky top-0 lg:left-[520px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">KODE</th>
-                        <th class="sticky top-0 lg:left-[640px] z-[50] bg-blue-50 border px-4 py-3 w-[160px]">INPUTED BY
+                        <th class="sticky top-0 lg:left-[520px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">TANGGAL
+                            SAMPEL</th>
+                        <th class="sticky top-0 lg:left-[640px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">KODE</th>
+                        <th class="sticky top-0 lg:left-[760px] z-[50] bg-blue-50 border px-4 py-3 w-[160px]">INPUTED BY
                         </th>
 
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">NAMA PIVOT</th>
@@ -169,11 +172,15 @@
                                 {{ $calc->updated_at ? \Carbon\Carbon::parse($calc->updated_at)->format('d-m-Y H:i:s') : '-' }}
                             </td>
 
-                            <td class="border px-4 py-2 font-semibold lg:sticky lg:left-[520px] z-[10] bg-white">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[520px] z-[10] bg-white">
+                                {{ $calc->tanggal_sampel?->format('d-m-Y') ?? '-' }}
+                            </td>
+
+                            <td class="border px-4 py-2 font-semibold lg:sticky lg:left-[640px] z-[10] bg-white">
                                 {{ $calc->kode }}
                             </td>
 
-                            <td class="border px-4 py-2 lg:sticky lg:left-[640px] z-[10] bg-white">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[760px] z-[10] bg-white">
                                 {{ $calc->user_name ?? '-' }}
                             </td>
 
@@ -235,7 +242,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="31" class="text-center py-10 text-gray-400">
+                            <td colspan="32" class="text-center py-10 text-gray-400">
                                 Tidak ada data
                             </td>
                         </tr>

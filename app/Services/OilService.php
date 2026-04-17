@@ -117,6 +117,8 @@ class OilService
      */
     private function storeNonNumericData(array $data, int $userId, string $userOffice): array
     {
+        $sampleDate = $this->resolveSampleDate($data, 'tanggal_sampel_mode1');
+
         // VLOOKUP equivalent: ambil data dari master berdasarkan kode
         $masterData = OilMasterData::where('kode', $data['kode'])
             ->where('office', $userOffice)
@@ -139,6 +141,7 @@ class OilService
             'operator' => $data['operator'] ?? null,
             'sampel_boy' => $data['sampel_boy'] ?? null,
             'parameter_lain' => $data['parameter_lain'] ?? null,
+            'tanggal_sampel' => $sampleDate,
         ]);
 
         return [
@@ -164,6 +167,8 @@ class OilService
      */
     private function storeNumericData(array $data, int $userId, string $userOffice): array
     {
+        $sampleDate = $this->resolveSampleDate($data, 'tanggal_sampel_mode2');
+
         // FASE 1: Validasi - kode_mode2 harus diisi untuk mode 2
         if (empty($data['kode_mode2'])) {
             throw new Exception('Kode harus dipilih untuk input data angka (Mode 2).');
@@ -192,22 +197,23 @@ class OilService
         $existingOpenBatch = OilCalculation::where('office', $userOffice)
             ->where('kode', $kode)
             ->where('status', 'partial')
+            ->whereDate('tanggal_sampel', $sampleDate)
             ->latest('id')
             ->first();
 
         $existingCompletedBatch = OilCalculation::where('office', $userOffice)
             ->where('kode', $kode)
             ->where('status', 'complete')
-            ->whereBetween('created_at', $this->resolveProductionRangeFor($this->resolveProductionDateKey(Carbon::now())))
+            ->whereDate('tanggal_sampel', $sampleDate)
             ->latest('id')
             ->first();
 
         if ($phase === 'initial' && $existingCompletedBatch && !$existingOpenBatch) {
-            throw new Exception("Kode '{$kode}' untuk office {$userOffice} pada hari produksi ini (07:00-06:59) sudah selesai diproses. Gunakan kode lain atau buka data yang sudah ada untuk koreksi.");
+            throw new Exception("Kode '{$kode}' untuk office {$userOffice} pada tanggal sampel {$sampleDate} sudah selesai diproses. Gunakan kode lain atau buka data yang sudah ada untuk koreksi.");
         }
 
         if ($phase === 'complete' && $existingCompletedBatch && !$existingOpenBatch) {
-            throw new Exception("Kode '{$kode}' untuk office {$userOffice} pada hari produksi ini (07:00-06:59) sudah ada. Setiap kode hanya boleh diinput sekali per hari produksi per office.");
+            throw new Exception("Kode '{$kode}' untuk office {$userOffice} pada tanggal sampel {$sampleDate} sudah ada. Setiap kode hanya boleh diinput sekali per tanggal per office.");
         }
 
         // FASE 3: Ambil master data dari kode
@@ -225,6 +231,7 @@ class OilService
             'office' => $userOffice,
             'oil_master_id' => $masterData->id,
             'kode' => $masterData->kode,
+            'tanggal_sampel' => $sampleDate,
             'initial_user_id' => $existingOpenBatch?->initial_user_id ?? ($phase === 'initial' || $phase === 'complete' ? $userId : null),
             'final_user_id' => $existingOpenBatch?->final_user_id ?? ($phase === 'complete' ? $userId : null),
         ];
@@ -489,21 +496,41 @@ class OilService
         return 'initial';
     }
 
-    private function resolveProductionRangeFor(string $productionDate): array
+    private function resolveSampleDate(array $data, ?string $preferredKey = null): string
     {
-        $start = Carbon::parse($productionDate)->setTime(7, 0, 0);
-        $end = Carbon::parse($productionDate)->addDay()->setTime(6, 59, 59);
+        $candidateKeys = array_filter([
+            $preferredKey,
+            'tanggal_sampel',
+            'tanggal_sampel_mode1',
+            'tanggal_sampel_mode2',
+        ]);
 
-        return [$start, $end];
-    }
+        $sampleDate = null;
+        foreach ($candidateKeys as $key) {
+            if (!array_key_exists($key, $data)) {
+                continue;
+            }
 
-    private function resolveProductionDateKey(Carbon $timestamp): string
-    {
-        $productionDate = $timestamp->copy();
-        if ((int) $productionDate->format('H') < 7) {
-            $productionDate->subDay();
+            $value = $data[$key];
+            if ($value instanceof Carbon) {
+                $sampleDate = $value;
+                break;
+            }
+
+            if (is_string($value) && trim($value) !== '') {
+                $sampleDate = $value;
+                break;
+            }
         }
 
-        return $productionDate->format('Y-m-d');
+        if ($sampleDate instanceof Carbon) {
+            return $sampleDate->toDateString();
+        }
+
+        if (is_string($sampleDate) && trim($sampleDate) !== '') {
+            return Carbon::parse($sampleDate)->toDateString();
+        }
+
+        return now()->toDateString();
     }
 }

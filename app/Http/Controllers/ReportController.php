@@ -52,6 +52,7 @@ class ReportController extends Controller
             ->select([
                 DB::raw('1 as priority'),
                 'c.created_at',
+                DB::raw('COALESCE(GREATEST(c.updated_at, r.updated_at), c.updated_at, r.updated_at, c.created_at) as updated_at'),
                 'c.kode',
                 'c.office',
                 'u.name as user_name',
@@ -105,6 +106,7 @@ class ReportController extends Controller
             ->select([
                 DB::raw('2 as priority'),
                 'c.created_at',
+                'c.updated_at',
                 'c.kode',
                 'c.office',
                 'u.name as user_name',
@@ -158,6 +160,7 @@ class ReportController extends Controller
             ->select([
                 DB::raw('3 as priority'),
                 'r.created_at',
+                'r.updated_at',
                 'r.kode',
                 'r.office',
                 'u.name as user_name',
@@ -344,6 +347,7 @@ class ReportController extends Controller
             ->select([
                 DB::raw('1 as priority'),
                 'c.created_at',
+                DB::raw('COALESCE(GREATEST(c.updated_at, r.updated_at), c.updated_at, r.updated_at, c.created_at) as updated_at'),
                 'c.kode',
                 'c.office',
                 'u.name as user_name',
@@ -390,6 +394,7 @@ class ReportController extends Controller
             ->select([
                 DB::raw('2 as priority'),
                 'c.created_at',
+                'c.updated_at',
                 'c.kode',
                 'c.office',
                 'u.name as user_name',
@@ -436,6 +441,7 @@ class ReportController extends Controller
             ->select([
                 DB::raw('3 as priority'),
                 'r.created_at',
+                'r.updated_at',
                 'r.kode',
                 'u.name as user_name',
                 'r.pivot',

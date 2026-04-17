@@ -113,8 +113,9 @@
                         <th class="sticky top-0 lg:left-[180px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">TANGGAL
                         </th>
                         <th class="sticky top-0 lg:left-[300px] z-[50] bg-blue-50 border px-4 py-3 w-[100px]">JAM</th>
-                        <th class="sticky top-0 lg:left-[400px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">KODE</th>
-                        <th class="sticky top-0 lg:left-[520px] z-[50] bg-blue-50 border px-4 py-3 w-[160px]">INPUTED BY
+                        <th class="sticky top-0 lg:left-[400px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">JAM AKHIR INPUT</th>
+                        <th class="sticky top-0 lg:left-[520px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">KODE</th>
+                        <th class="sticky top-0 lg:left-[640px] z-[50] bg-blue-50 border px-4 py-3 w-[160px]">INPUTED BY
                         </th>
 
                         <th class="sticky top-0 z-20 bg-blue-50 border px-4 py-3">NAMA PIVOT</th>
@@ -163,11 +164,15 @@
                                 {{ \Carbon\Carbon::parse($calc->created_at)->format('H:i:s') }}
                             </td>
 
-                            <td class="border px-4 py-2 font-semibold lg:sticky lg:left-[400px] z-[10] bg-white">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[400px] z-[10] bg-white">
+                                {{ $calc->updated_at ? \Carbon\Carbon::parse($calc->updated_at)->format('H:i:s') : '-' }}
+                            </td>
+
+                            <td class="border px-4 py-2 font-semibold lg:sticky lg:left-[520px] z-[10] bg-white">
                                 {{ $calc->kode }}
                             </td>
 
-                            <td class="border px-4 py-2 lg:sticky lg:left-[520px] z-[10] bg-white">
+                            <td class="border px-4 py-2 lg:sticky lg:left-[640px] z-[10] bg-white">
                                 {{ $calc->user_name ?? '-' }}
                             </td>
 
@@ -229,7 +234,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="30" class="text-center py-10 text-gray-400">
+                            <td colspan="31" class="text-center py-10 text-gray-400">
                                 Tidak ada data
                             </td>
                         </tr>

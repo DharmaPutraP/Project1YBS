@@ -296,6 +296,9 @@
                                         Tanggal Input
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        Jam Akhir Input
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Kode
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -323,6 +326,9 @@
                                     <tr class="hover:bg-blue-50">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ $record->created_at->format('d/m/Y H:i') }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {{ $record->updated_at ? $record->updated_at->format('H:i:s') : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-900">
                                             {{ $record->kode ?? '-' }}
@@ -410,6 +416,9 @@
                                         Tanggal Input
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        Jam Akhir Input
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Kode
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -440,6 +449,9 @@
                                     <tr class="hover:bg-purple-50">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ $oilLoss->created_at->format('d/m/Y H:i') }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {{ $oilLoss->updated_at ? $oilLoss->updated_at->format('H:i:s') : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-purple-900">
                                             {{ $oilLoss->kode }}

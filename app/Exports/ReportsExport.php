@@ -62,7 +62,7 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
             'BULAN',
             'TANGGAL',
             'JAM',
-            'JAM AKHIR INPUT',
+            'TGL & JAM AKHIR INPUT',
             'KODE',
             'INPUTED BY',
             'NAMA PIVOT',
@@ -102,7 +102,7 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
             Carbon::parse($row->created_at)->format('F Y'),
             Carbon::parse($row->created_at)->format('d-m-Y'),
             Carbon::parse($row->created_at)->format('H:i:s'),
-            $row->updated_at ? Carbon::parse($row->updated_at)->format('H:i:s') : '-',
+            $row->updated_at ? Carbon::parse($row->updated_at)->format('d-m-Y H:i:s') : '-',
             $row->kode ?? '-',
             $row->user_name ?? '-',
             $row->pivot ?? '-',
@@ -308,7 +308,7 @@ class ReportsExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
             'B' => 15,  // BULAN
             'C' => 12,  // TANGGAL
             'D' => 10,  // JAM
-            'E' => 16,  // JAM AKHIR INPUT
+            'E' => 22,  // TGL & JAM AKHIR INPUT
             'F' => 12,  // KODE
             'G' => 18,  // INPUTED BY
             'H' => 15,  // NAMA PIVOT

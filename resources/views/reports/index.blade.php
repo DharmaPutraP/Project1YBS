@@ -113,7 +113,8 @@
                         <th class="sticky top-0 lg:left-[180px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">TANGGAL
                         </th>
                         <th class="sticky top-0 lg:left-[300px] z-[50] bg-blue-50 border px-4 py-3 w-[100px]">JAM</th>
-                        <th class="sticky top-0 lg:left-[400px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">JAM AKHIR INPUT</th>
+                        <th class="sticky top-0 lg:left-[400px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">TGL & JAM AKHIR
+                            INPUT</th>
                         <th class="sticky top-0 lg:left-[520px] z-[50] bg-blue-50 border px-4 py-3 w-[120px]">KODE</th>
                         <th class="sticky top-0 lg:left-[640px] z-[50] bg-blue-50 border px-4 py-3 w-[160px]">INPUTED BY
                         </th>
@@ -165,7 +166,7 @@
                             </td>
 
                             <td class="border px-4 py-2 lg:sticky lg:left-[400px] z-[10] bg-white">
-                                {{ $calc->updated_at ? \Carbon\Carbon::parse($calc->updated_at)->format('H:i:s') : '-' }}
+                                {{ $calc->updated_at ? \Carbon\Carbon::parse($calc->updated_at)->format('d-m-Y H:i:s') : '-' }}
                             </td>
 
                             <td class="border px-4 py-2 font-semibold lg:sticky lg:left-[520px] z-[10] bg-white">

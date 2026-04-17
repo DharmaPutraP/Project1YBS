@@ -296,7 +296,7 @@
                                         Tanggal Input
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                        Jam Akhir Input
+                                        Tgl & Jam Akhir Input
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Kode
@@ -328,7 +328,7 @@
                                             {{ $record->created_at->format('d/m/Y H:i') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $record->updated_at ? $record->updated_at->format('H:i:s') : '-' }}
+                                            {{ $record->updated_at ? $record->updated_at->format('d/m/Y H:i:s') : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-900">
                                             {{ $record->kode ?? '-' }}
@@ -416,7 +416,7 @@
                                         Tanggal Input
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                        Jam Akhir Input
+                                        Tgl & Jam Akhir Input
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                         Kode
@@ -451,7 +451,7 @@
                                             {{ $oilLoss->created_at->format('d/m/Y H:i') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $oilLoss->updated_at ? $oilLoss->updated_at->format('H:i:s') : '-' }}
+                                            {{ $oilLoss->updated_at ? $oilLoss->updated_at->format('d/m/Y H:i:s') : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-purple-900">
                                             {{ $oilLoss->kode }}

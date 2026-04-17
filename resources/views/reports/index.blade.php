@@ -173,7 +173,7 @@
                             </td>
 
                             <td class="border px-4 py-2 lg:sticky lg:left-[520px] z-[10] bg-white">
-                                {{ $calc->tanggal_sampel?->format('d-m-Y') ?? '-' }}
+                                {{ $calc->tanggal_sampel ? \Carbon\Carbon::parse($calc->tanggal_sampel)->format('d-m-Y') : '-' }}
                             </td>
 
                             <td class="border px-4 py-2 font-semibold lg:sticky lg:left-[640px] z-[10] bg-white">

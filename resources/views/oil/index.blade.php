@@ -392,7 +392,7 @@
 
                     {{-- Pagination --}}
                     <div class="mt-6">
-                        {{ $oilRecords->links() }}
+                        {{ $oilRecords->appends(array_merge(request()->except('page'), ['tab' => 'records']))->links() }}
                     </div>
                 @endif
             </div>
@@ -610,7 +610,7 @@
 
                     {{-- Pagination --}}
                     <div class="mt-6">
-                        {{ $oilLosses->links() }}
+                        {{ $oilLosses->appends(array_merge(request()->except('page'), ['tab' => 'calculations']))->links() }}
                     </div>
                 @endif
             </div>
@@ -1141,7 +1141,7 @@
 
     {{-- Tab Switching JavaScript --}}
     <script>
-        function switchTab(tabName) {
+        function switchTab(tabName, updateUrl = true) {
             // Hide all tab contents
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.add('hidden');
@@ -1160,11 +1160,21 @@
             const activeButton = document.getElementById('tab-' + tabName);
             activeButton.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             activeButton.classList.add('border-blue-500', 'text-blue-600');
+
+            // Update URL query param so pagination preserves tab
+            if (updateUrl) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tabName);
+                url.searchParams.delete('page'); // reset page when manually switching tab
+                window.history.replaceState({}, '', url.toString());
+            }
         }
 
-        // Default: Show records tab on load
+        // On load: honour ?tab= query param, then session default
         document.addEventListener('DOMContentLoaded', function () {
-            switchTab(@json($defaultTab));
+            const urlTab = new URLSearchParams(window.location.search).get('tab');
+            const sessionTab = @json($defaultTab);
+            switchTab(urlTab || sessionTab, false);
         });
     </script>
 

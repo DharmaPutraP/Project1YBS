@@ -692,6 +692,7 @@ class KernelController extends Controller
 
             $proofData = $this->buildDirtMoistProofData($savedRows[0], $message);
             $proofData['entries'] = $this->buildKernelProofEntries($savedRows);
+            $proofData['entries_metrics'] = $this->buildDirtMoistEntriesMetrics($savedRows);
 
             if ($request->wantsJson()) {
                 return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
@@ -1072,6 +1073,7 @@ class KernelController extends Controller
 
             $proofData = $this->buildQwtProofData($savedRows[0], $message);
             $proofData['entries'] = $this->buildKernelProofEntries($savedRows);
+            $proofData['entries_metrics'] = $this->buildQwtEntriesMetrics($savedRows);
 
             if ($request->wantsJson()) {
                 return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
@@ -1431,6 +1433,7 @@ class KernelController extends Controller
 
             $proofData = $this->buildRippleMillProofData($savedRows[0], $message);
             $proofData['entries'] = $this->buildKernelProofEntries($savedRows);
+            $proofData['entries_metrics'] = $this->buildRippleMillEntriesMetrics($savedRows);
 
             if ($request->wantsJson()) {
                 return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
@@ -1773,6 +1776,7 @@ class KernelController extends Controller
 
             $proofData = $this->buildDestonerProofData($savedRows[0], $message);
             $proofData['entries'] = $this->buildKernelProofEntries($savedRows);
+            $proofData['entries_metrics'] = $this->buildDestonerEntriesMetrics($savedRows);
 
             if ($request->wantsJson()) {
                 return response()->json(['success' => true, 'message' => $message, 'proof' => $proofData]);
@@ -3474,6 +3478,79 @@ class KernelController extends Controller
         return $proof;
     }
 
+    private function buildDirtMoistEntriesMetrics(array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $kodes = collect($rows)
+            ->pluck('kode')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $offices = collect($rows)
+            ->pluck('office')
+            ->filter()
+            ->map(fn($office) => strtoupper(trim((string) $office)))
+            ->unique()
+            ->values();
+
+        $masterRows = KernelMasterData::query()
+            ->where('is_active', true)
+            ->whereIn('kode', $kodes)
+            ->when($offices->isNotEmpty(), fn($q) => $q->whereIn('office', $offices))
+            ->get(['office', 'kode', 'nama_sample']);
+
+        $masterByOfficeAndKode = $masterRows->keyBy(
+            fn($row) => strtoupper(trim((string) $row->office)) . '|' . (string) $row->kode
+        );
+
+        $masterFallbackByKode = $masterRows->groupBy('kode')
+            ->map(fn($group) => $group->first());
+
+        return collect($rows)->map(function ($calc) use ($masterByOfficeAndKode, $masterFallbackByKode) {
+            $kode = (string) ($calc->kode ?? '');
+            $officeCode = strtoupper(trim((string) ($calc->office ?? '')));
+
+            $master = $masterByOfficeAndKode->get($officeCode . '|' . $kode)
+                ?? $masterFallbackByKode->get($kode);
+
+            $limitMap = $this->getDirtMoistLimitMap($calc->office);
+            $limitConfig = $limitMap[$kode] ?? ['dirty' => null, 'moist' => null];
+
+            return [
+                'kode_label' => $kode . ' - ' . ($master->nama_sample ?? '-'),
+                'metrics' => [
+                    $this->buildProofMetric(
+                        'Dirty to Sampel',
+                        $calc->dirty_to_sampel,
+                        '%',
+                        2,
+                        data_get($limitConfig, 'dirty.operator'),
+                        data_get($limitConfig, 'dirty.value'),
+                        2
+                    ),
+                    $this->buildProofMetric(
+                        'Moist',
+                        $calc->moist_percent,
+                        '%',
+                        2,
+                        data_get($limitConfig, 'moist.operator'),
+                        data_get($limitConfig, 'moist.value'),
+                        2
+                    ),
+                ],
+                'inputs' => [
+                    $this->buildProofInput('Berat Sampel', $calc->berat_sampel, ' g', 2),
+                    $this->buildProofInput('Berat Dirty', $calc->berat_dirty, ' g', 2),
+                    $this->buildProofInput('Moist', $calc->moist_percent, ' %', 2),
+                ],
+            ];
+        })->values()->all();
+    }
+
     private function buildQwtProofData(KernelQwt $row, string $message): array
     {
         $master = $this->activeKernelMasterDataQuery($row->office)
@@ -3517,6 +3594,82 @@ class KernelController extends Controller
         return $proof;
     }
 
+    private function buildQwtEntriesMetrics(array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $kodes = collect($rows)
+            ->pluck('kode')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $offices = collect($rows)
+            ->pluck('office')
+            ->filter()
+            ->map(fn($office) => strtoupper(trim((string) $office)))
+            ->unique()
+            ->values();
+
+        $masterRows = KernelMasterData::query()
+            ->where('is_active', true)
+            ->whereIn('kode', $kodes)
+            ->when($offices->isNotEmpty(), fn($q) => $q->whereIn('office', $offices))
+            ->get(['office', 'kode', 'nama_sample']);
+
+        $masterByOfficeAndKode = $masterRows->keyBy(
+            fn($row) => strtoupper(trim((string) $row->office)) . '|' . (string) $row->kode
+        );
+
+        $masterFallbackByKode = $masterRows->groupBy('kode')
+            ->map(fn($group) => $group->first());
+
+        return collect($rows)->map(function ($row) use ($masterByOfficeAndKode, $masterFallbackByKode) {
+            $kode = (string) ($row->kode ?? '');
+            $officeCode = strtoupper(trim((string) ($row->office ?? '')));
+            $master = $masterByOfficeAndKode->get($officeCode . '|' . $kode)
+                ?? $masterFallbackByKode->get($kode);
+
+            return [
+                'kode_label' => $kode . ' - ' . ($master->nama_sample ?? '-'),
+                'metrics' => [
+                    $this->buildProofMetric(
+                        'BN / TN',
+                        $row->bn_tn,
+                        '%',
+                        2,
+                        $row->bn_tn_limit_operator,
+                        $row->bn_tn_limit_value,
+                        2
+                    ),
+                    $this->buildProofMetric(
+                        'Moisture',
+                        $row->moisture,
+                        '%',
+                        2,
+                        $row->moist_limit_operator,
+                        $row->moist_limit_value,
+                        2
+                    ),
+                ],
+                'inputs' => [
+                    $this->buildProofInput('Sampel Setelah Kuarter', $row->sampel_setelah_kuarter, ' g', 2),
+                    $this->buildProofInput('Berat Nut Utuh', $row->berat_nut_utuh, ' g', 2),
+                    $this->buildProofInput('Berat Nut Pecah', $row->berat_nut_pecah, ' g', 2),
+                    $this->buildProofInput('Berat Kernel Utuh', $row->berat_kernel_utuh, ' g', 2),
+                    $this->buildProofInput('Berat Kernel Pecah', $row->berat_kernel_pecah, ' g', 2),
+                    $this->buildProofInput('Berat Cangkang', $row->berat_cangkang, ' g', 2),
+                    $this->buildProofInput('Berat Batu', $row->berat_batu, ' g', 2),
+                    $this->buildProofInput('Ampere Screw', $row->ampere_screw, '', 2),
+                    $this->buildProofInput('Tekanan Hydraulic', $row->tekanan_hydraulic, '', 2),
+                    $this->buildProofInput('Kecepatan Screw', $row->kecepatan_screw, '', 2),
+                ],
+            ];
+        })->values()->all();
+    }
+
     private function buildRippleMillProofData(KernelRippleMill $row, string $message): array
     {
         $master = $this->activeKernelMasterDataQuery($row->office)
@@ -3542,6 +3695,66 @@ class KernelController extends Controller
         ];
 
         return $proof;
+    }
+
+    private function buildRippleMillEntriesMetrics(array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $kodes = collect($rows)
+            ->pluck('kode')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $offices = collect($rows)
+            ->pluck('office')
+            ->filter()
+            ->map(fn($office) => strtoupper(trim((string) $office)))
+            ->unique()
+            ->values();
+
+        $masterRows = KernelMasterData::query()
+            ->where('is_active', true)
+            ->whereIn('kode', $kodes)
+            ->when($offices->isNotEmpty(), fn($q) => $q->whereIn('office', $offices))
+            ->get(['office', 'kode', 'nama_sample']);
+
+        $masterByOfficeAndKode = $masterRows->keyBy(
+            fn($row) => strtoupper(trim((string) $row->office)) . '|' . (string) $row->kode
+        );
+
+        $masterFallbackByKode = $masterRows->groupBy('kode')
+            ->map(fn($group) => $group->first());
+
+        return collect($rows)->map(function ($row) use ($masterByOfficeAndKode, $masterFallbackByKode) {
+            $kode = (string) ($row->kode ?? '');
+            $officeCode = strtoupper(trim((string) ($row->office ?? '')));
+            $master = $masterByOfficeAndKode->get($officeCode . '|' . $kode)
+                ?? $masterFallbackByKode->get($kode);
+
+            return [
+                'kode_label' => $kode . ' - ' . ($master->nama_sample ?? '-'),
+                'metrics' => [
+                    $this->buildProofMetric(
+                        'Efficiency',
+                        $row->efficiency,
+                        '%',
+                        2,
+                        $master?->limit_operator,
+                        $master?->limit_value,
+                        2
+                    ),
+                ],
+                'inputs' => [
+                    $this->buildProofInput('Berat Sampel', $row->berat_sampel, ' g', 2),
+                    $this->buildProofInput('Berat Nut Utuh', $row->berat_nut_utuh, ' g', 2),
+                    $this->buildProofInput('Berat Nut Pecah', $row->berat_nut_pecah, ' g', 2),
+                ],
+            ];
+        })->values()->all();
     }
 
     private function buildDestonerProofData(KernelDestoner $row, string $message): array
@@ -3571,6 +3784,68 @@ class KernelController extends Controller
         ];
 
         return $proof;
+    }
+
+    private function buildDestonerEntriesMetrics(array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $kodes = collect($rows)
+            ->pluck('kode')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $offices = collect($rows)
+            ->pluck('office')
+            ->filter()
+            ->map(fn($office) => strtoupper(trim((string) $office)))
+            ->unique()
+            ->values();
+
+        $masterRows = KernelMasterData::query()
+            ->where('is_active', true)
+            ->whereIn('kode', $kodes)
+            ->when($offices->isNotEmpty(), fn($q) => $q->whereIn('office', $offices))
+            ->get(['office', 'kode', 'nama_sample']);
+
+        $masterByOfficeAndKode = $masterRows->keyBy(
+            fn($row) => strtoupper(trim((string) $row->office)) . '|' . (string) $row->kode
+        );
+
+        $masterFallbackByKode = $masterRows->groupBy('kode')
+            ->map(fn($group) => $group->first());
+
+        return collect($rows)->map(function ($row) use ($masterByOfficeAndKode, $masterFallbackByKode) {
+            $kode = (string) ($row->kode ?? '');
+            $officeCode = strtoupper(trim((string) ($row->office ?? '')));
+            $master = $masterByOfficeAndKode->get($officeCode . '|' . $kode)
+                ?? $masterFallbackByKode->get($kode);
+
+            return [
+                'kode_label' => $kode . ' - ' . ($master->nama_sample ?? '-'),
+                'metrics' => [
+                    $this->buildProofMetric('Total Losses Kernel', $row->total_losses_kernel, '%', 4, null, null, 4),
+                    $this->buildProofMetric(
+                        'Loss Kernel/TBS',
+                        $row->loss_kernel_tbs,
+                        '',
+                        8,
+                        $row->limit_operator,
+                        $row->limit_value,
+                        3
+                    ),
+                ],
+                'inputs' => [
+                    $this->buildProofInput('Berat Sampel', $row->berat_sampel, ' g', 2),
+                    $this->buildProofInput('Time', $row->time, ' detik', 2),
+                    $this->buildProofInput('Berat Nut', $row->berat_nut, ' g', 2),
+                    $this->buildProofInput('Berat Kernel', $row->berat_kernel, ' g', 2),
+                ],
+            ];
+        })->values()->all();
     }
 
     private function calculateKernelBobot(float $value, $config, ?string $kode = null): int

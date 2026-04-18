@@ -120,7 +120,10 @@
         @foreach($entriesMetrics as $entryMetric)
             @php
                 $kodeLabel = $entryMetric['kode_label'] ?? '-';
-                $metric = $entryMetric['metric'] ?? [];
+                $entryMetricsRows = $entryMetric['metrics'] ?? [];
+                if (empty($entryMetricsRows) && !empty($entryMetric['metric'])) {
+                    $entryMetricsRows = [$entryMetric['metric']];
+                }
                 $inputs = $entryMetric['inputs'] ?? [];
                 $entryDetailInputsHtml = '';
                 if (!empty($inputs)) {
@@ -130,25 +133,6 @@
                         return $label . ': ' . $value;
                     })->implode('<br>');
                 }
-
-                $decimals = $metric['decimals'] ?? 2;
-                $limitDecimals = $metric['limit_decimals'] ?? $decimals;
-                $limitOperator = $metric['limit_operator'] ?? null;
-                $limitValue = $metric['limit_value'] ?? null;
-                $isGood = null;
-                if ($limitOperator && $limitValue !== null) {
-                    $metricValue = (float) ($metric['value'] ?? 0);
-                    $limitNumber = (float) $limitValue;
-                    $isGood = match ($limitOperator) {
-                        'lt' => $metricValue < $limitNumber,
-                        'ge' => $metricValue >= $limitNumber,
-                        'gt' => $metricValue > $limitNumber,
-                        default => $metricValue <= $limitNumber,
-                    };
-                }
-                $badgeClass = $isGood === null
-                    ? 'bg-gray-100 text-gray-700'
-                    : ($isGood ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800');
             @endphp
             <div class="mb-4 overflow-x-auto">
                 <div class="mb-2 rounded bg-purple-100 px-3 py-2 text-sm font-semibold text-purple-900">
@@ -164,25 +148,47 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-purple-100 text-sm text-slate-700">
-                        <tr>
-                            <td class="px-4 py-3 whitespace-nowrap">{{ $metric['label'] ?? '-' }}</td>
-                            <td class="px-4 py-3">
-                                @if($entryDetailInputsHtml)
-                                    <div class="text-xs text-slate-700">{!! $entryDetailInputsHtml !!}</div>
-                                @else
-                                    <span class="text-xs text-slate-400">-</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                <span
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $badgeClass }}">
-                                    {{ $formatValue($metric['value'] ?? null, $decimals, $metric['unit'] ?? '') }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-xs text-purple-800">
-                                {{ $formatLimit($limitOperator, $limitValue, $limitDecimals) }}
-                            </td>
-                        </tr>
+                        @foreach($entryMetricsRows as $metric)
+                            @php
+                                $decimals = $metric['decimals'] ?? 2;
+                                $limitDecimals = $metric['limit_decimals'] ?? $decimals;
+                                $limitOperator = $metric['limit_operator'] ?? null;
+                                $limitValue = $metric['limit_value'] ?? null;
+                                $isGood = null;
+                                if ($limitOperator && $limitValue !== null) {
+                                    $metricValue = (float) ($metric['value'] ?? 0);
+                                    $limitNumber = (float) $limitValue;
+                                    $isGood = match ($limitOperator) {
+                                        'lt' => $metricValue < $limitNumber,
+                                        'ge' => $metricValue >= $limitNumber,
+                                        'gt' => $metricValue > $limitNumber,
+                                        default => $metricValue <= $limitNumber,
+                                    };
+                                }
+                                $badgeClass = $isGood === null
+                                    ? 'bg-gray-100 text-gray-700'
+                                    : ($isGood ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800');
+                            @endphp
+                            <tr>
+                                <td class="px-4 py-3 whitespace-nowrap">{{ $metric['label'] ?? '-' }}</td>
+                                <td class="px-4 py-3">
+                                    @if($entryDetailInputsHtml)
+                                        <div class="text-xs text-slate-700">{!! $entryDetailInputsHtml !!}</div>
+                                    @else
+                                        <span class="text-xs text-slate-400">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $badgeClass }}">
+                                        {{ $formatValue($metric['value'] ?? null, $decimals, $metric['unit'] ?? '') }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-xs text-purple-800">
+                                    {{ $formatLimit($limitOperator, $limitValue, $limitDecimals) }}
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>

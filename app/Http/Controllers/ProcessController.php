@@ -1105,7 +1105,8 @@ class ProcessController extends Controller
         $actualBundle = $this->buildActualSamplesBundle(
             (string) optional($record->process_date)->format('Y-m-d'),
             $office === 'all' ? '' : $office,
-            $machineWindowsByCode
+            $machineWindowsByCode,
+            $members
         );
         $actualByGroup = $actualBundle['group'];
 
@@ -1284,9 +1285,9 @@ class ProcessController extends Controller
         return null;
     }
 
-    private function buildActualSamplesByGroup(string $date, string $office, array $machineWindowsByCode): array
+    private function buildActualSamplesByGroup(string $date, string $office, array $machineWindowsByCode, array $teamMembers = []): array
     {
-        return $this->buildActualSamplesBundle($date, $office, $machineWindowsByCode)['group'];
+        return $this->buildActualSamplesBundle($date, $office, $machineWindowsByCode, $teamMembers)['group'];
     }
 
     private function buildExpectedSamplesByCode(KernelProsses $record, string $teamName, Collection $machines, string $office = 'YBS'): array
@@ -1336,12 +1337,12 @@ class ProcessController extends Controller
         return $expected;
     }
 
-    private function buildActualSamplesByCode(string $date, string $office, array $machineWindowsByCode): array
+    private function buildActualSamplesByCode(string $date, string $office, array $machineWindowsByCode, array $teamMembers = []): array
     {
-        return $this->buildActualSamplesBundle($date, $office, $machineWindowsByCode)['code'];
+        return $this->buildActualSamplesBundle($date, $office, $machineWindowsByCode, $teamMembers)['code'];
     }
 
-    private function buildActualSamplesBundle(string $date, string $office, array $machineWindowsByCode): array
+    private function buildActualSamplesBundle(string $date, string $office, array $machineWindowsByCode, array $teamMembers = []): array
     {
         $groupActual = [];
         foreach (array_keys(self::PERFORMANCE_GROUP_INTERVAL_MINUTES) as $groupKey) {
@@ -1355,7 +1356,18 @@ class ProcessController extends Controller
 
         $rows = $this->getTimedCodeRowsCached($date, $office);
 
+        // Normalize team members to uppercase for comparison
+        $normalizedTeamMembers = array_map(fn($member) => strtoupper(trim((string) $member)), $teamMembers);
+
         foreach ($rows as $row) {
+            // Filter by team member if team_members is provided
+            if (!empty($normalizedTeamMembers)) {
+                $sampelBoy = strtoupper(trim((string) ($row['sampel_boy'] ?? '')));
+                if (!in_array($sampelBoy, $normalizedTeamMembers, true)) {
+                    continue;
+                }
+            }
+
             $isPengulangan = (bool) ($row['pengulangan'] ?? false);
             if ($isPengulangan) {
                 continue;
@@ -1426,7 +1438,7 @@ class ProcessController extends Controller
         $endDateTime = $baseDate->copy()->addDay()->setTime(6, 59, 59)->format('Y-m-d H:i:s');
         $table = $query->getModel()->getTable();
         $hasPengulanganColumn = Schema::hasColumn($table, 'pengulangan');
-        $selectColumns = ['kode', 'rounded_time', 'created_at'];
+        $selectColumns = ['kode', 'rounded_time', 'created_at', 'sampel_boy'];
         if ($hasPengulanganColumn) {
             $selectColumns[] = 'pengulangan';
         }
@@ -1452,6 +1464,7 @@ class ProcessController extends Controller
             return [
                 'code' => strtoupper(trim((string) $row->kode)),
                 'time' => $time,
+                'sampel_boy' => (string) ($row->sampel_boy ?? ''),
                 'pengulangan' => (bool) ($row->pengulangan ?? false),
             ];
         })->values();

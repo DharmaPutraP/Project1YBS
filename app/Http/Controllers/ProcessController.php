@@ -475,7 +475,8 @@ class ProcessController extends Controller
 
     public function performanceSampelBoy(Request $request)
     {
-        $selectedDate = (string) $request->input('date', now()->format('Y-m-d'));
+        $dateStart = (string) $request->input('date_start', now()->format('Y-m-d'));
+        $dateEnd = (string) $request->input('date_end', now()->format('Y-m-d'));
         $officeOptions = $this->getAvailableOfficesForPerformance();
         $defaultOffice = (string) (auth()->user()->office ?? '');
         $selectedOffice = (string) $request->input('office', $defaultOffice !== '' ? $defaultOffice : 'all');
@@ -484,15 +485,30 @@ class ProcessController extends Controller
             $selectedOffice = $defaultOffice !== '' ? $defaultOffice : 'all';
         }
 
+        // Ensure dates are valid and start <= end
+        try {
+            $startDate = Carbon::parse($dateStart)->startOfDay();
+            $endDate = Carbon::parse($dateEnd)->endOfDay();
+            if ($startDate > $endDate) {
+                $startDate = $endDate->copy()->startOfDay();
+                $endDate = $startDate->copy()->endOfDay();
+            }
+        } catch (\Throwable) {
+            $startDate = now()->startOfDay();
+            $endDate = now()->endOfDay();
+        }
+
         $records = KernelProsses::query()
             ->with('mesin')
-            ->whereDate('process_date', $selectedDate)
+            ->whereBetween('process_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->when($selectedOffice !== 'all', fn($query) => $query->where('office', $selectedOffice))
             ->orderBy('process_date')
             ->orderBy('id')
             ->get();
 
         $rows = [];
+        $perfTeam1 = []; // Track Tim 1 performance
+        $perfTeam2 = []; // Track Tim 2 performance
 
         foreach ($records as $record) {
             /** @var KernelProsses $record */
@@ -504,56 +520,85 @@ class ProcessController extends Controller
                 : null;
 
             if ($inputTeam === 'Tim 1') {
-                $rows[] = $this->buildPerformanceRow(
+                $row = $this->buildPerformanceRow(
                     $record,
                     'Tim 1',
                     (array) ($record->team_1_members ?? []),
                     $team1Machines,
                     $selectedOffice
                 );
+                $rows[] = $row;
+                if (!empty($row['perf_total']) && $row['perf_total'] !== '-') {
+                    $perfTeam1[] = (float) str_replace('%', '', $row['perf_total']);
+                }
                 continue;
             }
 
             if ($inputTeam === 'Tim 2') {
-                $rows[] = $this->buildPerformanceRow(
+                $row = $this->buildPerformanceRow(
                     $record,
                     'Tim 2',
                     (array) ($record->team_2_members ?? []),
                     $team2Machines,
                     $selectedOffice
                 );
+                $rows[] = $row;
+                if (!empty($row['perf_total']) && $row['perf_total'] !== '-') {
+                    $perfTeam2[] = (float) str_replace('%', '', $row['perf_total']);
+                }
                 continue;
             }
 
-            $rows[] = $this->buildPerformanceRow(
+            $row1 = $this->buildPerformanceRow(
                 $record,
                 'Tim 1',
                 (array) ($record->team_1_members ?? []),
                 $team1Machines,
                 $selectedOffice
             );
+            $rows[] = $row1;
+            if (!empty($row1['perf_total']) && $row1['perf_total'] !== '-') {
+                $perfTeam1[] = (float) str_replace('%', '', $row1['perf_total']);
+            }
 
-            $rows[] = $this->buildPerformanceRow(
+            $row2 = $this->buildPerformanceRow(
                 $record,
                 'Tim 2',
                 (array) ($record->team_2_members ?? []),
                 $team2Machines,
                 $selectedOffice
             );
+            $rows[] = $row2;
+            if (!empty($row2['perf_total']) && $row2['perf_total'] !== '-') {
+                $perfTeam2[] = (float) str_replace('%', '', $row2['perf_total']);
+            }
         }
 
+        // Calculate average performance per team
+        $avgTeam1 = !empty($perfTeam1)
+            ? number_format(array_sum($perfTeam1) / count($perfTeam1), 2) . '%'
+            : '-';
+        
+        $avgTeam2 = !empty($perfTeam2)
+            ? number_format(array_sum($perfTeam2) / count($perfTeam2), 2) . '%'
+            : '-';
+
         return view('process.performance-sampel-boy', [
-            'selectedDate' => $selectedDate,
+            'dateStart' => $startDate->format('Y-m-d'),
+            'dateEnd' => $endDate->format('Y-m-d'),
             'selectedOffice' => $selectedOffice,
             'officeOptions' => $officeOptions,
             'detailCodeHeaders' => self::PERFORMANCE_DETAIL_CODES,
             'rows' => $rows,
+            'avgTeam1' => $avgTeam1,
+            'avgTeam2' => $avgTeam2,
         ]);
     }
 
     public function exportPerformanceSampelBoy(Request $request)
     {
-        $selectedDate = (string) $request->input('date', now()->format('Y-m-d'));
+        $dateStart = (string) $request->input('date_start', now()->format('Y-m-d'));
+        $dateEnd = (string) $request->input('date_end', now()->format('Y-m-d'));
         $officeOptions = $this->getAvailableOfficesForPerformance();
         $defaultOffice = (string) (auth()->user()->office ?? '');
         $selectedOffice = (string) $request->input('office', $defaultOffice !== '' ? $defaultOffice : 'all');
@@ -562,9 +607,22 @@ class ProcessController extends Controller
             $selectedOffice = $defaultOffice !== '' ? $defaultOffice : 'all';
         }
 
+        // Ensure dates are valid and start <= end
+        try {
+            $startDate = Carbon::parse($dateStart)->startOfDay();
+            $endDate = Carbon::parse($dateEnd)->endOfDay();
+            if ($startDate > $endDate) {
+                $startDate = $endDate->copy()->startOfDay();
+                $endDate = $startDate->copy()->endOfDay();
+            }
+        } catch (\Throwable) {
+            $startDate = now()->startOfDay();
+            $endDate = now()->endOfDay();
+        }
+
         $records = KernelProsses::query()
             ->with('mesin')
-            ->whereDate('process_date', $selectedDate)
+            ->whereBetween('process_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->when($selectedOffice !== 'all', fn($query) => $query->where('office', $selectedOffice))
             ->orderBy('process_date')
             ->orderBy('id')
@@ -619,13 +677,20 @@ class ProcessController extends Controller
             );
         }
 
-        $filename = 'performance-sampel-boy-'
-            . Carbon::parse($selectedDate)->format('Ymd')
-            . '-' . ($selectedOffice === 'all' ? 'all-office' : strtolower($selectedOffice))
-            . '.xlsx';
+        $dateStartFormatted = Carbon::parse($startDate)->format('Ymd');
+        $dateEndFormatted = Carbon::parse($endDate)->format('Ymd');
+        $officeLabel = $selectedOffice === 'all' ? 'all-office' : strtolower($selectedOffice);
+
+        $exportType = (string) $request->input('export_type', 'summary');
+
+        if ($exportType === 'detail') {
+            $filename = 'Performance-Detail-' . $dateStartFormatted . '-' . $dateEndFormatted . '-' . $officeLabel . '.xlsx';
+        } else {
+            $filename = 'Performance-Summary-' . $dateStartFormatted . '-' . $dateEndFormatted . '-' . $officeLabel . '.xlsx';
+        }
 
         return Excel::download(
-            new PerformanceSampelBoyExport($rows, self::PERFORMANCE_DETAIL_CODES, $selectedDate, $selectedOffice),
+            new PerformanceSampelBoyExport($rows, self::PERFORMANCE_DETAIL_CODES, $startDate->format('Y-m-d'), $selectedOffice, $exportType === 'detail'),
             $filename
         );
     }
@@ -2396,3 +2461,5 @@ class ProcessController extends Controller
         return $rules;
     }
 }
+
+

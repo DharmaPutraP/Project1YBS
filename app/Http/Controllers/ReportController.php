@@ -32,13 +32,23 @@ class ReportController extends Controller
          * 1️⃣ CALCULATION + RECORD
          * ======================================================
          */
+        $latestRecordsSubquery = fn() => DB::table('oil_records as rr')
+            ->select([
+                'rr.office',
+                'rr.kode',
+                'rr.tanggal_sampel',
+                DB::raw('MAX(rr.id) as latest_record_id'),
+            ])
+            ->whereNull('rr.deleted_at')
+            ->groupBy('rr.office', 'rr.kode', 'rr.tanggal_sampel');
+
         $calculationWithRecord = DB::table('oil_calculations as c')
-            ->join('oil_records as r', function ($join) {
-                $join->on('c.kode', '=', 'r.kode')
-                    ->on('c.user_id', '=', 'r.user_id')
-                    ->on('c.tanggal_sampel', '=', 'r.tanggal_sampel')
-                    ->whereNull('r.deleted_at');
+            ->joinSub($latestRecordsSubquery(), 'lr', function ($join) {
+                $join->on('c.office', '=', 'lr.office')
+                    ->on('c.kode', '=', 'lr.kode')
+                    ->on('c.tanggal_sampel', '=', 'lr.tanggal_sampel');
             })
+            ->join('oil_records as r', 'r.id', '=', 'lr.latest_record_id')
             ->leftJoin('users as u', function ($join) {
                 $join->on('u.id', '=', 'c.user_id')
                     ->whereNull('u.deleted_at');
@@ -97,8 +107,8 @@ class ReportController extends Controller
             ->whereNotExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('oil_records as r')
+                    ->whereColumn('r.office', 'c.office')
                     ->whereColumn('r.kode', 'c.kode')
-                    ->whereColumn('r.user_id', 'c.user_id')
                     ->whereColumn('r.tanggal_sampel', 'c.tanggal_sampel')
                     ->whereNull('r.deleted_at');
             })
@@ -141,6 +151,11 @@ class ReportController extends Controller
          * ======================================================
          */
         $recordOnly = DB::table('oil_records as r')
+            ->leftJoinSub($latestRecordsSubquery(), 'lr', function ($join) {
+                $join->on('r.office', '=', 'lr.office')
+                    ->on('r.kode', '=', 'lr.kode')
+                    ->on('r.tanggal_sampel', '=', 'lr.tanggal_sampel');
+            })
             ->leftJoin('users as u', function ($join) {
                 $join->on('u.id', '=', 'r.user_id')
                     ->whereNull('u.deleted_at');
@@ -149,13 +164,17 @@ class ReportController extends Controller
             ->whereBetween('r.tanggal_sampel', [$startDate, $endDate])
             ->when($kode, fn($q) => $q->where('r.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('r.office', $officeFilter))
-            ->whereNotExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('oil_calculations as c')
-                    ->whereColumn('c.kode', 'r.kode')
-                    ->whereColumn('c.user_id', 'r.user_id')
-                    ->whereColumn('c.tanggal_sampel', 'r.tanggal_sampel')
-                    ->whereNull('c.deleted_at');
+            ->where(function ($q) {
+                $q->whereNotExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('oil_calculations as c')
+                        ->whereColumn('c.office', 'r.office')
+                        ->whereColumn('c.kode', 'r.kode')
+                        ->whereColumn('c.tanggal_sampel', 'r.tanggal_sampel')
+                        ->whereNull('c.deleted_at');
+                })
+                    // Keep additional non-numeric entries if a merged row already uses the latest record.
+                    ->orWhereColumn('r.id', '<>', 'lr.latest_record_id');
             })
             ->select([
                 DB::raw('3 as priority'),
@@ -209,9 +228,9 @@ class ReportController extends Controller
         $reports = DB::query()
             ->fromSub($unionQuery, 'reports')
             ->orderBy('tanggal_sampel', 'asc')
-            ->orderBy('created_at', 'asc')
             ->orderBy('kode', 'asc')
             ->orderBy('priority', 'asc')
+            ->orderBy('created_at', 'asc')
             ->paginate($perPage)
             ->withQueryString();
 
@@ -329,13 +348,23 @@ class ReportController extends Controller
         $userOffice = Auth()->user()->office;
         $officeFilter = $userOffice ?: $request->input('office', 'YBS');
 
+        $latestRecordsSubquery = fn() => DB::table('oil_records as rr')
+            ->select([
+                'rr.office',
+                'rr.kode',
+                'rr.tanggal_sampel',
+                DB::raw('MAX(rr.id) as latest_record_id'),
+            ])
+            ->whereNull('rr.deleted_at')
+            ->groupBy('rr.office', 'rr.kode', 'rr.tanggal_sampel');
+
         $calculationWithRecord = DB::table('oil_calculations as c')
-            ->join('oil_records as r', function ($join) {
-                $join->on('c.kode', '=', 'r.kode')
-                    ->on('c.user_id', '=', 'r.user_id')
-                    ->on('c.tanggal_sampel', '=', 'r.tanggal_sampel')
-                    ->whereNull('r.deleted_at');
+            ->joinSub($latestRecordsSubquery(), 'lr', function ($join) {
+                $join->on('c.office', '=', 'lr.office')
+                    ->on('c.kode', '=', 'lr.kode')
+                    ->on('c.tanggal_sampel', '=', 'lr.tanggal_sampel');
             })
+            ->join('oil_records as r', 'r.id', '=', 'lr.latest_record_id')
             ->leftJoin('users as u', function ($join) {
                 $join->on('u.id', '=', 'c.user_id')
                     ->whereNull('u.deleted_at');
@@ -387,8 +416,8 @@ class ReportController extends Controller
             ->whereNotExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('oil_records as r')
+                    ->whereColumn('r.office', 'c.office')
                     ->whereColumn('r.kode', 'c.kode')
-                    ->whereColumn('r.user_id', 'c.user_id')
                     ->whereColumn('r.tanggal_sampel', 'c.tanggal_sampel')
                     ->whereNull('r.deleted_at');
             })
@@ -424,6 +453,11 @@ class ReportController extends Controller
             ]);
 
         $recordOnly = DB::table('oil_records as r')
+            ->leftJoinSub($latestRecordsSubquery(), 'lr', function ($join) {
+                $join->on('r.office', '=', 'lr.office')
+                    ->on('r.kode', '=', 'lr.kode')
+                    ->on('r.tanggal_sampel', '=', 'lr.tanggal_sampel');
+            })
             ->leftJoin('users as u', function ($join) {
                 $join->on('u.id', '=', 'r.user_id')
                     ->whereNull('u.deleted_at');
@@ -432,13 +466,16 @@ class ReportController extends Controller
             ->whereBetween('r.tanggal_sampel', [$startDate, $endDate])
             ->when($kode, fn($q) => $q->where('r.kode', $kode))
             ->when($officeFilter !== 'all', fn($q) => $q->where('r.office', $officeFilter))
-            ->whereNotExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('oil_calculations as c')
-                    ->whereColumn('c.kode', 'r.kode')
-                    ->whereColumn('c.user_id', 'r.user_id')
-                    ->whereColumn('c.tanggal_sampel', 'r.tanggal_sampel')
-                    ->whereNull('c.deleted_at');
+            ->where(function ($q) {
+                $q->whereNotExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('oil_calculations as c')
+                        ->whereColumn('c.office', 'r.office')
+                        ->whereColumn('c.kode', 'r.kode')
+                        ->whereColumn('c.tanggal_sampel', 'r.tanggal_sampel')
+                        ->whereNull('c.deleted_at');
+                })
+                    ->orWhereColumn('r.id', '<>', 'lr.latest_record_id');
             })
             ->select([
                 DB::raw('3 as priority'),
@@ -446,6 +483,7 @@ class ReportController extends Controller
                 'r.updated_at',
                 'r.tanggal_sampel',
                 'r.kode',
+                'r.office',
                 'u.name as user_name',
                 'r.pivot',
                 'r.operator',
@@ -477,9 +515,9 @@ class ReportController extends Controller
         $exportQuery = DB::query()
             ->fromSub($unionQuery, 'reports')
             ->orderBy('tanggal_sampel', 'asc')
-            ->orderBy('created_at', 'asc')
             ->orderBy('kode', 'asc')
-            ->orderBy('priority', 'asc');
+            ->orderBy('priority', 'asc')
+            ->orderBy('created_at', 'asc');
 
         $filename = 'Laporan_Oil_Losses_' .
             Carbon::parse($startDate)->format('Ymd') . '_' .

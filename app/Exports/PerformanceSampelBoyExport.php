@@ -16,18 +16,14 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
     private array $rows;
-    private array $detailCodeHeaders;
     private string $selectedDate;
     private string $selectedOffice;
-    private bool $isDetailExport;
 
-    public function __construct(array $rows, array $detailCodeHeaders, string $selectedDate, string $selectedOffice, bool $isDetailExport = false)
+    public function __construct(array $rows, string $selectedDate, string $selectedOffice)
     {
         $this->rows = $rows;
-        $this->detailCodeHeaders = $detailCodeHeaders;
         $this->selectedDate = $selectedDate;
         $this->selectedOffice = $selectedOffice;
-        $this->isDetailExport = $isDetailExport;
     }
 
     public function collection(): Collection
@@ -37,97 +33,48 @@ class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMa
 
     public function headings(): array
     {
-        if ($this->isDetailExport) {
-            // Detail export with per-code data
-            $headings = [
-                'Tanggal',
-                'Tim',
-                'Jam Mulai Proses',
-                'Jam Akhir Proses',
-                'Jam Awal Break Time',
-                'Jam Akhir Break Time',
-                'Total Hours',
-                'Nama Sampel Boy',
-            ];
-
-            foreach ($this->detailCodeHeaders as $detailCode) {
-                $headings[] = (string) ($detailCode['label'] ?? $detailCode['code'] ?? '');
-            }
-
-            $headings[] = 'Perf Total';
-
-            return $headings;
-        } else {
-            // Summary export
-            return [
-                'Tanggal',
-                'Tim',
-                'Jam Mulai Proses',
-                'Jam Akhir Proses',
-                'Jam Awal Break Time',
-                'Jam Akhir Break Time',
-                'Total Hours',
-                'Nama Sampel Boy',
-                'Fiber Cyclone',
-                'LTDS',
-                'Claybath Wet Shell',
-                'Inlet Kernel Silo',
-                'Outlet Kernel Silo',
-                'Press',
-                'Eficiency',
-                'Destoner',
-                'Perf Total',
-            ];
-        }
+        return [
+            'Tanggal',
+            'Tim',
+            'Jam Mulai Proses',
+            'Jam Akhir Proses',
+            'Jam Awal Break Time',
+            'Jam Akhir Break Time',
+            'Total Hours',
+            'Nama Sampel Boy',
+            'Fiber Cyclone',
+            'LTDS',
+            'Claybath Wet Shell',
+            'Inlet Kernel Silo',
+            'Outlet Kernel Silo',
+            'Press',
+            'Eficiency',
+            'Destoner',
+            'Perf Total',
+        ];
     }
 
     public function map($row): array
     {
-        if ($this->isDetailExport) {
-            // Detail export with per-code data
-            $mapped = [
-                $row['tanggal'] ?? '-',
-                $row['team_name'] ?? '-',
-                $row['jam_mulai'] ?? '-',
-                $row['jam_akhir'] ?? '-',
-                $row['downtime_awal'] ?? '-',
-                $row['downtime_akhir'] ?? '-',
-                $row['total_hours'] ?? '-',
-                $row['nama_sampel_boy'] ?? '-',
-            ];
-
-            foreach ($this->detailCodeHeaders as $detailCode) {
-                $code = (string) ($detailCode['code'] ?? '');
-                $mapped[] = $row['detail_values'][$code] ?? '0/0';
-            }
-
-            $mapped[] = $row['detail_perf_total'] ?? '-';
-
-            return $mapped;
-        } else {
-            // Summary export
-            $mapped = [
-                $row['tanggal'] ?? '-',
-                $row['team_name'] ?? '-',
-                $row['jam_mulai'] ?? '-',
-                $row['jam_akhir'] ?? '-',
-                $row['downtime_awal'] ?? '-',
-                $row['downtime_akhir'] ?? '-',
-                $row['total_hours'] ?? '-',
-                $row['nama_sampel_boy'] ?? '-',
-                $row['fibre_cyclone'] ?? '0/0',
-                $row['ltds'] ?? '0/0',
-                $row['claybath_wet_shell'] ?? '0/0',
-                $row['inlet_kernel_silo'] ?? '0/0',
-                $row['outlet_kernel_silo'] ?? '0/0',
-                $row['press'] ?? '0/0',
-                $row['eficiency'] ?? '0/0',
-                $row['destoner'] ?? '0/0',
-                $row['perf_total'] ?? '-',
-            ];
-
-            return $mapped;
-        }
+        return [
+            $row['tanggal'] ?? '-',
+            $row['team_name'] ?? '-',
+            $row['jam_mulai'] ?? '-',
+            $row['jam_akhir'] ?? '-',
+            $row['downtime_awal'] ?? '-',
+            $row['downtime_akhir'] ?? '-',
+            $row['total_hours'] ?? '-',
+            $row['nama_sampel_boy'] ?? '-',
+            $row['fibre_cyclone'] ?? '0/0',
+            $row['ltds'] ?? '0/0',
+            $row['claybath_wet_shell'] ?? '0/0',
+            $row['inlet_kernel_silo'] ?? '0/0',
+            $row['outlet_kernel_silo'] ?? '0/0',
+            $row['press'] ?? '0/0',
+            $row['eficiency'] ?? '0/0',
+            $row['destoner'] ?? '0/0',
+            $row['perf_total'] ?? '-',
+        ];
     }
 
     public function styles(Worksheet $sheet): array

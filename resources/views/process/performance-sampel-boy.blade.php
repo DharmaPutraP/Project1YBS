@@ -38,21 +38,9 @@
                 <input type="hidden" name="date_start" value="{{ $dateStart }}">
                 <input type="hidden" name="date_end" value="{{ $dateEnd }}">
                 <input type="hidden" name="office" value="{{ $selectedOffice }}">
-                <input type="hidden" name="export_type" value="summary">
                 <button type="submit"
                     class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700">
                     Export Data Performance
-                </button>
-            </form>
-            <form method="POST" action="{{ route('process.performance-sampel-boy.export') }}" class="inline">
-                @csrf
-                <input type="hidden" name="date_start" value="{{ $dateStart }}">
-                <input type="hidden" name="date_end" value="{{ $dateEnd }}">
-                <input type="hidden" name="office" value="{{ $selectedOffice }}">
-                <input type="hidden" name="export_type" value="detail">
-                <button type="submit"
-                    class="inline-flex items-center rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-cyan-700">
-                    Export Data Detail (Per Kode)
                 </button>
             </form>
         </div>
@@ -119,47 +107,6 @@
                     @empty
                         <tr>
                             <td colspan="15" class="px-3 py-4 text-center text-gray-500">Belum ada data performance untuk tanggal ini.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </x-ui.card>
-
-    <x-ui.card title="Data Performance Per Kode (Detail)" class="mt-6">
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[3600px] text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Tanggal</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Tim</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Jam Mulai Proses</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Jam Akhir Proses</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Total Hours</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Nama Sampel Boy</th>
-                        @foreach (($detailCodeHeaders ?? []) as $detailCode)
-                            <th class="px-3 py-2 text-left font-semibold text-gray-700">{{ $detailCode['label'] }}</th>
-                        @endforeach
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Perf Total</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                    @forelse ($rows as $row)
-                        <tr>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['tanggal'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['team_name'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['jam_mulai'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['jam_akhir'] }}</td>
-                            <td class="px-3 py-2 font-medium text-gray-800">{{ $row['total_hours'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['nama_sampel_boy'] }}</td>
-                            @foreach (($detailCodeHeaders ?? []) as $detailCode)
-                                <td class="px-3 py-2 text-gray-700">{{ $row['detail_values'][$detailCode['code']] ?? '0/0' }}</td>
-                            @endforeach
-                            <td class="px-3 py-2 font-semibold text-blue-700">{{ $row['detail_perf_total'] ?? '-' }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="100" class="px-3 py-4 text-center text-gray-500">Belum ada data performance untuk tanggal ini.</td>
                         </tr>
                     @endforelse
                 </tbody>

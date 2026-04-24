@@ -439,6 +439,22 @@ Route::middleware('auth')->group(function () {
         // Data USB
         Route::get('/data-usb', [ProcessController::class, 'lapJangkosDataUsb'])
             ->name('data-usb');
+
+        Route::get('/data-usb/{analisaUsb}/edit', [ProcessController::class, 'lapJangkosEditUsb'])
+            ->name('edit-usb');
+
+        Route::put('/data-usb/{analisaUsb}', [ProcessController::class, 'lapJangkosUpdateUsb'])
+            ->name('update-usb');
+
+        Route::delete('/data-usb/{analisaUsb}', [ProcessController::class, 'lapJangkosDestroyUsb'])
+            ->name('destroy-usb');
+
+        // Rekap USB
+        Route::get('/rekap-usb', [ProcessController::class, 'lapJangkosRekapUsb'])
+            ->name('rekap-usb');
+
+        Route::get('/rekap-usb/export', [ProcessController::class, 'lapJangkosRekapUsbExport'])
+            ->name('rekap-usb.export');
     });
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -454,8 +470,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/data', [ProcessController::class, 'oilLossFossData'])
             ->name('data');
 
+        Route::get('/data/export', [ProcessController::class, 'oilLossFossDataExport'])
+            ->name('data.export');
+
         Route::get('/rekap', [ProcessController::class, 'oilLossFossRekap'])
             ->name('rekap');
+
+        Route::get('/rekap/export', [ProcessController::class, 'oilLossFossRekapExport'])
+            ->name('rekap.export');
     });
 
     // ══════════════════════════════════════════════════════════════════════════

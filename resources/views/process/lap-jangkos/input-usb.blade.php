@@ -24,7 +24,7 @@
                     @foreach ($rowNumbers as $rowNumber)
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                             <div class="mb-4 flex items-center justify-between">
-                                <h2 class="text-sm font-bold text-slate-900">No Rebusan {{ $rowNumber }}</h2>
+                                <h2 class="text-sm font-bold text-slate-900">No Rebusan / Sterilizer {{ $rowNumber }}</h2>
                                 <span class="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">USB</span>
                             </div>
 

@@ -3301,81 +3301,246 @@ class ProcessController extends Controller
         $records = AnalisaUsb::query()
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderBy('tanggal')
+            ->orderBy('jam')
             ->orderBy('no_rebusan')
-            ->orderByDesc('id')
+            ->orderBy('id')
             ->get();
 
-        $dates = $records
-            ->pluck('tanggal')
-            ->filter()
-            ->map(fn($tanggal) => Carbon::parse($tanggal)->toDateString())
-            ->unique()
-            ->sort()
-            ->values()
-            ->all();
-
-        $rowNumbers = range(1, 8);
-        $matrix = [];
-
-        foreach ($rowNumbers as $rowNumber) {
-            $matrix[$rowNumber] = [];
-            foreach ($dates as $date) {
-                $matrix[$rowNumber][$date] = null;
-            }
-        }
-
-        foreach ($records as $record) {
-            $dateKey = Carbon::parse($record->tanggal)->toDateString();
-            $rowNumber = (int) $record->no_rebusan;
-
-            if (!isset($matrix[$rowNumber][$dateKey])) {
-                continue;
-            }
-
-            if ($matrix[$rowNumber][$dateKey] === null) {
-                $matrix[$rowNumber][$dateKey] = (float) $record->persen_usb;
-            }
-        }
-
-        $averages = [];
-        foreach ($dates as $date) {
-            $values = collect($rowNumbers)
-                ->map(fn($rowNumber) => $matrix[$rowNumber][$date] ?? null)
-                ->filter(fn($value) => $value !== null)
-                ->values();
-
-            $averages[$date] = $values->isEmpty()
-                ? null
-                : round($values->avg(), 2);
-        }
+        [$detailRows] = $this->buildUsbReportData($records, $startDate, $endDate);
 
         return view('process.lap-jangkos.data-usb', [
-            'rowNumbers' => $rowNumbers,
-            'dates' => $dates,
-            'matrix' => $matrix,
-            'averages' => $averages,
+            'detailRows' => $detailRows,
             'startDate' => $startDate,
             'endDate' => $endDate,
         ]);
     }
 
+    public function lapJangkosEditUsb(AnalisaUsb $analisaUsb)
+    {
+        return view('process.lap-jangkos.edit-usb', [
+            'record' => $analisaUsb,
+            'shiftOptions' => [1, 2],
+        ]);
+    }
+
+    public function lapJangkosUpdateUsb(Request $request, AnalisaUsb $analisaUsb)
+    {
+        $validated = $request->validate([
+            'tanggal' => ['required', 'date'],
+            'jam' => ['required', 'date_format:H:i'],
+            'shift' => ['required', Rule::in([1, 2, '1', '2'])],
+            'diamati_jlh_janjang' => ['required', 'numeric', 'min:0'],
+            'lolos_jlh_janjang' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $diamati = (float) $validated['diamati_jlh_janjang'];
+        $lolos = (float) $validated['lolos_jlh_janjang'];
+        $persenUsb = $diamati > 0 ? round(($lolos / $diamati) * 100, 2) : 0;
+
+        $analisaUsb->update([
+            'tanggal' => $validated['tanggal'],
+            'jam' => $validated['jam'],
+            'shift' => (int) $validated['shift'],
+            'diamati_jlh_janjang' => $diamati,
+            'lolos_jlh_janjang' => $lolos,
+            'persen_usb' => $persenUsb,
+        ]);
+
+        return redirect()->route('lap-jangkos.data-usb')
+            ->with('success', 'Data USB berhasil diperbarui.');
+    }
+
+    public function lapJangkosDestroyUsb(AnalisaUsb $analisaUsb)
+    {
+        $analisaUsb->delete();
+
+        return redirect()->route('lap-jangkos.data-usb')
+            ->with('success', 'Data USB berhasil dihapus.');
+    }
+
+    public function lapJangkosRekapUsb(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+
+        $records = AnalisaUsb::query()
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('no_rebusan')
+            ->orderBy('id')
+            ->get();
+
+        [, $recapData] = $this->buildUsbReportData($records, $startDate, $endDate);
+
+        return view('process.lap-jangkos.rekap-usb', [
+            'recapData' => $recapData,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ]);
+    }
+
+    public function lapJangkosRekapUsbExport(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+
+        $records = AnalisaUsb::query()
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('no_rebusan')
+            ->orderBy('id')
+            ->get();
+
+        [, $recapData] = $this->buildUsbReportData($records, $startDate, $endDate);
+
+        $headings = array_merge(
+            ['No Rebusan'],
+            collect($recapData['dates'])->map(fn(string $date): string => Carbon::parse($date)->format('d-m-Y'))->all()
+        );
+        $rows = collect();
+
+        foreach ($recapData['row_numbers'] as $rowNumber) {
+            $row = ['no_rebusan' => $rowNumber];
+            foreach ($recapData['dates'] as $date) {
+                $value = $recapData['matrix'][$rowNumber][$date] ?? null;
+                $row[$date] = $value === null ? null : round((float) $value, 2);
+            }
+            $rows->push($row);
+        }
+
+        $avgRow = ['no_rebusan' => 'Avg'];
+        foreach ($recapData['dates'] as $date) {
+            $value = $recapData['date_averages'][$date] ?? null;
+            $avgRow[$date] = $value === null ? null : round((float) $value, 2);
+        }
+        $rows->push($avgRow);
+
+        return $this->downloadAnalysisExport(
+            'Rekap USB',
+            $startDate,
+            $endDate,
+            $rows,
+            $headings,
+            'Rekap_USB_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
+    }
+
+    private function buildUsbReportData(Collection $records, ?string $startDate = null, ?string $endDate = null): array
+    {
+        $rowNumbers = range(1, 8);
+        $dateKeys = [];
+
+        if ($startDate !== null && $endDate !== null) {
+            foreach (\Carbon\CarbonPeriod::create($startDate, $endDate) as $date) {
+                $dateKeys[] = $date->format('Y-m-d');
+            }
+        } else {
+            $dateKeys = $records
+                ->pluck('tanggal')
+                ->filter()
+                ->map(fn($date) => Carbon::parse($date)->toDateString())
+                ->unique()
+                ->sort()
+                ->values()
+                ->all();
+        }
+
+        $dailyGrouped = [];
+        $dailyAllValues = [];
+
+        foreach ($records as $record) {
+            $dateKey = Carbon::parse($record->tanggal)->toDateString();
+            $rowNumber = (int) $record->no_rebusan;
+
+            if ($rowNumber < 1 || $rowNumber > 8) {
+                continue;
+            }
+
+            $dailyGrouped[$dateKey][$rowNumber][] = (float) $record->persen_usb;
+            $dailyAllValues[$dateKey][] = (float) $record->persen_usb;
+        }
+
+        $dailyRowAverages = [];
+        foreach ($dailyGrouped as $dateKey => $rows) {
+            foreach ($rows as $rowNumber => $values) {
+                $dailyRowAverages[$dateKey][$rowNumber] = round(array_sum($values) / count($values), 2);
+            }
+        }
+
+        $dailyAllAverages = [];
+        foreach ($dailyAllValues as $dateKey => $values) {
+            $dailyAllAverages[$dateKey] = round(array_sum($values) / count($values), 2);
+        }
+
+        $detailRows = $records->map(function (AnalisaUsb $record) use ($dailyAllAverages): array {
+            $dateKey = Carbon::parse($record->tanggal)->toDateString();
+            $rowNumber = (int) $record->no_rebusan;
+
+            return [
+                'id' => (int) $record->id,
+                'tanggal' => Carbon::parse($record->tanggal)->format('d-m-Y'),
+                'jam' => substr((string) $record->jam, 0, 5),
+                'shift' => (int) $record->shift,
+                'no_rebusan' => $rowNumber,
+                'diamati_jlh_janjang' => (float) $record->diamati_jlh_janjang,
+                'lolos_jlh_janjang' => (float) $record->lolos_jlh_janjang,
+                'persen_usb' => (float) $record->persen_usb,
+                'average' => $dailyAllAverages[$dateKey] ?? (float) $record->persen_usb,
+            ];
+        })->values()->all();
+
+        $matrix = [];
+        foreach ($rowNumbers as $rowNumber) {
+            foreach ($dateKeys as $dateKey) {
+                $matrix[$rowNumber][$dateKey] = $dailyRowAverages[$dateKey][$rowNumber] ?? null;
+            }
+        }
+
+        $dateAverages = [];
+        foreach ($dateKeys as $dateKey) {
+            $values = collect($rowNumbers)
+                ->map(fn(int $rowNumber) => $matrix[$rowNumber][$dateKey] ?? null)
+                ->filter(fn($value) => $value !== null)
+                ->values();
+
+            $dateAverages[$dateKey] = $values->isEmpty()
+                ? null
+                : round($values->avg(), 2);
+        }
+
+        $recapData = [
+            'dates' => $dateKeys,
+            'row_numbers' => $rowNumbers,
+            'matrix' => $matrix,
+            'date_averages' => $dateAverages,
+        ];
+
+        return [$detailRows, $recapData];
+    }
+
     public function oilLossFossInput()
     {
+        $operatorOptions = $this->getOperatorOptionsByOffice(auth()->user()->office ?? null, 'oil');
+
         return view('process.oil-loss-foss.input', [
             'machineGroups' => $this->oilFossMachineGroups(),
-            'operator' => $this->resolveOilFossOperator(),
+            'operatorOptions' => $operatorOptions,
+            'defaultOperator' => $this->resolveOilFossOperator($operatorOptions),
             'shiftOptions' => [1, 2],
         ]);
     }
 
     public function oilLossFossStore(Request $request)
     {
+        $operatorOptions = $this->getOperatorOptionsByOffice(auth()->user()->office ?? null, 'oil');
+        $operatorRule = !empty($operatorOptions) ? Rule::in($operatorOptions) : null;
+
         $validated = $request->validate([
-            'tanggal' => ['required', 'date'],
-            'waktu' => ['required', 'date_format:H:i'],
-            'operator' => ['required', Rule::in(['YBS', 'SUN'])],
-            'shift' => ['required', Rule::in([1, 2, '1', '2'])],
             'rows' => ['required', 'array'],
+            'rows.*.tanggal' => ['nullable', 'date'],
+            'rows.*.waktu' => ['nullable', 'date_format:H:i'],
+            'rows.*.operator' => array_values(array_filter(['nullable', $operatorRule])),
+            'rows.*.shift' => ['nullable', Rule::in([1, 2, '1', '2'])],
             'rows.*.moist' => ['nullable', 'numeric', 'min:0'],
             'rows.*.olwb' => ['nullable', 'numeric', 'min:0'],
         ]);
@@ -3384,7 +3549,9 @@ class ProcessController extends Controller
         $savedCount = 0;
         $userId = auth()->id();
 
-        DB::transaction(function () use ($validated, $definitions, $userId, &$savedCount) {
+        $defaultOperator = $this->resolveOilFossOperator($operatorOptions);
+
+        DB::transaction(function () use ($validated, $definitions, $userId, $defaultOperator, &$savedCount) {
             foreach ($validated['rows'] as $rowKey => $row) {
                 if (!$definitions->has($rowKey)) {
                     continue;
@@ -3411,13 +3578,17 @@ class ProcessController extends Controller
                 }
 
                 $definition = $definitions->get($rowKey);
+                $operator = trim((string) ($row['operator'] ?? $defaultOperator));
+                if ($operator === '') {
+                    $operator = $defaultOperator;
+                }
 
                 OilFoss::create([
                     'user_id' => $userId,
-                    'tanggal' => $validated['tanggal'],
-                    'waktu' => $validated['waktu'],
-                    'operator' => strtoupper((string) $validated['operator']),
-                    'shift' => (int) $validated['shift'],
+                    'tanggal' => $row['tanggal'] ?? now()->toDateString(),
+                    'waktu' => $row['waktu'] ?? now()->format('H:i'),
+                    'operator' => $operator,
+                    'shift' => (int) ($row['shift'] ?? 1),
                     'machine_group' => $definition['group'],
                     'machine_name' => $definition['label'],
                     'moist' => $moist,
@@ -3442,8 +3613,8 @@ class ProcessController extends Controller
     {
         [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
 
-        $operator = strtoupper(trim((string) $request->input('operator', 'ALL')));
-        if (!in_array($operator, ['ALL', 'YBS', 'SUN'], true)) {
+        $operator = trim((string) $request->input('operator', 'ALL'));
+        if ($operator === '' || strtoupper($operator) === 'ALL') {
             $operator = 'ALL';
         }
 
@@ -3453,10 +3624,12 @@ class ProcessController extends Controller
         }
 
         $machineName = trim((string) $request->input('machine_name', 'all'));
-        $machineOptions = collect($this->oilFossMachineDefinitions())
+        $definitions = collect($this->oilFossMachineDefinitions());
+        $definitionMap = $definitions
+            ->mapWithKeys(fn(array $definition) => [(string) $definition['label'] => $definition])
+            ->all();
+        $machineOptions = $definitions
             ->pluck('label')
-            ->unique()
-            ->sort()
             ->values()
             ->all();
 
@@ -3475,6 +3648,16 @@ class ProcessController extends Controller
             ->paginate(25)
             ->appends($request->except('page'));
 
+        $operatorOptions = OilFoss::query()
+            ->whereNotNull('operator')
+            ->where('operator', '!=', '')
+            ->select('operator')
+            ->distinct()
+            ->orderBy('operator')
+            ->pluck('operator')
+            ->values()
+            ->all();
+
         return view('process.oil-loss-foss.data', [
             'rows' => $rows,
             'startDate' => $startDate,
@@ -3483,15 +3666,125 @@ class ProcessController extends Controller
             'shift' => $shift,
             'machineName' => $machineName,
             'machineOptions' => $machineOptions,
+            'operatorOptions' => $operatorOptions,
+            'definitionMap' => $definitionMap,
         ]);
+    }
+
+    public function oilLossFossDataExport(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+
+        $operator = trim((string) $request->input('operator', 'ALL'));
+        if ($operator === '' || strtoupper($operator) === 'ALL') {
+            $operator = 'ALL';
+        }
+
+        $shift = (string) $request->input('shift', 'all');
+        if (!in_array($shift, ['all', '1', '2'], true)) {
+            $shift = 'all';
+        }
+
+        $machineName = trim((string) $request->input('machine_name', 'all'));
+        $definitions = collect($this->oilFossMachineDefinitions());
+        $definitionMap = $definitions
+            ->mapWithKeys(fn(array $definition) => [(string) $definition['label'] => $definition])
+            ->all();
+        $machineOptions = $definitions
+            ->pluck('label')
+            ->values()
+            ->all();
+
+        if ($machineName !== 'all' && !in_array($machineName, $machineOptions, true)) {
+            $machineName = 'all';
+        }
+
+        $rows = OilFoss::query()
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
+            ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))
+            ->when($machineName !== 'all', fn($query) => $query->where('machine_name', $machineName))
+            ->orderBy('tanggal')
+            ->orderBy('waktu')
+            ->orderBy('machine_name')
+            ->get()
+            ->map(function (OilFoss $row) use ($definitionMap): array {
+                $code = (string) $row->machine_name;
+                $definition = $definitionMap[$code] ?? null;
+
+                $moist = $row->moist === null ? null : (float) $row->moist;
+                $dmwm = $moist === null ? null : (100 - $moist);
+                $olwb = $row->olwb === null ? null : (float) $row->olwb;
+                $oldb = ($olwb !== null && $dmwm !== null && $dmwm != 0.0)
+                    ? ($olwb / $dmwm)
+                    : null;
+
+                $massPercent = $definition['mass_balance_percent'] ?? null;
+                $massPercent2 = $definition['mass_balance_percent_2'] ?? null;
+                $oilLossesTon = ($olwb !== null && $massPercent !== null)
+                    ? ($olwb * (float) $massPercent)
+                    : null;
+
+                $operatorMap = [
+                    '<=' => '≤',
+                    '>=' => '≥',
+                    '<' => '<',
+                    '>' => '>',
+                    '=' => '=',
+                ];
+
+                $limitOlwb = null;
+                if (($definition['limit_olwb'] ?? null) !== null) {
+                    $symbol = $operatorMap[$definition['limit_olwb_operator'] ?? '<='] ?? ($definition['limit_olwb_operator'] ?? '<=');
+                    $limitOlwb = $symbol . ' ' . number_format((float) $definition['limit_olwb'], 2);
+                }
+
+                $limitOldb = null;
+                if (($definition['limit_oldb'] ?? null) !== null) {
+                    $symbol = $operatorMap[$definition['limit_oldb_operator'] ?? '<='] ?? ($definition['limit_oldb_operator'] ?? '<=');
+                    $limitOldb = $symbol . ' ' . number_format((float) $definition['limit_oldb'], 2);
+                }
+
+                $limitOilLoss = null;
+                if (($definition['limit_oil_losses'] ?? null) !== null) {
+                    $symbol = $operatorMap[$definition['limit_oil_losses_operator'] ?? '<='] ?? ($definition['limit_oil_losses_operator'] ?? '<=');
+                    $limitOilLoss = $symbol . ' ' . number_format((float) $definition['limit_oil_losses'], 2);
+                }
+
+                return [
+                    Carbon::parse($row->tanggal)->format('d-m-Y'),
+                    $code,
+                    $definition['sample_name'] ?? $code,
+                    $moist === null ? null : round($moist, 2),
+                    $dmwm === null ? null : round($dmwm, 2),
+                    $olwb === null ? null : round($olwb, 2),
+                    $limitOlwb,
+                    $oldb === null ? null : round($oldb, 4),
+                    $limitOldb,
+                    $oilLossesTon === null ? null : round($oilLossesTon, 4),
+                    $limitOilLoss,
+                    $massPercent,
+                    $massPercent2,
+                ];
+            })
+            ->values();
+
+        return $this->downloadAnalysisExport(
+            'Data Oil Loss Foss',
+            $startDate,
+            $endDate,
+            $rows,
+            ['Tanggal', 'Kode', 'Nama Sample', 'MOIST (%)', 'DM/WM (%)', 'OLWB (%)', 'LIMIT (%)', 'OLDB (%)', 'LIMIT (%)2', 'OIL LOSSES/TON TBS (%)', 'LIMIT (%)3', '%', '%2'],
+            'Data_Oil_Loss_Foss_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
     }
 
     public function oilLossFossRekap(Request $request)
     {
         [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
 
-        $operator = strtoupper(trim((string) $request->input('operator', 'ALL')));
-        if (!in_array($operator, ['ALL', 'YBS', 'SUN'], true)) {
+        $operator = trim((string) $request->input('operator', 'ALL'));
+        if ($operator === '' || strtoupper($operator) === 'ALL') {
             $operator = 'ALL';
         }
 
@@ -3505,9 +3798,8 @@ class ProcessController extends Controller
             ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
             ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))
             ->select(
-                'tanggal',
+                DB::raw('DATE(tanggal) as tanggal'),
                 'machine_name',
-                DB::raw('AVG(moist) as avg_moist'),
                 DB::raw('AVG(olwb) as avg_olwb'),
                 DB::raw('COUNT(*) as total_data')
             )
@@ -3519,51 +3811,162 @@ class ProcessController extends Controller
         $dates = $records
             ->pluck('tanggal')
             ->filter()
-            ->map(fn($tanggal) => Carbon::parse($tanggal)->toDateString())
+            ->map(fn($tanggal) => (string) $tanggal)
             ->unique()
             ->sort()
             ->values()
             ->all();
 
-        $machineNames = collect($this->oilFossMachineDefinitions())
-            ->pluck('label')
-            ->unique()
-            ->sort()
-            ->values()
-            ->all();
+        $columns = $this->oilFossRekapColumns();
 
-        $rekap = [];
-        foreach ($machineNames as $machineName) {
-            $rekap[$machineName] = [];
-            foreach ($dates as $date) {
-                $rekap[$machineName][$date] = null;
+        $matrix = [];
+        foreach ($dates as $date) {
+            $matrix[$date] = [];
+            foreach ($columns as $column) {
+                $matrix[$date][$column['code']] = null;
             }
         }
 
         foreach ($records as $record) {
-            $dateKey = Carbon::parse($record->tanggal)->toDateString();
-            $machineName = (string) $record->machine_name;
+            $dateKey = (string) $record->tanggal;
+            $code = (string) $record->machine_name;
 
-            if (!isset($rekap[$machineName][$dateKey])) {
+            if (!array_key_exists($dateKey, $matrix) || !array_key_exists($code, $matrix[$dateKey])) {
                 continue;
             }
 
-            $rekap[$machineName][$dateKey] = [
-                'avg_moist' => round((float) $record->avg_moist, 2),
-                'avg_olwb' => round((float) $record->avg_olwb, 2),
-                'total_data' => (int) $record->total_data,
-            ];
+            $matrix[$dateKey][$code] = round((float) $record->avg_olwb, 2);
         }
+
+        $grandTotals = [];
+        foreach ($columns as $column) {
+            $code = $column['code'];
+            $values = collect($dates)
+                ->map(fn($date) => $matrix[$date][$code] ?? null)
+                ->filter(fn($value) => $value !== null)
+                ->values();
+
+            $grandTotals[$code] = $values->isEmpty() ? null : round((float) $values->avg(), 2);
+        }
+
+        $operatorOptions = OilFoss::query()
+            ->whereNotNull('operator')
+            ->where('operator', '!=', '')
+            ->select('operator')
+            ->distinct()
+            ->orderBy('operator')
+            ->pluck('operator')
+            ->values()
+            ->all();
 
         return view('process.oil-loss-foss.rekap', [
             'dates' => $dates,
-            'machineNames' => $machineNames,
-            'rekap' => $rekap,
+            'columns' => $columns,
+            'matrix' => $matrix,
+            'grandTotals' => $grandTotals,
             'startDate' => $startDate,
             'endDate' => $endDate,
             'operator' => $operator,
+            'operatorOptions' => $operatorOptions,
             'shift' => $shift,
         ]);
+    }
+
+    public function oilLossFossRekapExport(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+
+        $operator = trim((string) $request->input('operator', 'ALL'));
+        if ($operator === '' || strtoupper($operator) === 'ALL') {
+            $operator = 'ALL';
+        }
+
+        $shift = (string) $request->input('shift', 'all');
+        if (!in_array($shift, ['all', '1', '2'], true)) {
+            $shift = 'all';
+        }
+
+        $records = OilFoss::query()
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
+            ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))
+            ->select(
+                DB::raw('DATE(tanggal) as tanggal'),
+                'machine_name',
+                DB::raw('AVG(olwb) as avg_olwb')
+            )
+            ->groupBy('tanggal', 'machine_name')
+            ->orderBy('tanggal')
+            ->orderBy('machine_name')
+            ->get();
+
+        $dates = $records
+            ->pluck('tanggal')
+            ->filter()
+            ->map(fn($tanggal) => (string) $tanggal)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        $columns = $this->oilFossRekapColumns();
+
+        $matrix = [];
+        foreach ($dates as $date) {
+            $matrix[$date] = [];
+            foreach ($columns as $column) {
+                $matrix[$date][$column['code']] = null;
+            }
+        }
+
+        foreach ($records as $record) {
+            $dateKey = (string) $record->tanggal;
+            $code = (string) $record->machine_name;
+
+            if (!array_key_exists($dateKey, $matrix) || !array_key_exists($code, $matrix[$dateKey])) {
+                continue;
+            }
+
+            $matrix[$dateKey][$code] = round((float) $record->avg_olwb, 2);
+        }
+
+        $grandTotals = [];
+        foreach ($columns as $column) {
+            $code = $column['code'];
+            $values = collect($dates)
+                ->map(fn($date) => $matrix[$date][$code] ?? null)
+                ->filter(fn($value) => $value !== null)
+                ->values();
+
+            $grandTotals[$code] = $values->isEmpty() ? null : round((float) $values->avg(), 2);
+        }
+
+        $rows = collect($dates)
+            ->map(function (string $date) use ($columns, $matrix): array {
+                $cells = [$date];
+
+                foreach ($columns as $column) {
+                    $cells[] = $matrix[$date][$column['code']] ?? null;
+                }
+
+                return $cells;
+            })
+            ->values();
+
+        $grandTotalRow = ['Grand Total'];
+        foreach ($columns as $column) {
+            $grandTotalRow[] = $grandTotals[$column['code']] ?? null;
+        }
+        $rows->push($grandTotalRow);
+
+        return $this->downloadAnalysisExport(
+            'Rekap Oil Loss Foss',
+            $startDate,
+            $endDate,
+            $rows,
+            array_merge(['Row Labels'], array_map(fn(array $column) => $column['sample_name'], $columns)),
+            'Rekap_Oil_Loss_Foss_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
     }
 
     private function numericOrZero(mixed $value): float
@@ -3607,47 +4010,142 @@ class ProcessController extends Controller
         return $groups;
     }
 
-    private function oilFossMachineDefinitions(): array
+    private function oilFossRekapColumns(): array
     {
         return [
-            ['key' => 'cot_in', 'group' => 'COT', 'label' => 'COT IN'],
-            ['key' => 'cot_2', 'group' => 'COT', 'label' => 'COT 2'],
-            ['key' => 'cst', 'group' => 'CST', 'label' => 'CST'],
-            ['key' => 'fd_1', 'group' => 'FD', 'label' => 'FD1'],
-            ['key' => 'fd_2', 'group' => 'FD', 'label' => 'FD2'],
-            ['key' => 'fd_3', 'group' => 'FD', 'label' => 'FD3'],
-            ['key' => 'fd_4', 'group' => 'FD', 'label' => 'FD4'],
-            ['key' => 'hp_1', 'group' => 'HP', 'label' => 'HP1'],
-            ['key' => 'hp_2', 'group' => 'HP', 'label' => 'HP2'],
-            ['key' => 'hp_3', 'group' => 'HP', 'label' => 'HP3'],
-            ['key' => 'hp_4', 'group' => 'HP', 'label' => 'HP4'],
-            ['key' => 'sd_1', 'group' => 'SD', 'label' => 'SD1'],
-            ['key' => 'sd_2', 'group' => 'SD', 'label' => 'SD2'],
-            ['key' => 'sd_3', 'group' => 'SD', 'label' => 'SD3'],
-            ['key' => 'sd_4', 'group' => 'SD', 'label' => 'SD4'],
-            ['key' => 'hpl_1', 'group' => 'HPL', 'label' => 'HPL1'],
-            ['key' => 'hpl_2', 'group' => 'HPL', 'label' => 'HPL2'],
-            ['key' => 'hpl_3', 'group' => 'HPL', 'label' => 'HPL3'],
-            ['key' => 'fe', 'group' => 'FE', 'label' => 'FE'],
-            ['key' => 'fbp_1', 'group' => 'FBP', 'label' => 'FBP1'],
-            ['key' => 'fbp_2', 'group' => 'FBP', 'label' => 'FBP2'],
-            ['key' => 'fbp_3', 'group' => 'FBP', 'label' => 'FBP3'],
-            ['key' => 'fbp_4', 'group' => 'FBP', 'label' => 'FBP4'],
-            ['key' => 'fbp_5', 'group' => 'FBP', 'label' => 'FBP5'],
-            ['key' => 'fp_1', 'group' => 'FP', 'label' => 'FP1'],
-            ['key' => 'fp_2', 'group' => 'FP', 'label' => 'FP2'],
-            ['key' => 'fp_3', 'group' => 'FP', 'label' => 'FP3'],
-            ['key' => 'fp_4', 'group' => 'FP', 'label' => 'FP4'],
-            ['key' => 'fp_5', 'group' => 'FP', 'label' => 'FP5'],
-            ['key' => 'fp_6', 'group' => 'FP', 'label' => 'FP6'],
-            ['key' => 'fp_7', 'group' => 'FP', 'label' => 'FP7'],
-            ['key' => 'fp_8', 'group' => 'FP', 'label' => 'FP8'],
-            ['key' => 'fp_9', 'group' => 'FP', 'label' => 'FP9'],
+            ['code' => 'COT IN', 'sample_name' => 'COT INLET to COT 2'],
+            ['code' => 'COT 2', 'sample_name' => 'U/F COT 2'],
+            ['code' => 'CST', 'sample_name' => 'U/F CST'],
+            ['code' => 'FD1', 'sample_name' => 'FEED DECANTER ALVA LAFAL 1'],
+            ['code' => 'FD2', 'sample_name' => 'FEED DECANTER  IHI 2'],
+            ['code' => 'FD3', 'sample_name' => 'FEED DECANTER ALVA LAFAL 2'],
+            ['code' => 'FD4', 'sample_name' => 'FEED DECANTER FLOTTWEG'],
+            ['code' => 'HP1', 'sample_name' => 'HEAVY PHASE ALFA LAVAL 1'],
+            ['code' => 'HP2', 'sample_name' => 'HEAVY PHASE IHI'],
+            ['code' => 'HP3', 'sample_name' => 'HEAVY PHASE ALFA LAVAL 2'],
+            ['code' => 'HP4', 'sample_name' => 'HEAVY PHASE FLOTTWEG'],
+            ['code' => 'SD1', 'sample_name' => 'SOLID ALFA LAVAL 1'],
+            ['code' => 'SD2', 'sample_name' => 'SOLID IHI'],
+            ['code' => 'SD3', 'sample_name' => 'SOLID ALFA LAVAL 2'],
+            ['code' => 'SD4', 'sample_name' => 'SOLID FLOTTWEG'],
+            ['code' => 'HPL1', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 1'],
+            ['code' => 'HPL2', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 2'],
+            ['code' => 'HPL3', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 3'],
+            ['code' => 'FE', 'sample_name' => 'FINAL EFFLUENT'],
+            ['code' => 'FBP1', 'sample_name' => 'FIBRE EX BUNCH PRESS 1'],
+            ['code' => 'FBP2', 'sample_name' => 'FIBRE EX BUNCH PRESS 2'],
+            ['code' => 'FBP3', 'sample_name' => 'FIBRE EX BUNCH PRESS 3'],
+            ['code' => 'FBP4', 'sample_name' => 'FIBRE EX BUNCH PRESS 4'],
+            ['code' => 'FBP5', 'sample_name' => 'FIBRE EX BUNCH PRESS 5'],
+            ['code' => 'FP1', 'sample_name' => 'FIBRE PRESS 1'],
+            ['code' => 'FP2', 'sample_name' => 'FIBRE PRESS 2'],
+            ['code' => 'FP3', 'sample_name' => 'FIBRE PRESS 3'],
+            ['code' => 'FP4', 'sample_name' => 'FIBRE PRESS 4'],
+            ['code' => 'FP5', 'sample_name' => 'FIBRE PRESS 5'],
+            ['code' => 'FP6', 'sample_name' => 'FIBRE PRESS 6'],
+            ['code' => 'FP7', 'sample_name' => 'FIBRE PRESS 7'],
+            ['code' => 'FP8', 'sample_name' => 'FIBRE PRESS 8'],
+            ['code' => 'FP9', 'sample_name' => 'FIBRE PRESS 9'],
         ];
     }
 
-    private function resolveOilFossOperator(): string
+    private function resolveOilFossRekapLabel(?string $label): ?string
     {
+        if ($label === null || trim($label) === '') {
+            return null;
+        }
+
+        $normalizedCurrent = $this->normalizeOilFossLabel($label);
+        $labelMap = $this->oilFossRekapLabelMap();
+
+        if (isset($labelMap[$normalizedCurrent])) {
+            return $labelMap[$normalizedCurrent];
+        }
+
+        return null;
+    }
+
+    private function oilFossRekapLabelMap(): array
+    {
+        $map = [];
+
+        foreach ($this->oilFossMachineDefinitions() as $definition) {
+            $sampleName = (string) ($definition['sample_name'] ?? $definition['label']);
+            $label = (string) ($definition['label'] ?? $sampleName);
+
+            $map[$this->normalizeOilFossLabel($label)] = $sampleName;
+            $map[$this->normalizeOilFossLabel($sampleName)] = $sampleName;
+        }
+
+        return $map;
+    }
+
+    private function normalizeOilFossLabel(string $label): string
+    {
+        $normalized = strtoupper(trim($label));
+        $normalized = preg_replace('/\s+/', ' ', $normalized) ?? $normalized;
+        $normalized = str_replace('ALFA', 'ALVA', $normalized);
+        $normalized = str_replace('LAVAL', 'LAFAL', $normalized);
+
+        return $normalized;
+    }
+
+    private function oilFossMachineDefinitions(): array
+    {
+        return [
+            ['key' => 'cot_in', 'group' => 'COT', 'label' => 'COT IN', 'sample_name' => 'COT INLET to COT 2', 'limit_olwb_operator' => '>', 'limit_olwb' => 45, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'cot_2', 'group' => 'COT', 'label' => 'COT 2', 'sample_name' => 'U/F COT 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 8, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'cst', 'group' => 'CST', 'label' => 'CST', 'sample_name' => 'U/F CST', 'limit_olwb_operator' => '<=', 'limit_olwb' => 6, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'fd_1', 'group' => 'FD', 'label' => 'FD1', 'sample_name' => 'FEED DECANTER ALVA LAFAL 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 6, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'fd_2', 'group' => 'FD', 'label' => 'FD2', 'sample_name' => 'FEED DECANTER  IHI 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 6, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'fd_3', 'group' => 'FD', 'label' => 'FD3', 'sample_name' => 'FEED DECANTER ALVA LAFAL 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 6, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'fd_4', 'group' => 'FD', 'label' => 'FD4', 'sample_name' => 'FEED DECANTER FLOTTWEG', 'limit_olwb_operator' => '<=', 'limit_olwb' => 6, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hp_1', 'group' => 'HP', 'label' => 'HP1', 'sample_name' => 'HEAVY PHASE ALFA LAVAL 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hp_2', 'group' => 'HP', 'label' => 'HP2', 'sample_name' => 'HEAVY PHASE IHI', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hp_3', 'group' => 'HP', 'label' => 'HP3', 'sample_name' => 'HEAVY PHASE ALFA LAVAL 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hp_4', 'group' => 'HP', 'label' => 'HP4', 'sample_name' => 'HEAVY PHASE FLOTTWEG', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'sd_1', 'group' => 'SD', 'label' => 'SD1', 'sample_name' => 'SOLID ALFA LAVAL 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 2.5, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => 0.02, 'mass_balance_percent_2' => null],
+            ['key' => 'sd_2', 'group' => 'SD', 'label' => 'SD2', 'sample_name' => 'SOLID IHI', 'limit_olwb_operator' => '<=', 'limit_olwb' => 2.5, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => 0.02, 'mass_balance_percent_2' => null],
+            ['key' => 'sd_3', 'group' => 'SD', 'label' => 'SD3', 'sample_name' => 'SOLID ALFA LAVAL 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 2.5, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => 0.02, 'mass_balance_percent_2' => null],
+            ['key' => 'sd_4', 'group' => 'SD', 'label' => 'SD4', 'sample_name' => 'SOLID FLOTTWEG', 'limit_olwb_operator' => '<=', 'limit_olwb' => 2.5, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => 0.02, 'mass_balance_percent_2' => null],
+            ['key' => 'hpl_1', 'group' => 'HPL', 'label' => 'HPL1', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hpl_2', 'group' => 'HPL', 'label' => 'HPL2', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hpl_3', 'group' => 'HPL', 'label' => 'HPL3', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 3', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'fe', 'group' => 'FE', 'label' => 'FE', 'sample_name' => 'FINAL EFFLUENT', 'limit_olwb_operator' => '<=', 'limit_olwb' => 0.7, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.50, 'mass_balance_percent_2' => null],
+            ['key' => 'fbp_1', 'group' => 'FBP', 'label' => 'FBP1', 'sample_name' => 'FIBRE EX BUNCH PRESS 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1.3, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.75, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => 0],
+            ['key' => 'fbp_2', 'group' => 'FBP', 'label' => 'FBP2', 'sample_name' => 'FIBRE EX BUNCH PRESS 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1.3, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.75, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => 0],
+            ['key' => 'fbp_3', 'group' => 'FBP', 'label' => 'FBP3', 'sample_name' => 'FIBRE EX BUNCH PRESS 3', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1.3, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.75, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => 0],
+            ['key' => 'fbp_4', 'group' => 'FBP', 'label' => 'FBP4', 'sample_name' => 'FIBRE EX BUNCH PRESS 4', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1.3, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.75, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => 0],
+            ['key' => 'fbp_5', 'group' => 'FBP', 'label' => 'FBP5', 'sample_name' => 'FIBRE EX BUNCH PRESS 5', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1.3, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.2, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => 0],
+            ['key' => 'fp_1', 'group' => 'FP', 'label' => 'FP1', 'sample_name' => 'FIBRE PRESS 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_2', 'group' => 'FP', 'label' => 'FP2', 'sample_name' => 'FIBRE PRESS 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_3', 'group' => 'FP', 'label' => 'FP3', 'sample_name' => 'FIBRE PRESS 3', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_4', 'group' => 'FP', 'label' => 'FP4', 'sample_name' => 'FIBRE PRESS 4', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_5', 'group' => 'FP', 'label' => 'FP5', 'sample_name' => 'FIBRE PRESS 5', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_6', 'group' => 'FP', 'label' => 'FP6', 'sample_name' => 'FIBRE PRESS 6', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_7', 'group' => 'FP', 'label' => 'FP7', 'sample_name' => 'FIBRE PRESS 7', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_8', 'group' => 'FP', 'label' => 'FP8', 'sample_name' => 'FIBRE PRESS 8', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_9', 'group' => 'FP', 'label' => 'FP9', 'sample_name' => 'FIBRE PRESS 9', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+        ];
+    }
+
+    private function getOperatorOptionsByOffice(?string $office, string $module): array
+    {
+        $office = strtoupper(trim((string) $office));
+
+        if ($office === '') {
+            $office = 'YBS';
+        }
+
+        return config('operator-options.' . $module . '.' . $office, []);
+    }
+
+    private function resolveOilFossOperator(array $operatorOptions = []): string
+    {
+        if (!empty($operatorOptions)) {
+            return (string) $operatorOptions[0];
+        }
+
         $office = strtoupper(trim((string) (auth()->user()->office ?? '')));
 
         if ($office === 'SUN') {

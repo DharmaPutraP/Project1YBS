@@ -10,7 +10,7 @@ class OilFoss extends Model
 {
     use HasFactory;
 
-    protected $table = 'Oil_Foss';
+    protected $table = 'oil_foss';
 
     protected $fillable = [
         'user_id',

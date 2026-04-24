@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('Oil_Foss', function (Blueprint $table) {
+        Schema::create('oil_foss', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->date('tanggal');
@@ -28,6 +28,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('Oil_Foss');
+        Schema::dropIfExists('oil_foss');
     }
 };

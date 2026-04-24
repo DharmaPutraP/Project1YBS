@@ -41,18 +41,21 @@
                 <p class="mt-1 text-sm text-slate-500">Kolom AVERAGE menampilkan rata-rata %USB harian dari seluruh no rebusan pada tanggal yang sama.</p>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-[1200px] text-sm">
+                <table class="min-w-[1200px] w-full border-collapse text-sm">
                     <thead class="bg-slate-50 text-slate-700">
                         <tr>
                             <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">Tgl</th>
                             <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">JAM</th>
+                            <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">Created By</th>
                             <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">Shift</th>
                             <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">No Rebusan / Sterilizer</th>
                             <th class="px-4 py-3 text-right font-semibold whitespace-nowrap">Diamati (Jlh Janjang)</th>
                             <th class="px-4 py-3 text-right font-semibold whitespace-nowrap">Lolos (Jlh Janjang)</th>
                             <th class="px-4 py-3 text-right font-semibold whitespace-nowrap">%USB</th>
                             <th class="px-4 py-3 text-right font-semibold whitespace-nowrap">AVERAGE</th>
-                            <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
+                            @role('Super Admin')
+                                <th class="w-[150px] px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
+                            @endrole
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
@@ -60,26 +63,29 @@
                             <tr>
                                 <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['tanggal'] }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['jam'] }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['created_by'] ?? '-' }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['shift'] }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['no_rebusan'] }}</td>
                                 <td class="px-4 py-3 text-right whitespace-nowrap text-slate-700">{{ number_format((float) $row['diamati_jlh_janjang'], 2, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-right whitespace-nowrap text-slate-700">{{ number_format((float) $row['lolos_jlh_janjang'], 2, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-right whitespace-nowrap font-semibold text-indigo-700">{{ number_format((float) $row['persen_usb'], 2, ',', '.') . '%' }}</td>
                                 <td class="px-4 py-3 text-right whitespace-nowrap font-semibold text-amber-700">{{ number_format((float) $row['average'], 2, ',', '.') . '%' }}</td>
-                                <td class="px-4 py-3 text-center whitespace-nowrap">
-                                    <div class="inline-flex items-center gap-2">
-                                        <a href="{{ route('lap-jangkos.edit-usb', $row['id']) }}"class="inline-flex items-center rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-200">Edit</a>
-                                        <form action="{{ route('lap-jangkos.destroy-usb', $row['id']) }}" method="POST" onsubmit="return confirm('Hapus data USB ini?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="inline-flex items-center rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-200">Delete</button>
-                                        </form>
-                                    </div>
-                                </td>
+                                @role('Super Admin')
+                                    <td class="w-[150px] px-4 py-3 text-center whitespace-nowrap">
+                                        <div class="inline-flex items-center gap-2">
+                                            <a href="{{ route('lap-jangkos.edit-usb', $row['id']) }}" class="inline-flex items-center rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-200">Edit</a>
+                                            <form action="{{ route('lap-jangkos.destroy-usb', $row['id']) }}" method="POST" onsubmit="return confirm('Hapus data USB ini?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="inline-flex items-center rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-200">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                @endrole
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-4 py-8 text-center text-slate-500">Belum ada data USB pada periode ini.</td>
+                                <td colspan="{{ auth()->user()?->hasRole('Super Admin') ? 10 : 9 }}" class="px-4 py-8 text-center text-slate-500">Belum ada data USB pada periode ini.</td>
                             </tr>
                         @endforelse
                     </tbody>

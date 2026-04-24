@@ -329,6 +329,8 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             <span class="sidebar-item-text">Rekap USB</span>
         </x-sidebar-item>
 
+        @php($currentOffice = strtoupper(auth()->user()->office ?? ''))
+        @if ($currentOffice !== 'SUN')
         {{-- ── Oil Loss Foss ──────────────────────────────────── --}}
         <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
             Oil Loss Foss
@@ -351,6 +353,7 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2z"/></svg>'>
             <span class="sidebar-item-text">Rekap Oil Loss Foss</span>
         </x-sidebar-item>
+        @endif
 
         {{-- ── Admin ───────────────────────────────────────── --}}
         @canany(['view users', 'view user activity log'])

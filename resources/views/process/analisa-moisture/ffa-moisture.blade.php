@@ -14,26 +14,34 @@
             <table class="min-w-full text-sm">
                 <thead class="bg-slate-50 text-slate-700">
                         <tr>
-                            <th class="px-4 py-3 text-left font-semibold">Tanggal</th>
-                            <th class="px-4 py-3 text-left font-semibold">Jam</th>
-                            <th class="px-4 py-3 text-left font-semibold">Moisture</th>
-                            <th class="px-4 py-3 text-left font-semibold">BST1 (FFA)</th>
-                            <th class="px-4 py-3 text-left font-semibold">BST2 (FFA)</th>
-                            <th class="px-4 py-3 text-left font-semibold">BST3 (FFA)</th>
-                            <th class="px-4 py-3 text-left font-semibold">Impurities</th>
-                            <th class="px-4 py-3 text-left font-semibold">Aksi</th>
+                            <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Tanggal</th>
+                            <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Jam</th>
+                            <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Created By</th>
+                            <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Moisture</th>
+                            <th colspan="3" class="px-4 py-2 text-center font-semibold">FFA</th>
+                            <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Impurities</th>
+                            @role('Super Admin')
+                                <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Aksi</th>
+                            @endrole
+                        </tr>
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold">BST1</th>
+                            <th class="px-4 py-3 text-left font-semibold">BST2</th>
+                            <th class="px-4 py-3 text-left font-semibold">BST3</th>
                         </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
                     @forelse ($rows as $row)
-                            <tr class="hover:bg-slate-50/70">
-                                <td class="px-4 py-3 text-slate-700">{{ $row->tanggal?->format('d-m-Y') }}</td>
-                                <td class="px-4 py-3 text-slate-700">{{ $row->jam }}</td>
-                                <td class="px-4 py-3 text-slate-700">{{ $row->moisture }}</td>
-                                <td class="px-4 py-3 text-slate-700">{{ $row->bst1_ffa }}</td>
-                                <td class="px-4 py-3 text-slate-700">{{ $row->bst2_ffa }}</td>
-                                <td class="px-4 py-3 text-slate-700">{{ $row->bst3_ffa }}</td>
-                                <td class="px-4 py-3 text-slate-700">{{ $row->impurities }}</td>
+                        <tr class="hover:bg-slate-50/70">
+                            <td class="px-4 py-3 text-slate-700">{{ $row->tanggal?->format('d-m-Y') }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ $row->jam }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ $row->created_by ?: ($row->user?->name ?? '-') }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ $row->moisture }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ $row->bst1_ffa }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ $row->bst2_ffa }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ $row->bst3_ffa }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ $row->impurities }}</td>
+                            @role('Super Admin')
                                 <td class="px-4 py-3 text-slate-700">
                                     <div class="flex items-center gap-2">
                                         <a href="{{ route('analisa-moisture.ffa-moisture.edit', $row) }}" class="inline-flex items-center rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-200">Edit</a>
@@ -44,11 +52,12 @@
                                         </form>
                                     </div>
                                 </td>
-                            </tr>
+                            @endrole
+                        </tr>
                     @empty
-                            <tr>
-                                <td colspan="8" class="px-4 py-8 text-center text-slate-500">Belum ada data pada periode ini.</td>
-                            </tr>
+                        <tr>
+                            <td colspan="{{ auth()->user()?->hasRole('Super Admin') ? 9 : 8 }}" class="px-4 py-8 text-center text-slate-500">Belum ada data pada periode ini.</td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>

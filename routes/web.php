@@ -352,10 +352,12 @@ Route::middleware('auth')->group(function () {
             ->name('ffa-moisture.edit');
 
         Route::put('/ffa-moisture/{ffaMoisture}', [ProcessController::class, 'updateAnalisaFfaMoisture'])
-            ->name('ffa-moisture.update');
+            ->name('ffa-moisture.update')
+            ->middleware('role:Super Admin');
 
         Route::delete('/ffa-moisture/{ffaMoisture}', [ProcessController::class, 'destroyAnalisaFfaMoisture'])
-            ->name('ffa-moisture.destroy');
+            ->name('ffa-moisture.destroy')
+            ->middleware('role:Super Admin');
 
         Route::post('/ffa-moisture/export', [ProcessController::class, 'exportAnalisaFfaMoisture'])
             ->name('ffa-moisture.export');
@@ -365,13 +367,16 @@ Route::middleware('auth')->group(function () {
             ->name('spintest-cot');
 
         Route::get('/spintest-cot/{spintestCot}/edit', [ProcessController::class, 'editAnalisaSpintestCot'])
-            ->name('spintest-cot.edit');
+            ->name('spintest-cot.edit')
+            ->middleware('role:Super Admin');
 
         Route::put('/spintest-cot/{spintestCot}', [ProcessController::class, 'updateAnalisaSpintestCot'])
-            ->name('spintest-cot.update');
+            ->name('spintest-cot.update')
+            ->middleware('role:Super Admin');
 
         Route::delete('/spintest-cot/{spintestCot}', [ProcessController::class, 'destroyAnalisaSpintestCot'])
-            ->name('spintest-cot.destroy');
+            ->name('spintest-cot.destroy')
+            ->middleware('role:Super Admin');
 
         Route::post('/spintest-cot/export', [ProcessController::class, 'exportAnalisaSpintestCot'])
             ->name('spintest-cot.export');
@@ -381,13 +386,16 @@ Route::middleware('auth')->group(function () {
             ->name('spintest-underflow-cst');
 
         Route::get('/spintest-underflow-cst/{spintestCst}/edit', [ProcessController::class, 'editAnalisaSpintestUnderflowCst'])
-            ->name('spintest-underflow-cst.edit');
+            ->name('spintest-underflow-cst.edit')
+            ->middleware('role:Super Admin');
 
         Route::put('/spintest-underflow-cst/{spintestCst}', [ProcessController::class, 'updateAnalisaSpintestUnderflowCst'])
-            ->name('spintest-underflow-cst.update');
+            ->name('spintest-underflow-cst.update')
+            ->middleware('role:Super Admin');
 
         Route::delete('/spintest-underflow-cst/{spintestCst}', [ProcessController::class, 'destroyAnalisaSpintestUnderflowCst'])
-            ->name('spintest-underflow-cst.destroy');
+            ->name('spintest-underflow-cst.destroy')
+            ->middleware('role:Super Admin');
 
         Route::post('/spintest-underflow-cst/export', [ProcessController::class, 'exportAnalisaSpintestUnderflowCst'])
             ->name('spintest-underflow-cst.export');
@@ -397,13 +405,16 @@ Route::middleware('auth')->group(function () {
             ->name('spintest-feed-decanter');
 
         Route::get('/spintest-feed-decanter/{spintestFeedDecanter}/edit', [ProcessController::class, 'editAnalisaSpintestFeedDecanter'])
-            ->name('spintest-feed-decanter.edit');
+            ->name('spintest-feed-decanter.edit')
+            ->middleware('role:Super Admin');
 
         Route::put('/spintest-feed-decanter/{spintestFeedDecanter}', [ProcessController::class, 'updateAnalisaSpintestFeedDecanter'])
-            ->name('spintest-feed-decanter.update');
+            ->name('spintest-feed-decanter.update')
+            ->middleware('role:Super Admin');
 
         Route::delete('/spintest-feed-decanter/{spintestFeedDecanter}', [ProcessController::class, 'destroyAnalisaSpintestFeedDecanter'])
-            ->name('spintest-feed-decanter.destroy');
+            ->name('spintest-feed-decanter.destroy')
+            ->middleware('role:Super Admin');
 
         Route::post('/spintest-feed-decanter/export', [ProcessController::class, 'exportAnalisaSpintestFeedDecanter'])
             ->name('spintest-feed-decanter.export');
@@ -413,13 +424,16 @@ Route::middleware('auth')->group(function () {
             ->name('spintest-light-phase');
 
         Route::get('/spintest-light-phase/{spintestLightPhase}/edit', [ProcessController::class, 'editAnalisaSpintestLightPhase'])
-            ->name('spintest-light-phase.edit');
+            ->name('spintest-light-phase.edit')
+            ->middleware('role:Super Admin');
 
         Route::put('/spintest-light-phase/{spintestLightPhase}', [ProcessController::class, 'updateAnalisaSpintestLightPhase'])
-            ->name('spintest-light-phase.update');
+            ->name('spintest-light-phase.update')
+            ->middleware('role:Super Admin');
 
         Route::delete('/spintest-light-phase/{spintestLightPhase}', [ProcessController::class, 'destroyAnalisaSpintestLightPhase'])
-            ->name('spintest-light-phase.destroy');
+            ->name('spintest-light-phase.destroy')
+            ->middleware('role:Super Admin');
 
         Route::post('/spintest-light-phase/export', [ProcessController::class, 'exportAnalisaSpintestLightPhase'])
             ->name('spintest-light-phase.export');
@@ -441,13 +455,16 @@ Route::middleware('auth')->group(function () {
             ->name('data-usb');
 
         Route::get('/data-usb/{analisaUsb}/edit', [ProcessController::class, 'lapJangkosEditUsb'])
-            ->name('edit-usb');
+            ->name('edit-usb')
+            ->middleware('role:Super Admin');
 
         Route::put('/data-usb/{analisaUsb}', [ProcessController::class, 'lapJangkosUpdateUsb'])
-            ->name('update-usb');
+            ->name('update-usb')
+            ->middleware('role:Super Admin');
 
         Route::delete('/data-usb/{analisaUsb}', [ProcessController::class, 'lapJangkosDestroyUsb'])
-            ->name('destroy-usb');
+            ->name('destroy-usb')
+            ->middleware('role:Super Admin');
 
         // Rekap USB
         Route::get('/rekap-usb', [ProcessController::class, 'lapJangkosRekapUsb'])
@@ -469,6 +486,18 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/data', [ProcessController::class, 'oilLossFossData'])
             ->name('data');
+
+        Route::get('/data/{oilFoss}/edit', [ProcessController::class, 'oilLossFossEdit'])
+            ->name('edit')
+            ->middleware('role:Super Admin');
+
+        Route::put('/data/{oilFoss}', [ProcessController::class, 'oilLossFossUpdate'])
+            ->name('update')
+            ->middleware('role:Super Admin');
+
+        Route::delete('/data/{oilFoss}', [ProcessController::class, 'oilLossFossDestroy'])
+            ->name('destroy')
+            ->middleware('role:Super Admin');
 
         Route::get('/data/export', [ProcessController::class, 'oilLossFossDataExport'])
             ->name('data.export');

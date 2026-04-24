@@ -14,6 +14,7 @@ class AnalisaUsb extends Model
 
     protected $fillable = [
         'user_id',
+        'created_by',
         'tanggal',
         'jam',
         'shift',

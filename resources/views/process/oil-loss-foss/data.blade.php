@@ -66,11 +66,16 @@
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50 text-slate-700">
                         <tr>
-                            <th colspan="11" class="px-4 py-3 text-left font-bold tracking-wide text-slate-800">DATA OIL LOSS FOSS</th>
+                            <th colspan="13" class="px-4 py-3 text-left font-bold tracking-wide text-slate-800">DATA OIL LOSS FOSS</th>
                             <th colspan="2" class="px-4 py-3 text-left font-bold tracking-wide text-slate-800">MASS BALANCE</th>
+                            @role('Super Admin')
+                                <th rowspan="2" class="px-4 py-3 text-center font-bold tracking-wide text-slate-800">Aksi</th>
+                            @endrole
                         </tr>
                         <tr>
                             <th class="px-4 py-3 text-left font-semibold">Tanggal</th>
+                            <th class="px-4 py-3 text-left font-semibold">Jam</th>
+                            <th class="px-4 py-3 text-left font-semibold">Created By</th>
                             <th class="px-4 py-3 text-left font-semibold">Kode</th>
                             <th class="px-4 py-3 text-left font-semibold">Nama Sample</th>
                             <th class="px-4 py-3 text-left font-semibold">MOIST (%)</th>
@@ -170,6 +175,8 @@
                             @endphp
                             <tr>
                                 <td class="px-4 py-3 text-slate-700">{{ $row->tanggal?->format('d-m-Y') }}</td>
+                                <td class="px-4 py-3 text-slate-700">{{ substr((string) $row->waktu, 0, 5) }}</td>
+                                <td class="px-4 py-3 text-slate-700">{{ $row->created_by ?: ($row->user?->name ?? '-') }}</td>
                                 <td class="px-4 py-3 text-slate-700 font-semibold">{{ $code }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $definition['sample_name'] ?? $code }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $moist === null ? '-' : number_format($moist, 2) }}</td>
@@ -182,10 +189,22 @@
                                 <td class="px-4 py-3 text-slate-700">{{ $limitOilLoss ?? '-' }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $massPercent === null ? '-' : number_format((float) $massPercent, 2) }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $massPercent2 === null ? '-' : number_format((float) $massPercent2, 2) }}</td>
+                                @role('Super Admin')
+                                    <td class="px-4 py-3 text-slate-700 whitespace-nowrap">
+                                        <div class="inline-flex items-center gap-2">
+                                            <a href="{{ route('oil-loss-foss.edit', $row) }}" class="inline-flex items-center rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-200">Edit</a>
+                                            <form method="POST" action="{{ route('oil-loss-foss.destroy', $row) }}" onsubmit="return confirm('Hapus data ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="inline-flex items-center rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-200">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                @endrole
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="13" class="px-4 py-8 text-center text-slate-500">Belum ada data.</td>
+                                <td colspan="{{ auth()->user()?->hasRole('Super Admin') ? 17 : 16 }}" class="px-4 py-8 text-center text-slate-500">Belum ada data.</td>
                             </tr>
                         @endforelse
                     </tbody>

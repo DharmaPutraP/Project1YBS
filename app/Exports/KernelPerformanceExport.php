@@ -6,36 +6,36 @@ use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 class KernelPerformanceExport implements WithMultipleSheets
 {
-    protected $reportData;
-    protected $allKodesData;
+    protected $individualRecords;
     protected $operators;
     protected $reportDates;
-    protected $dailyPerformance;
+    protected $operatorDailyPerformance;
     protected $startDate;
     protected $endDate;
+    protected $office;
 
-    public function __construct($reportData, $allKodesData, $operators, $reportDates, $dailyPerformance, $startDate, $endDate)
+    public function __construct($individualRecords, $operators, $reportDates, $operatorDailyPerformance, $startDate, $endDate, $office)
     {
-        $this->reportData       = $reportData;
-        $this->allKodesData     = $allKodesData;
-        $this->operators        = $operators;
-        $this->reportDates      = $reportDates;
-        $this->dailyPerformance = $dailyPerformance;
-        $this->startDate        = $startDate;
-        $this->endDate          = $endDate;
+        $this->individualRecords       = $individualRecords;
+        $this->operators               = $operators;
+        $this->reportDates             = $reportDates;
+        $this->operatorDailyPerformance = $operatorDailyPerformance;
+        $this->startDate               = $startDate;
+        $this->endDate                 = $endDate;
+        $this->office                  = $office;
     }
 
     public function sheets(): array
     {
         return [
             new KernelPerformanceSheet(
-                $this->reportData,
-                $this->allKodesData,
+                $this->individualRecords,
                 $this->operators,
                 $this->reportDates,
-                $this->dailyPerformance,
+                $this->operatorDailyPerformance,
                 $this->startDate,
-                $this->endDate
+                $this->endDate,
+                $this->office
             ),
         ];
     }

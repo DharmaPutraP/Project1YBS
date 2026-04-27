@@ -43,6 +43,15 @@ class KernelPerformanceSheet implements FromArray, WithStyles, WithTitle, WithCo
     {
         $rows = [];
 
+        $operatorInputCounts = collect($this->individualRecords)
+            ->filter(function (array $record) {
+                $operator = trim((string) ($record['operator'] ?? ''));
+                return $operator !== '' && $operator !== '-';
+            })
+            ->groupBy('operator')
+            ->map(fn($records) => $records->count())
+            ->toArray();
+
         // Title
         $rows[] = ['LAPORAN PERFORMANCE KERNEL LOSSES'];
         $rows[] = ['Periode: ' . Carbon::parse($this->startDate)->format('d M Y') . ' - ' . Carbon::parse($this->endDate)->format('d M Y')];
@@ -86,7 +95,8 @@ class KernelPerformanceSheet implements FromArray, WithStyles, WithTitle, WithCo
         $rows[] = $operatorHeader;
 
         foreach ($this->operators as $operator) {
-            $row = [$operator];
+            $totalInput = (int) ($operatorInputCounts[$operator] ?? 0);
+            $row = [$operator . "\n" . $totalInput . ' input'];
             $grandSum = 0;
             $grandCount = 0;
 
@@ -217,6 +227,8 @@ class KernelPerformanceSheet implements FromArray, WithStyles, WithTitle, WithCo
 
             $sheet->getStyle('A' . $operatorDataStartRow . ':A' . $operatorDataEndRow)
                 ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle('A' . $operatorDataStartRow . ':A' . $operatorDataEndRow)
+                ->getAlignment()->setWrapText(true);
             if ($operatorLastColumn !== 'A') {
                 $sheet->getStyle('B' . $operatorDataStartRow . ':' . $operatorLastColumn . $operatorDataEndRow)
                     ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);

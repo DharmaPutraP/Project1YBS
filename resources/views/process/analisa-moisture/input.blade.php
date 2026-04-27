@@ -54,7 +54,7 @@
                             class="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                     </div>
 
-                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div class="grid gap-4 md:grid-cols-2 {{ $isSunOffice ? 'xl:grid-cols-3' : 'xl:grid-cols-4' }}">
                         <div>
                             <label for="ffa_bst1" class="mb-2 block text-sm font-medium text-slate-700">BST1 (FFA)</label>
                             <input type="number" step="0.01" id="ffa_bst1" name="ffa[bst1_ffa]" value="{{ old('ffa.bst1_ffa') }}"
@@ -65,11 +65,13 @@
                             <input type="number" step="0.01" id="ffa_bst2" name="ffa[bst2_ffa]" value="{{ old('ffa.bst2_ffa') }}"
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                         </div>
-                        <div>
-                            <label for="ffa_bst3" class="mb-2 block text-sm font-medium text-slate-700">BST3 (FFA)</label>
-                            <input type="number" step="0.01" id="ffa_bst3" name="ffa[bst3_ffa]" value="{{ old('ffa.bst3_ffa') }}"
-                                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
-                        </div>
+                        @unless($isSunOffice)
+                            <div>
+                                <label for="ffa_bst3" class="mb-2 block text-sm font-medium text-slate-700">BST3 (FFA)</label>
+                                <input type="number" step="0.01" id="ffa_bst3" name="ffa[bst3_ffa]" value="{{ old('ffa.bst3_ffa') }}"
+                                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+                            </div>
+                        @endunless
                         <div>
                             <label for="ffa_impurities" class="mb-2 block text-sm font-medium text-slate-700">IMPURITIES</label>
                             <input type="number" step="0.01" id="ffa_impurities" name="ffa[impurities]" value="{{ old('ffa.impurities') }}"

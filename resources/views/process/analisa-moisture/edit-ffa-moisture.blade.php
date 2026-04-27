@@ -5,7 +5,7 @@
                 @csrf
                 @method('PUT')
 
-                <div class="grid gap-4 md:grid-cols-2">
+                <div class="grid gap-4 md:grid-cols-2 {{ $isSunOffice ? 'xl:grid-cols-3' : 'xl:grid-cols-4' }}">
                     <div>
                         <label for="tanggal" class="mb-2 block text-sm font-medium text-slate-700">Tanggal</label>
                         <input type="date" id="tanggal" name="tanggal" value="{{ old('tanggal', $row->tanggal?->format('Y-m-d')) }}" class="w-full rounded-lg border border-gray-300 px-4 py-2.5" required>
@@ -30,10 +30,12 @@
                         <label for="bst2_ffa" class="mb-2 block text-sm font-medium text-slate-700">BST2 (FFA)</label>
                         <input type="number" step="0.01" id="bst2_ffa" name="bst2_ffa" value="{{ old('bst2_ffa', $row->bst2_ffa) }}" class="w-full rounded-lg border border-gray-300 px-4 py-2.5">
                     </div>
-                    <div>
-                        <label for="bst3_ffa" class="mb-2 block text-sm font-medium text-slate-700">BST3 (FFA)</label>
-                        <input type="number" step="0.01" id="bst3_ffa" name="bst3_ffa" value="{{ old('bst3_ffa', $row->bst3_ffa) }}" class="w-full rounded-lg border border-gray-300 px-4 py-2.5">
-                    </div>
+                    @unless($isSunOffice)
+                        <div>
+                            <label for="bst3_ffa" class="mb-2 block text-sm font-medium text-slate-700">BST3 (FFA)</label>
+                            <input type="number" step="0.01" id="bst3_ffa" name="bst3_ffa" value="{{ old('bst3_ffa', $row->bst3_ffa) }}" class="w-full rounded-lg border border-gray-300 px-4 py-2.5">
+                        </div>
+                    @endunless
                     <div>
                         <label for="impurities" class="mb-2 block text-sm font-medium text-slate-700">Impurities</label>
                         <input type="number" step="0.01" id="impurities" name="impurities" value="{{ old('impurities', $row->impurities) }}" class="w-full rounded-lg border border-gray-300 px-4 py-2.5">

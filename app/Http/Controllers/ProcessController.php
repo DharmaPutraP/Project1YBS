@@ -36,7 +36,7 @@ class ProcessController extends Controller
 
     private const TEAM_OPTIONS = ['Tim 1', 'Tim 2'];
     private const CST_MACHINES_YBS = ['CST1', 'CST2'];
-    private const CST_MACHINES_SUN = ['CST1'];
+    private const CST_MACHINES_SUN = ['CST1', 'CST2'];
     private const DECANTER_MACHINES_YBS = ['Alfa Laval 1', 'Alfa Laval 2', 'GEA', 'Flottweg'];
     private const DECANTER_MACHINES_SUN = ['GEA1', 'GEA2'];
     private const LIGHT_PHASE_MACHINES_YBS = ['Alfa Laval 1', 'Alfa Laval 2', 'GEA', 'Flottweg'];
@@ -2494,6 +2494,7 @@ class ProcessController extends Controller
     public function analisisaMoistureInput()
     {
         return view('process.analisa-moisture.input', [
+            'isSunOffice' => $this->isSunOffice(),
             'cstMachines' => $this->getCstMachinesForOffice(),
             'decanterMachines' => $this->getDecanterMachinesForOffice(),
             'lightPhaseMachines' => $this->getLightPhaseMachinesForOffice(),
@@ -2562,7 +2563,7 @@ class ProcessController extends Controller
                         'moisture' => $this->stringOrDefault($validated['ffa']['moisture'] ?? null, '0'),
                         'bst1_ffa' => $this->numericOrZero($validated['ffa']['bst1_ffa'] ?? null),
                         'bst2_ffa' => $this->numericOrZero($validated['ffa']['bst2_ffa'] ?? null),
-                        'bst3_ffa' => $this->numericOrZero($validated['ffa']['bst3_ffa'] ?? null),
+                        'bst3_ffa' => $this->isSunOffice() ? null : $this->numericOrZero($validated['ffa']['bst3_ffa'] ?? null),
                         'impurities' => $this->numericOrZero($validated['ffa']['impurities'] ?? null),
                     ]);
                     $savedCount++;
@@ -2657,6 +2658,7 @@ class ProcessController extends Controller
         return DB::transaction(function () use ($request, $module, $userId, $createdBy) {
             $redirectRoute = 'analisa-moisture.ffa-moisture';
             $successMessage = 'Data berhasil disimpan.';
+            $isSunOffice = $this->isSunOffice();
 
             switch ($module) {
                 case 'ffa_moisture':
@@ -2666,11 +2668,15 @@ class ProcessController extends Controller
                         'moisture' => ['required', 'string', 'max:100'],
                         'bst1_ffa' => ['required', 'numeric'],
                         'bst2_ffa' => ['required', 'numeric'],
-                        'bst3_ffa' => ['required', 'numeric'],
+                        'bst3_ffa' => $isSunOffice ? ['nullable', 'numeric'] : ['required', 'numeric'],
                         'impurities' => ['required', 'numeric'],
                     ]);
 
-                    FfaMoisture::create($validated + ['user_id' => $userId, 'created_by' => $createdBy]);
+                    FfaMoisture::create(array_merge($validated, [
+                        'user_id' => $userId,
+                        'created_by' => $createdBy,
+                        'bst3_ffa' => $isSunOffice ? null : ($validated['bst3_ffa'] ?? null),
+                    ]));
                     $redirectRoute = 'analisa-moisture.ffa-moisture';
                     $successMessage = 'Data analisa FFA dan Moisture berhasil disimpan.';
                     break;
@@ -2750,6 +2756,7 @@ class ProcessController extends Controller
     {
         [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
         $officeScope = $this->getUserOfficeScope();
+        $isSunOffice = $this->isSunOffice($officeScope);
 
         $rows = FfaMoisture::query()
             ->with('user')
@@ -2760,18 +2767,21 @@ class ProcessController extends Controller
             ->paginate(25)
             ->appends($request->except('page'));
 
-        return view('process.analisa-moisture.ffa-moisture', compact('rows', 'startDate', 'endDate'));
+        return view('process.analisa-moisture.ffa-moisture', compact('rows', 'startDate', 'endDate', 'isSunOffice'));
     }
 
     public function editAnalisaFfaMoisture(FfaMoisture $ffaMoisture)
     {
         return view('process.analisa-moisture.edit-ffa-moisture', [
             'row' => $ffaMoisture,
+            'isSunOffice' => $this->isSunOffice(),
         ]);
     }
 
     public function updateAnalisaFfaMoisture(Request $request, FfaMoisture $ffaMoisture)
     {
+        $isSunOffice = $this->isSunOffice();
+
         $validated = $request->validate([
             'tanggal' => ['required', 'date'],
             'jam' => ['required', 'date_format:H:i'],
@@ -2788,7 +2798,7 @@ class ProcessController extends Controller
             'moisture' => $this->stringOrDefault($validated['moisture'] ?? null, '0'),
             'bst1_ffa' => $this->numericOrZero($validated['bst1_ffa'] ?? null),
             'bst2_ffa' => $this->numericOrZero($validated['bst2_ffa'] ?? null),
-            'bst3_ffa' => $this->numericOrZero($validated['bst3_ffa'] ?? null),
+            'bst3_ffa' => $isSunOffice ? null : $this->numericOrZero($validated['bst3_ffa'] ?? null),
             'impurities' => $this->numericOrZero($validated['impurities'] ?? null),
         ]);
 
@@ -2811,32 +2821,43 @@ class ProcessController extends Controller
     {
         [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
         $officeScope = $this->getUserOfficeScope();
+        $isSunOffice = $this->isSunOffice($officeScope);
 
         $rows = FfaMoisture::query()
             ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderBy('tanggal')
             ->orderBy('jam')
-            ->get()
-            ->map(function (FfaMoisture $row): array {
-                return [
-                    Carbon::parse($row->tanggal)->format('d-m-Y'),
-                    $row->jam,
-                    $row->moisture,
-                    $row->bst1_ffa,
-                    $row->bst2_ffa,
-                    $row->bst3_ffa,
-                    $row->impurities,
-                ];
-            })
-            ->values();
+            ->get();
+
+        $rows = $rows->map(function (FfaMoisture $row) use ($isSunOffice): array {
+            $baseRow = [
+                Carbon::parse($row->tanggal)->format('d-m-Y'),
+                $row->jam,
+                $row->moisture,
+                $row->bst1_ffa,
+                $row->bst2_ffa,
+            ];
+
+            if (!$isSunOffice) {
+                $baseRow[] = $row->bst3_ffa;
+            }
+
+            $baseRow[] = $row->impurities;
+
+            return $baseRow;
+        })->values();
+
+        $headings = $isSunOffice
+            ? ['Tanggal', 'Jam', 'Moisture', 'BST1 (FFA)', 'BST2 (FFA)', 'Impurities']
+            : ['Tanggal', 'Jam', 'Moisture', 'BST1 (FFA)', 'BST2 (FFA)', 'BST3 (FFA)', 'Impurities'];
 
         return $this->downloadAnalysisExport(
             'Data Analisa FFA dan Moisture',
             $startDate,
             $endDate,
             $rows,
-            ['Tanggal', 'Jam', 'Moisture', 'BST1 (FFA)', 'BST2 (FFA)', 'BST3 (FFA)', 'Impurities'],
+            $headings,
             'FFA_Moisture_' . $startDate . '_to_' . $endDate . '.xlsx'
         );
     }

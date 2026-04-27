@@ -18,7 +18,7 @@
                             <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Jam</th>
                             <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Created By</th>
                             <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Moisture</th>
-                            <th colspan="3" class="px-4 py-2 text-center font-semibold">FFA</th>
+                            <th colspan="{{ $isSunOffice ? 2 : 3 }}" class="px-4 py-2 text-center font-semibold">FFA</th>
                             <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Impurities</th>
                             @role('Super Admin')
                                 <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Aksi</th>
@@ -27,7 +27,9 @@
                         <tr>
                             <th class="px-4 py-3 text-left font-semibold">BST1</th>
                             <th class="px-4 py-3 text-left font-semibold">BST2</th>
-                            <th class="px-4 py-3 text-left font-semibold">BST3</th>
+                            @unless($isSunOffice)
+                                <th class="px-4 py-3 text-left font-semibold">BST3</th>
+                            @endunless
                         </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -39,7 +41,9 @@
                             <td class="px-4 py-3 text-slate-700">{{ $row->moisture }}</td>
                             <td class="px-4 py-3 text-slate-700">{{ $row->bst1_ffa }}</td>
                             <td class="px-4 py-3 text-slate-700">{{ $row->bst2_ffa }}</td>
-                            <td class="px-4 py-3 text-slate-700">{{ $row->bst3_ffa }}</td>
+                            @unless($isSunOffice)
+                                <td class="px-4 py-3 text-slate-700">{{ $row->bst3_ffa }}</td>
+                            @endunless
                             <td class="px-4 py-3 text-slate-700">{{ $row->impurities }}</td>
                             @role('Super Admin')
                                 <td class="px-4 py-3 text-slate-700">
@@ -56,7 +60,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()?->hasRole('Super Admin') ? 9 : 8 }}" class="px-4 py-8 text-center text-slate-500">Belum ada data pada periode ini.</td>
+                            <td colspan="{{ $isSunOffice ? (auth()->user()?->hasRole('Super Admin') ? 8 : 7) : (auth()->user()?->hasRole('Super Admin') ? 9 : 8) }}" class="px-4 py-8 text-center text-slate-500">Belum ada data pada periode ini.</td>
                         </tr>
                     @endforelse
                 </tbody>

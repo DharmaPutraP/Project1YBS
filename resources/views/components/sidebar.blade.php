@@ -265,6 +265,96 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             </x-sidebar-item>
         @endcan
 
+        {{-- ── Analisa Moisture & Spintes ──────────────────── --}}
+        <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
+            Analisa Moisture & Spintes
+        </p>
+
+        <x-sidebar-item href="{{ route('analisa-moisture.input') }}"
+            :active="request()->routeIs('analisa-moisture.input')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
+            <span class="sidebar-item-text">Inputan Analisa</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('analisa-moisture.ffa-moisture') }}"
+            :active="request()->routeIs('analisa-moisture.ffa-moisture')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'>
+            <span class="sidebar-item-text">Data FFA & Moisture</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('analisa-moisture.spintest-cot') }}"
+            :active="request()->routeIs('analisa-moisture.spintest-cot')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'>
+            <span class="sidebar-item-text">Spintest COT</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('analisa-moisture.spintest-underflow-cst') }}"
+            :active="request()->routeIs('analisa-moisture.spintest-underflow-cst')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'>
+            <span class="sidebar-item-text">Spintest Underflow CST</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('analisa-moisture.spintest-feed-decanter') }}"
+            :active="request()->routeIs('analisa-moisture.spintest-feed-decanter')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'>
+            <span class="sidebar-item-text">Spintest Feed Decanter</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('analisa-moisture.spintest-light-phase') }}"
+            :active="request()->routeIs('analisa-moisture.spintest-light-phase')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'>
+            <span class="sidebar-item-text">Spintest Light Phase</span>
+        </x-sidebar-item>
+
+        {{-- ── Lap Jangkos ──────────────────────────────────── --}}
+        <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
+            Lap Jangkos
+        </p>
+
+        <x-sidebar-item href="{{ route('lap-jangkos.input-usb') }}"
+            :active="request()->routeIs('lap-jangkos.input-usb')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
+            <span class="sidebar-item-text">Inputan USB</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('lap-jangkos.data-usb') }}"
+            :active="request()->routeIs('lap-jangkos.data-usb')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'>
+            <span class="sidebar-item-text">Data USB</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('lap-jangkos.rekap-usb') }}"
+            :active="request()->routeIs('lap-jangkos.rekap-usb')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2z"/></svg>'>
+            <span class="sidebar-item-text">Rekap USB</span>
+        </x-sidebar-item>
+
+        @php($currentOffice = strtoupper(auth()->user()->office ?? ''))
+        @if ($currentOffice !== 'SUN')
+        {{-- ── Oil Loss Foss ──────────────────────────────────── --}}
+        <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">
+            Oil Loss Foss
+        </p>
+
+        <x-sidebar-item href="{{ route('oil-loss-foss.input') }}"
+            :active="request()->routeIs('oil-loss-foss.input')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'>
+            <span class="sidebar-item-text">Input Oil Loss Foss</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('oil-loss-foss.data') }}"
+            :active="request()->routeIs('oil-loss-foss.data')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'>
+            <span class="sidebar-item-text">Data Oil Loss Foss</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('oil-loss-foss.rekap') }}"
+            :active="request()->routeIs('oil-loss-foss.rekap')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2z"/></svg>'>
+            <span class="sidebar-item-text">Rekap Oil Loss Foss</span>
+        </x-sidebar-item>
+        @endif
+
         {{-- ── Admin ───────────────────────────────────────── --}}
         @canany(['view users', 'view user activity log'])
             <p class="px-3 pt-5 pb-1 mt-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold">

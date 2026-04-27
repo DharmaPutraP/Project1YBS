@@ -16,14 +16,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
     private array $rows;
-    private array $detailCodeHeaders;
     private string $selectedDate;
     private string $selectedOffice;
 
-    public function __construct(array $rows, array $detailCodeHeaders, string $selectedDate, string $selectedOffice)
+    public function __construct(array $rows, string $selectedDate, string $selectedOffice)
     {
         $this->rows = $rows;
-        $this->detailCodeHeaders = $detailCodeHeaders;
         $this->selectedDate = $selectedDate;
         $this->selectedOffice = $selectedOffice;
     }
@@ -35,7 +33,7 @@ class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMa
 
     public function headings(): array
     {
-        $headings = [
+        return [
             'Tanggal',
             'Tim',
             'Jam Mulai Proses',
@@ -54,19 +52,11 @@ class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMa
             'Destoner',
             'Perf Total',
         ];
-
-        foreach ($this->detailCodeHeaders as $detailCode) {
-            $headings[] = (string) ($detailCode['label'] ?? $detailCode['code'] ?? '');
-        }
-
-        $headings[] = 'Perf Total Detail';
-
-        return $headings;
     }
 
     public function map($row): array
     {
-        $mapped = [
+        return [
             $row['tanggal'] ?? '-',
             $row['team_name'] ?? '-',
             $row['jam_mulai'] ?? '-',
@@ -85,15 +75,6 @@ class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMa
             $row['destoner'] ?? '0/0',
             $row['perf_total'] ?? '-',
         ];
-
-        foreach ($this->detailCodeHeaders as $detailCode) {
-            $code = (string) ($detailCode['code'] ?? '');
-            $mapped[] = $row['detail_values'][$code] ?? '0/0';
-        }
-
-        $mapped[] = $row['detail_perf_total'] ?? '-';
-
-        return $mapped;
     }
 
     public function styles(Worksheet $sheet): array

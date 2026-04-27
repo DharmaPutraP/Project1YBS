@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Exports\PerformanceSampelBoyExport;
+use App\Exports\ProcessAnalysisExport;
+use App\Models\AnalisaUsb;
+use App\Models\FfaMoisture;
 use App\Models\KernelCalculation;
 use App\Models\KernelDirtMoistCalculation;
 use App\Models\KernelDestoner;
@@ -11,10 +14,17 @@ use App\Models\KernelMesin;
 use App\Models\KernelProsses;
 use App\Models\KernelQwt;
 use App\Models\KernelRippleMill;
+use App\Models\OilFoss;
+use App\Models\SpintestCot;
+use App\Models\SpintestCst;
+use App\Models\SpintestFeedDecanter;
+use App\Models\SpintestLightPhase;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -25,6 +35,14 @@ class ProcessController extends Controller
     private array $timedCodeRowsCache = [];
 
     private const TEAM_OPTIONS = ['Tim 1', 'Tim 2'];
+    private const CST_MACHINES_YBS = ['CST1', 'CST2'];
+    private const CST_MACHINES_SUN = ['CST1'];
+    private const DECANTER_MACHINES_YBS = ['Alfa Laval 1', 'Alfa Laval 2', 'GEA', 'Flottweg'];
+    private const DECANTER_MACHINES_SUN = ['GEA1', 'GEA2'];
+    private const LIGHT_PHASE_MACHINES_YBS = ['Alfa Laval 1', 'Alfa Laval 2', 'GEA', 'Flottweg'];
+    private const LIGHT_PHASE_MACHINES_SUN = ['GEA1', 'GEA2'];
+    private const USB_ROW_NUMBERS_YBS = [1, 2, 3, 4, 5, 6, 7, 8];
+    private const USB_ROW_NUMBERS_SUN = [1, 2, 3, 4];
 
     // Hardcoded master mesin per PT.
     // Silakan ubah daftar di konstanta ini sesuai kebutuhan masing-masing PT.
@@ -475,7 +493,8 @@ class ProcessController extends Controller
 
     public function performanceSampelBoy(Request $request)
     {
-        $selectedDate = (string) $request->input('date', now()->format('Y-m-d'));
+        $dateStart = (string) $request->input('date_start', now()->format('Y-m-d'));
+        $dateEnd = (string) $request->input('date_end', now()->format('Y-m-d'));
         $officeOptions = $this->getAvailableOfficesForPerformance();
         $defaultOffice = (string) (auth()->user()->office ?? '');
         $selectedOffice = (string) $request->input('office', $defaultOffice !== '' ? $defaultOffice : 'all');
@@ -484,15 +503,30 @@ class ProcessController extends Controller
             $selectedOffice = $defaultOffice !== '' ? $defaultOffice : 'all';
         }
 
+        // Ensure dates are valid and start <= end
+        try {
+            $startDate = Carbon::parse($dateStart)->startOfDay();
+            $endDate = Carbon::parse($dateEnd)->endOfDay();
+            if ($startDate > $endDate) {
+                $startDate = $endDate->copy()->startOfDay();
+                $endDate = $startDate->copy()->endOfDay();
+            }
+        } catch (\Throwable) {
+            $startDate = now()->startOfDay();
+            $endDate = now()->endOfDay();
+        }
+
         $records = KernelProsses::query()
             ->with('mesin')
-            ->whereDate('process_date', $selectedDate)
+            ->whereBetween('process_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->when($selectedOffice !== 'all', fn($query) => $query->where('office', $selectedOffice))
             ->orderBy('process_date')
             ->orderBy('id')
             ->get();
 
         $rows = [];
+        $perfTeam1 = []; // Track Tim 1 performance
+        $perfTeam2 = []; // Track Tim 2 performance
 
         foreach ($records as $record) {
             /** @var KernelProsses $record */
@@ -504,56 +538,84 @@ class ProcessController extends Controller
                 : null;
 
             if ($inputTeam === 'Tim 1') {
-                $rows[] = $this->buildPerformanceRow(
+                $row = $this->buildPerformanceRow(
                     $record,
                     'Tim 1',
                     (array) ($record->team_1_members ?? []),
                     $team1Machines,
                     $selectedOffice
                 );
+                $rows[] = $row;
+                if (!empty($row['perf_total']) && $row['perf_total'] !== '-') {
+                    $perfTeam1[] = (float) str_replace('%', '', $row['perf_total']);
+                }
                 continue;
             }
 
             if ($inputTeam === 'Tim 2') {
-                $rows[] = $this->buildPerformanceRow(
+                $row = $this->buildPerformanceRow(
                     $record,
                     'Tim 2',
                     (array) ($record->team_2_members ?? []),
                     $team2Machines,
                     $selectedOffice
                 );
+                $rows[] = $row;
+                if (!empty($row['perf_total']) && $row['perf_total'] !== '-') {
+                    $perfTeam2[] = (float) str_replace('%', '', $row['perf_total']);
+                }
                 continue;
             }
 
-            $rows[] = $this->buildPerformanceRow(
+            $row1 = $this->buildPerformanceRow(
                 $record,
                 'Tim 1',
                 (array) ($record->team_1_members ?? []),
                 $team1Machines,
                 $selectedOffice
             );
+            $rows[] = $row1;
+            if (!empty($row1['perf_total']) && $row1['perf_total'] !== '-') {
+                $perfTeam1[] = (float) str_replace('%', '', $row1['perf_total']);
+            }
 
-            $rows[] = $this->buildPerformanceRow(
+            $row2 = $this->buildPerformanceRow(
                 $record,
                 'Tim 2',
                 (array) ($record->team_2_members ?? []),
                 $team2Machines,
                 $selectedOffice
             );
+            $rows[] = $row2;
+            if (!empty($row2['perf_total']) && $row2['perf_total'] !== '-') {
+                $perfTeam2[] = (float) str_replace('%', '', $row2['perf_total']);
+            }
         }
 
+        // Calculate average performance per team
+        $avgTeam1 = !empty($perfTeam1)
+            ? number_format(array_sum($perfTeam1) / count($perfTeam1), 2) . '%'
+            : '-';
+        
+        $avgTeam2 = !empty($perfTeam2)
+            ? number_format(array_sum($perfTeam2) / count($perfTeam2), 2) . '%'
+            : '-';
+
         return view('process.performance-sampel-boy', [
-            'selectedDate' => $selectedDate,
+            'dateStart' => $startDate->format('Y-m-d'),
+            'dateEnd' => $endDate->format('Y-m-d'),
             'selectedOffice' => $selectedOffice,
             'officeOptions' => $officeOptions,
-            'detailCodeHeaders' => self::PERFORMANCE_DETAIL_CODES,
             'rows' => $rows,
+            'avgTeam1' => $avgTeam1,
+            'avgTeam2' => $avgTeam2,
         ]);
     }
 
     public function exportPerformanceSampelBoy(Request $request)
     {
-        $selectedDate = (string) $request->input('date', now()->format('Y-m-d'));
+        $dateStart = (string) $request->input('date_start', now()->format('Y-m-d'));
+        $dateEnd = (string) $request->input('date_end', now()->format('Y-m-d'));
         $officeOptions = $this->getAvailableOfficesForPerformance();
         $defaultOffice = (string) (auth()->user()->office ?? '');
         $selectedOffice = (string) $request->input('office', $defaultOffice !== '' ? $defaultOffice : 'all');
@@ -562,9 +624,22 @@ class ProcessController extends Controller
             $selectedOffice = $defaultOffice !== '' ? $defaultOffice : 'all';
         }
 
+        // Ensure dates are valid and start <= end
+        try {
+            $startDate = Carbon::parse($dateStart)->startOfDay();
+            $endDate = Carbon::parse($dateEnd)->endOfDay();
+            if ($startDate > $endDate) {
+                $startDate = $endDate->copy()->startOfDay();
+                $endDate = $startDate->copy()->endOfDay();
+            }
+        } catch (\Throwable) {
+            $startDate = now()->startOfDay();
+            $endDate = now()->endOfDay();
+        }
+
         $records = KernelProsses::query()
             ->with('mesin')
-            ->whereDate('process_date', $selectedDate)
+            ->whereBetween('process_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->when($selectedOffice !== 'all', fn($query) => $query->where('office', $selectedOffice))
             ->orderBy('process_date')
             ->orderBy('id')
@@ -619,13 +694,14 @@ class ProcessController extends Controller
             );
         }
 
-        $filename = 'performance-sampel-boy-'
-            . Carbon::parse($selectedDate)->format('Ymd')
-            . '-' . ($selectedOffice === 'all' ? 'all-office' : strtolower($selectedOffice))
-            . '.xlsx';
+        $dateStartFormatted = Carbon::parse($startDate)->format('Ymd');
+        $dateEndFormatted = Carbon::parse($endDate)->format('Ymd');
+        $officeLabel = $selectedOffice === 'all' ? 'all-office' : strtolower($selectedOffice);
+
+        $filename = 'Performance-Summary-' . $dateStartFormatted . '-' . $dateEndFormatted . '-' . $officeLabel . '.xlsx';
 
         return Excel::download(
-            new PerformanceSampelBoyExport($rows, self::PERFORMANCE_DETAIL_CODES, $selectedDate, $selectedOffice),
+            new PerformanceSampelBoyExport($rows, $startDate->format('Y-m-d'), $selectedOffice),
             $filename
         );
     }
@@ -1105,28 +1181,10 @@ class ProcessController extends Controller
         $actualBundle = $this->buildActualSamplesBundle(
             (string) optional($record->process_date)->format('Y-m-d'),
             $office === 'all' ? '' : $office,
-            $machineWindowsByCode
+            $machineWindowsByCode,
+            $members
         );
         $actualByGroup = $actualBundle['group'];
-
-        $expectedByCode = $this->buildExpectedSamplesByCode($record, $teamName, $teamMachines, $office);
-        $actualByCode = $actualBundle['code'];
-
-        $detailValues = [];
-        $detailActualTotal = 0;
-        $detailExpectedTotal = 0;
-        foreach (self::PERFORMANCE_DETAIL_CODES as $detailCode) {
-            $code = $detailCode['code'];
-            $actual = (int) ($actualByCode[$code] ?? 0);
-            $expected = (int) ($expectedByCode[$code] ?? 0);
-            $detailValues[$code] = $actual . '/' . $expected;
-            $detailActualTotal += $actual;
-            $detailExpectedTotal += $expected;
-        }
-
-        $detailPerfTotal = $detailExpectedTotal > 0
-            ? number_format(($detailActualTotal / $detailExpectedTotal) * 100, 2) . '%'
-            : '-';
 
         $perfActualTotal = 0;
         $perfExpectedTotal = 0;
@@ -1158,8 +1216,6 @@ class ProcessController extends Controller
             'eficiency' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'eficiency'),
             'destoner' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'destoner'),
             'perf_total' => $perfTotal,
-            'detail_values' => $detailValues,
-            'detail_perf_total' => $detailPerfTotal,
         ];
     }
 
@@ -1179,25 +1235,27 @@ class ProcessController extends Controller
             $expected[$groupKey] = 0;
         }
 
-        $machinesByName = $machines
-            ->groupBy(fn($machine) => strtoupper(trim((string) $machine->machine_name)));
-
-        foreach ($machinesByName as $machineName => $rows) {
-            $groupKey = $this->resolvePerformanceGroupByMachineName((string) $machineName);
-            if ($groupKey === null) {
+        foreach ($intervals as $groupKey => $intervalMinutes) {
+            if ((int) $intervalMinutes <= 0) {
                 continue;
             }
 
-            $intervalMinutes = $this->resolveMachineIntervalMinutes((string) $machineName, $office);
-            if ($intervalMinutes <= 0) {
+            $rowsForGroup = $machines
+                ->filter(function ($machine) use ($groupKey): bool {
+                    $machineName = strtoupper(trim((string) $machine->machine_name));
+                    return $this->resolvePerformanceGroupByMachineName($machineName) === $groupKey;
+                })
+                ->values();
+
+            if ($rowsForGroup->isEmpty()) {
                 continue;
             }
 
-            $expected[$groupKey] += $this->calculateExpectedSamplesFromRowsWithConditions(
+            $expected[$groupKey] = $this->calculateExpectedSamplesFromRowsWithConditions(
                 $record,
                 $teamName,
-                $rows->values(),
-                $intervalMinutes
+                $rowsForGroup,
+                (int) $intervalMinutes
             );
         }
 
@@ -1284,9 +1342,9 @@ class ProcessController extends Controller
         return null;
     }
 
-    private function buildActualSamplesByGroup(string $date, string $office, array $machineWindowsByCode): array
+    private function buildActualSamplesByGroup(string $date, string $office, array $machineWindowsByCode, array $teamMembers = []): array
     {
-        return $this->buildActualSamplesBundle($date, $office, $machineWindowsByCode)['group'];
+        return $this->buildActualSamplesBundle($date, $office, $machineWindowsByCode, $teamMembers)['group'];
     }
 
     private function buildExpectedSamplesByCode(KernelProsses $record, string $teamName, Collection $machines, string $office = 'YBS'): array
@@ -1336,12 +1394,12 @@ class ProcessController extends Controller
         return $expected;
     }
 
-    private function buildActualSamplesByCode(string $date, string $office, array $machineWindowsByCode): array
+    private function buildActualSamplesByCode(string $date, string $office, array $machineWindowsByCode, array $teamMembers = []): array
     {
-        return $this->buildActualSamplesBundle($date, $office, $machineWindowsByCode)['code'];
+        return $this->buildActualSamplesBundle($date, $office, $machineWindowsByCode, $teamMembers)['code'];
     }
 
-    private function buildActualSamplesBundle(string $date, string $office, array $machineWindowsByCode): array
+    private function buildActualSamplesBundle(string $date, string $office, array $machineWindowsByCode, array $teamMembers = []): array
     {
         $groupActual = [];
         foreach (array_keys(self::PERFORMANCE_GROUP_INTERVAL_MINUTES) as $groupKey) {
@@ -1355,7 +1413,19 @@ class ProcessController extends Controller
 
         $rows = $this->getTimedCodeRowsCached($date, $office);
 
+        // Normalize team members to uppercase for comparison
+        $normalizedTeamMembers = array_map(fn($member) => strtoupper(trim((string) $member)), $teamMembers);
+        $groupSlots = [];
+
         foreach ($rows as $row) {
+            // Filter by team member if team_members is provided
+            if (!empty($normalizedTeamMembers)) {
+                $sampelBoy = strtoupper(trim((string) ($row['sampel_boy'] ?? '')));
+                if (!in_array($sampelBoy, $normalizedTeamMembers, true)) {
+                    continue;
+                }
+            }
+
             $isPengulangan = (bool) ($row['pengulangan'] ?? false);
             if ($isPengulangan) {
                 continue;
@@ -1382,18 +1452,30 @@ class ProcessController extends Controller
             }
 
             if (!$matched) {
-                $matched = true;
+                continue;
             }
 
             $groupKey = $this->resolvePerformanceGroupByCode($rawCode);
             if ($groupKey !== null) {
-                $groupActual[$groupKey]++;
+                $intervalMinutes = $this->resolveCodeIntervalMinutes($rawCode, $office === '' ? 'YBS' : $office);
+                if ($intervalMinutes > 0) {
+                    $slotKey = (int) floor($minutes / $intervalMinutes);
+                    if (!isset($groupSlots[$groupKey])) {
+                        $groupSlots[$groupKey] = [];
+                    }
+
+                    $groupSlots[$groupKey][$slotKey] = true;
+                }
             }
 
             $normalizedCode = $this->normalizeDetailCode($rawCode);
             if ($normalizedCode !== null) {
                 $codeActual[$normalizedCode]++;
             }
+        }
+
+        foreach ($groupSlots as $groupKey => $slots) {
+            $groupActual[$groupKey] = count($slots);
         }
 
         return [
@@ -1426,7 +1508,7 @@ class ProcessController extends Controller
         $endDateTime = $baseDate->copy()->addDay()->setTime(6, 59, 59)->format('Y-m-d H:i:s');
         $table = $query->getModel()->getTable();
         $hasPengulanganColumn = Schema::hasColumn($table, 'pengulangan');
-        $selectColumns = ['kode', 'rounded_time', 'created_at'];
+        $selectColumns = ['kode', 'rounded_time', 'created_at', 'sampel_boy'];
         if ($hasPengulanganColumn) {
             $selectColumns[] = 'pengulangan';
         }
@@ -1440,6 +1522,7 @@ class ProcessController extends Controller
                     });
             })
             ->when($office !== '', fn($builder) => $builder->where('office', $office))
+            ->when($hasPengulanganColumn, fn($builder) => $builder->where('pengulangan', false))
             ->get($selectColumns);
 
         return $rows->map(function ($row): array {
@@ -1452,6 +1535,7 @@ class ProcessController extends Controller
             return [
                 'code' => strtoupper(trim((string) $row->kode)),
                 'time' => $time,
+                'sampel_boy' => (string) ($row->sampel_boy ?? ''),
                 'pengulangan' => (bool) ($row->pengulangan ?? false),
             ];
         })->values();
@@ -2305,6 +2389,26 @@ class ProcessController extends Controller
         return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
     }
 
+    private function getUserOfficeScope(?string $office = null): ?string
+    {
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? '')));
+
+        return $officeCode !== '' ? $officeCode : null;
+    }
+
+    private function applyUserOfficeScope(Builder $query, ?string $office = null): Builder
+    {
+        $officeScope = $this->getUserOfficeScope($office);
+
+        if ($officeScope === null) {
+            return $query;
+        }
+
+        return $query->whereHas('user', function (Builder $userQuery) use ($officeScope): void {
+            $userQuery->where('office', $officeScope);
+        });
+    }
+
     private function getIntervalMinutesForOffice(string $office): array
     {
         if ($office === 'SUN') {
@@ -2382,4 +2486,1923 @@ class ProcessController extends Controller
 
         return $rules;
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── ANALISA MOISTURE & SPINTES ────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public function analisisaMoistureInput()
+    {
+        return view('process.analisa-moisture.input', [
+            'cstMachines' => $this->getCstMachinesForOffice(),
+            'decanterMachines' => $this->getDecanterMachinesForOffice(),
+            'lightPhaseMachines' => $this->getLightPhaseMachinesForOffice(),
+        ]);
+    }
+
+    public function analisisaMoistureStore(Request $request)
+    {
+        if ($request->boolean('bulk_submit')) {
+            $userId = auth()->id();
+            $createdBy = (string) (auth()->user()->name ?? 'System');
+
+            return DB::transaction(function () use ($request, $userId, $createdBy) {
+                $validated = $request->validate([
+                    'ffa.tanggal' => ['nullable', 'date'],
+                    'ffa.jam' => ['nullable', 'date_format:H:i'],
+                    'ffa.moisture' => ['nullable', 'string', 'max:100'],
+                    'ffa.bst1_ffa' => ['nullable', 'numeric'],
+                    'ffa.bst2_ffa' => ['nullable', 'numeric'],
+                    'ffa.bst3_ffa' => ['nullable', 'numeric'],
+                    'ffa.impurities' => ['nullable', 'numeric'],
+
+                    'cot.tanggal' => ['nullable', 'date'],
+                    'cot.jam' => ['nullable', 'date_format:H:i'],
+                    'cot.oil' => ['nullable', 'numeric'],
+                    'cot.emulsi' => ['nullable', 'numeric'],
+                    'cot.air' => ['nullable', 'numeric'],
+                    'cot.nos' => ['nullable', 'numeric'],
+
+                    'machines.spintest_cst' => ['nullable', 'array'],
+                    'machines.spintest_cst.*.tanggal' => ['nullable', 'date'],
+                    'machines.spintest_cst.*.jam' => ['nullable', 'date_format:H:i'],
+                    'machines.spintest_cst.*.machine_name' => ['nullable', Rule::in($this->getCstMachinesForOffice())],
+                    'machines.spintest_cst.*.oil' => ['nullable', 'numeric'],
+                    'machines.spintest_cst.*.emulsi' => ['nullable', 'numeric'],
+                    'machines.spintest_cst.*.air' => ['nullable', 'numeric'],
+                    'machines.spintest_cst.*.nos' => ['nullable', 'numeric'],
+
+                    'machines.spintest_feed_decanter' => ['nullable', 'array'],
+                    'machines.spintest_feed_decanter.*.tanggal' => ['nullable', 'date'],
+                    'machines.spintest_feed_decanter.*.jam' => ['nullable', 'date_format:H:i'],
+                    'machines.spintest_feed_decanter.*.machine_name' => ['nullable', Rule::in($this->getDecanterMachinesForOffice())],
+                    'machines.spintest_feed_decanter.*.oil' => ['nullable', 'numeric'],
+                    'machines.spintest_feed_decanter.*.emulsi' => ['nullable', 'numeric'],
+                    'machines.spintest_feed_decanter.*.air' => ['nullable', 'numeric'],
+                    'machines.spintest_feed_decanter.*.nos' => ['nullable', 'numeric'],
+
+                    'machines.spintest_light_phase' => ['nullable', 'array'],
+                    'machines.spintest_light_phase.*.tanggal' => ['nullable', 'date'],
+                    'machines.spintest_light_phase.*.jam' => ['nullable', 'date_format:H:i'],
+                    'machines.spintest_light_phase.*.machine_name' => ['nullable', Rule::in($this->getLightPhaseMachinesForOffice())],
+                    'machines.spintest_light_phase.*.oil' => ['nullable', 'numeric'],
+                    'machines.spintest_light_phase.*.emulsi' => ['nullable', 'numeric'],
+                    'machines.spintest_light_phase.*.air' => ['nullable', 'numeric'],
+                    'machines.spintest_light_phase.*.nos' => ['nullable', 'numeric'],
+                ]);
+
+                $savedCount = 0;
+
+                if ($this->hasAnyMeaningfulValue($validated['ffa'] ?? [])) {
+                    FfaMoisture::create([
+                        'user_id' => $userId,
+                        'created_by' => $createdBy,
+                        'tanggal' => $validated['ffa']['tanggal'] ?? now()->toDateString(),
+                        'jam' => $validated['ffa']['jam'] ?? now()->format('H:i'),
+                        'moisture' => $this->stringOrDefault($validated['ffa']['moisture'] ?? null, '0'),
+                        'bst1_ffa' => $this->numericOrZero($validated['ffa']['bst1_ffa'] ?? null),
+                        'bst2_ffa' => $this->numericOrZero($validated['ffa']['bst2_ffa'] ?? null),
+                        'bst3_ffa' => $this->numericOrZero($validated['ffa']['bst3_ffa'] ?? null),
+                        'impurities' => $this->numericOrZero($validated['ffa']['impurities'] ?? null),
+                    ]);
+                    $savedCount++;
+                }
+
+                if ($this->hasAnyMeaningfulValue($validated['cot'] ?? [])) {
+                    SpintestCot::create([
+                        'user_id' => $userId,
+                        'created_by' => $createdBy,
+                        'tanggal' => $validated['cot']['tanggal'] ?? now()->toDateString(),
+                        'jam' => $validated['cot']['jam'] ?? now()->format('H:i'),
+                        'oil' => $this->numericOrZero($validated['cot']['oil'] ?? null),
+                        'emulsi' => $this->numericOrZero($validated['cot']['emulsi'] ?? null),
+                        'air' => $this->numericOrZero($validated['cot']['air'] ?? null),
+                        'nos' => $this->numericOrZero($validated['cot']['nos'] ?? null),
+                    ]);
+                    $savedCount++;
+                }
+
+                foreach (($validated['machines']['spintest_cst'] ?? []) as $row) {
+                    if (!$this->hasAnyMeaningfulValue($row, ['machine_name'])) {
+                        continue;
+                    }
+
+                    SpintestCst::create([
+                        'user_id' => $userId,
+                        'created_by' => $createdBy,
+                        'tanggal' => $row['tanggal'] ?? now()->toDateString(),
+                        'jam' => $row['jam'] ?? now()->format('H:i'),
+                        'machine_name' => $row['machine_name'] ?? $this->getCstMachinesForOffice()[0],
+                        'oil' => $this->numericOrZero($row['oil'] ?? null),
+                        'emulsi' => $this->numericOrZero($row['emulsi'] ?? null),
+                        'air' => $this->numericOrZero($row['air'] ?? null),
+                        'nos' => $this->numericOrZero($row['nos'] ?? null),
+                    ]);
+                    $savedCount++;
+                }
+
+                foreach (($validated['machines']['spintest_feed_decanter'] ?? []) as $row) {
+                    if (!$this->hasAnyMeaningfulValue($row, ['machine_name'])) {
+                        continue;
+                    }
+
+                    SpintestFeedDecanter::create([
+                        'user_id' => $userId,
+                        'created_by' => $createdBy,
+                        'tanggal' => $row['tanggal'] ?? now()->toDateString(),
+                        'jam' => $row['jam'] ?? now()->format('H:i'),
+                        'machine_name' => $row['machine_name'] ?? $this->getDecanterMachinesForOffice()[0],
+                        'oil' => $this->numericOrZero($row['oil'] ?? null),
+                        'emulsi' => $this->numericOrZero($row['emulsi'] ?? null),
+                        'air' => $this->numericOrZero($row['air'] ?? null),
+                        'nos' => $this->numericOrZero($row['nos'] ?? null),
+                    ]);
+                    $savedCount++;
+                }
+
+                foreach (($validated['machines']['spintest_light_phase'] ?? []) as $row) {
+                    if (!$this->hasAnyMeaningfulValue($row, ['machine_name'])) {
+                        continue;
+                    }
+
+                    SpintestLightPhase::create([
+                        'user_id' => $userId,
+                        'created_by' => $createdBy,
+                        'tanggal' => $row['tanggal'] ?? now()->toDateString(),
+                        'jam' => $row['jam'] ?? now()->format('H:i'),
+                        'machine_name' => $row['machine_name'] ?? $this->getLightPhaseMachinesForOffice()[0],
+                        'oil' => $this->numericOrZero($row['oil'] ?? null),
+                        'emulsi' => $this->numericOrZero($row['emulsi'] ?? null),
+                        'air' => $this->numericOrZero($row['air'] ?? null),
+                        'nos' => $this->numericOrZero($row['nos'] ?? null),
+                    ]);
+                    $savedCount++;
+                }
+
+                if ($savedCount === 0) {
+                    throw ValidationException::withMessages([
+                        'bulk_submit' => 'Minimal satu form harus diisi agar data bisa disimpan.',
+                    ]);
+                }
+
+                return redirect()->route('analisa-moisture.input')
+                    ->with('success', 'Semua data analisa berhasil disimpan.');
+            });
+        }
+
+        $module = (string) $request->input('module', '');
+        $userId = auth()->id();
+        $createdBy = (string) (auth()->user()->name ?? 'System');
+
+        return DB::transaction(function () use ($request, $module, $userId, $createdBy) {
+            $redirectRoute = 'analisa-moisture.ffa-moisture';
+            $successMessage = 'Data berhasil disimpan.';
+
+            switch ($module) {
+                case 'ffa_moisture':
+                    $validated = $request->validate([
+                        'tanggal' => ['required', 'date'],
+                        'jam' => ['required', 'date_format:H:i'],
+                        'moisture' => ['required', 'string', 'max:100'],
+                        'bst1_ffa' => ['required', 'numeric'],
+                        'bst2_ffa' => ['required', 'numeric'],
+                        'bst3_ffa' => ['required', 'numeric'],
+                        'impurities' => ['required', 'numeric'],
+                    ]);
+
+                    FfaMoisture::create($validated + ['user_id' => $userId, 'created_by' => $createdBy]);
+                    $redirectRoute = 'analisa-moisture.ffa-moisture';
+                    $successMessage = 'Data analisa FFA dan Moisture berhasil disimpan.';
+                    break;
+
+                case 'spintest_cot':
+                    $validated = $request->validate([
+                        'tanggal' => ['required', 'date'],
+                        'jam' => ['required', 'date_format:H:i'],
+                        'oil' => ['required', 'numeric'],
+                        'emulsi' => ['required', 'numeric'],
+                        'air' => ['required', 'numeric'],
+                        'nos' => ['required', 'numeric'],
+                    ]);
+
+                    SpintestCot::create($validated + ['user_id' => $userId, 'created_by' => $createdBy]);
+                    $redirectRoute = 'analisa-moisture.spintest-cot';
+                    $successMessage = 'Data analisa Spintest COT berhasil disimpan.';
+                    break;
+
+                case 'spintest_cst':
+                    $validated = $request->validate([
+                        'tanggal' => ['required', 'date'],
+                        'jam' => ['required', 'date_format:H:i'],
+                        'machine_name' => ['required', Rule::in($this->getCstMachinesForOffice())],
+                        'oil' => ['required', 'numeric'],
+                        'emulsi' => ['required', 'numeric'],
+                        'air' => ['required', 'numeric'],
+                        'nos' => ['required', 'numeric'],
+                    ]);
+
+                    SpintestCst::create($validated + ['user_id' => $userId, 'created_by' => $createdBy]);
+                    $redirectRoute = 'analisa-moisture.spintest-underflow-cst';
+                    $successMessage = 'Data analisa Spintest Underflow CST berhasil disimpan.';
+                    break;
+
+                case 'spintest_feed_decanter':
+                    $validated = $request->validate([
+                        'tanggal' => ['required', 'date'],
+                        'jam' => ['required', 'date_format:H:i'],
+                        'machine_name' => ['required', Rule::in($this->getDecanterMachinesForOffice())],
+                        'oil' => ['required', 'numeric'],
+                        'emulsi' => ['required', 'numeric'],
+                        'air' => ['required', 'numeric'],
+                        'nos' => ['required', 'numeric'],
+                    ]);
+
+                    SpintestFeedDecanter::create($validated + ['user_id' => $userId, 'created_by' => $createdBy]);
+                    $redirectRoute = 'analisa-moisture.spintest-feed-decanter';
+                    $successMessage = 'Data analisa Spintest Feed Decanter berhasil disimpan.';
+                    break;
+
+                case 'spintest_light_phase':
+                    $validated = $request->validate([
+                        'tanggal' => ['required', 'date'],
+                        'jam' => ['required', 'date_format:H:i'],
+                        'machine_name' => ['required', Rule::in($this->getLightPhaseMachinesForOffice())],
+                        'oil' => ['required', 'numeric'],
+                        'emulsi' => ['required', 'numeric'],
+                        'air' => ['required', 'numeric'],
+                        'nos' => ['required', 'numeric'],
+                    ]);
+
+                    SpintestLightPhase::create($validated + ['user_id' => $userId, 'created_by' => $createdBy]);
+                    $redirectRoute = 'analisa-moisture.spintest-light-phase';
+                    $successMessage = 'Data analisa Spintest Light Phase berhasil disimpan.';
+                    break;
+
+                default:
+                    abort(422, 'Module analisa tidak valid.');
+            }
+
+            return redirect()->route($redirectRoute)->with('success', $successMessage);
+        });
+    }
+
+    public function analisaFfaMoisture(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+
+        $rows = FfaMoisture::query()
+            ->with('user')
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->paginate(25)
+            ->appends($request->except('page'));
+
+        return view('process.analisa-moisture.ffa-moisture', compact('rows', 'startDate', 'endDate'));
+    }
+
+    public function editAnalisaFfaMoisture(FfaMoisture $ffaMoisture)
+    {
+        return view('process.analisa-moisture.edit-ffa-moisture', [
+            'row' => $ffaMoisture,
+        ]);
+    }
+
+    public function updateAnalisaFfaMoisture(Request $request, FfaMoisture $ffaMoisture)
+    {
+        $validated = $request->validate([
+            'tanggal' => ['required', 'date'],
+            'jam' => ['required', 'date_format:H:i'],
+            'moisture' => ['nullable', 'string', 'max:100'],
+            'bst1_ffa' => ['nullable', 'numeric'],
+            'bst2_ffa' => ['nullable', 'numeric'],
+            'bst3_ffa' => ['nullable', 'numeric'],
+            'impurities' => ['nullable', 'numeric'],
+        ]);
+
+        $ffaMoisture->update([
+            'tanggal' => $validated['tanggal'],
+            'jam' => $validated['jam'],
+            'moisture' => $this->stringOrDefault($validated['moisture'] ?? null, '0'),
+            'bst1_ffa' => $this->numericOrZero($validated['bst1_ffa'] ?? null),
+            'bst2_ffa' => $this->numericOrZero($validated['bst2_ffa'] ?? null),
+            'bst3_ffa' => $this->numericOrZero($validated['bst3_ffa'] ?? null),
+            'impurities' => $this->numericOrZero($validated['impurities'] ?? null),
+        ]);
+
+        return redirect()
+            ->route('analisa-moisture.ffa-moisture', $this->buildAnalysisListQuery($ffaMoisture->tanggal?->toDateString()))
+            ->with('success', 'Data analisa FFA dan Moisture berhasil diperbarui.');
+    }
+
+    public function destroyAnalisaFfaMoisture(FfaMoisture $ffaMoisture)
+    {
+        $tanggal = $ffaMoisture->tanggal?->toDateString();
+        $ffaMoisture->delete();
+
+        return redirect()
+            ->route('analisa-moisture.ffa-moisture', $this->buildAnalysisListQuery($tanggal))
+            ->with('success', 'Data analisa FFA dan Moisture berhasil dihapus.');
+    }
+
+    public function exportAnalisaFfaMoisture(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+
+        $rows = FfaMoisture::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->get()
+            ->map(function (FfaMoisture $row): array {
+                return [
+                    Carbon::parse($row->tanggal)->format('d-m-Y'),
+                    $row->jam,
+                    $row->moisture,
+                    $row->bst1_ffa,
+                    $row->bst2_ffa,
+                    $row->bst3_ffa,
+                    $row->impurities,
+                ];
+            })
+            ->values();
+
+        return $this->downloadAnalysisExport(
+            'Data Analisa FFA dan Moisture',
+            $startDate,
+            $endDate,
+            $rows,
+            ['Tanggal', 'Jam', 'Moisture', 'BST1 (FFA)', 'BST2 (FFA)', 'BST3 (FFA)', 'Impurities'],
+            'FFA_Moisture_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
+    }
+
+    public function analisaSpintestCot(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+
+        $rows = SpintestCot::query()
+            ->with('user')
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->paginate(25)
+            ->appends($request->except('page'));
+
+        return view('process.analisa-moisture.spintest-cot', compact('rows', 'startDate', 'endDate'));
+    }
+
+    public function editAnalisaSpintestCot(SpintestCot $spintestCot)
+    {
+        return view('process.analisa-moisture.edit-spintest-cot', [
+            'row' => $spintestCot,
+        ]);
+    }
+
+    public function updateAnalisaSpintestCot(Request $request, SpintestCot $spintestCot)
+    {
+        $validated = $request->validate([
+            'tanggal' => ['required', 'date'],
+            'jam' => ['required', 'date_format:H:i'],
+            'oil' => ['nullable', 'numeric'],
+            'emulsi' => ['nullable', 'numeric'],
+            'air' => ['nullable', 'numeric'],
+            'nos' => ['nullable', 'numeric'],
+        ]);
+
+        $spintestCot->update([
+            'tanggal' => $validated['tanggal'],
+            'jam' => $validated['jam'],
+            'oil' => $this->numericOrZero($validated['oil'] ?? null),
+            'emulsi' => $this->numericOrZero($validated['emulsi'] ?? null),
+            'air' => $this->numericOrZero($validated['air'] ?? null),
+            'nos' => $this->numericOrZero($validated['nos'] ?? null),
+        ]);
+
+        return redirect()
+            ->route('analisa-moisture.spintest-cot', $this->buildAnalysisListQuery($spintestCot->tanggal?->toDateString()))
+            ->with('success', 'Data analisa Spintest COT berhasil diperbarui.');
+    }
+
+    public function destroyAnalisaSpintestCot(SpintestCot $spintestCot)
+    {
+        $tanggal = $spintestCot->tanggal?->toDateString();
+        $spintestCot->delete();
+
+        return redirect()
+            ->route('analisa-moisture.spintest-cot', $this->buildAnalysisListQuery($tanggal))
+            ->with('success', 'Data analisa Spintest COT berhasil dihapus.');
+    }
+
+    public function exportAnalisaSpintestCot(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+
+        $rows = SpintestCot::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->get()
+            ->map(function (SpintestCot $row): array {
+                return [
+                    Carbon::parse($row->tanggal)->format('d-m-Y'),
+                    $row->jam,
+                    $row->oil,
+                    $row->emulsi,
+                    $row->air,
+                    $row->nos,
+                ];
+            })
+            ->values();
+
+        return $this->downloadAnalysisExport(
+            'Data Analisa Spintest COT',
+            $startDate,
+            $endDate,
+            $rows,
+            ['Tanggal', 'Jam', 'OIL', 'EMULSI', 'AIR', 'NOS'],
+            'Spintest_COT_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
+    }
+
+    public function analisaSpintestUnderflowCst(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+        $selectedMachine = trim((string) $request->input('machine_name', 'all'));
+
+        if ($selectedMachine !== 'all' && !in_array($selectedMachine, $this->getCstMachinesForOffice(), true)) {
+            $selectedMachine = 'all';
+        }
+
+        $rows = SpintestCst::query()
+            ->with('user')
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('machine_name')
+            ->paginate(25)
+            ->appends($request->except('page'));
+
+        return view('process.analisa-moisture.spintest-underflow-cst', [
+            'rows' => $rows,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'machineOptions' => $this->getCstMachinesForOffice(),
+            'selectedMachine' => $selectedMachine,
+        ]);
+    }
+
+    public function editAnalisaSpintestUnderflowCst(SpintestCst $spintestCst)
+    {
+        return view('process.analisa-moisture.edit-spintest-underflow-cst', [
+            'row' => $spintestCst,
+            'machineOptions' => $this->getCstMachinesForOffice(),
+        ]);
+    }
+
+    public function updateAnalisaSpintestUnderflowCst(Request $request, SpintestCst $spintestCst)
+    {
+        $validated = $request->validate([
+            'tanggal' => ['required', 'date'],
+            'jam' => ['required', 'date_format:H:i'],
+            'machine_name' => ['required', Rule::in($this->getCstMachinesForOffice())],
+            'oil' => ['nullable', 'numeric'],
+            'emulsi' => ['nullable', 'numeric'],
+            'air' => ['nullable', 'numeric'],
+            'nos' => ['nullable', 'numeric'],
+        ]);
+
+        $spintestCst->update([
+            'tanggal' => $validated['tanggal'],
+            'jam' => $validated['jam'],
+            'machine_name' => $validated['machine_name'],
+            'oil' => $this->numericOrZero($validated['oil'] ?? null),
+            'emulsi' => $this->numericOrZero($validated['emulsi'] ?? null),
+            'air' => $this->numericOrZero($validated['air'] ?? null),
+            'nos' => $this->numericOrZero($validated['nos'] ?? null),
+        ]);
+
+        return redirect()
+            ->route('analisa-moisture.spintest-underflow-cst', $this->buildAnalysisListQuery($spintestCst->tanggal?->toDateString(), $spintestCst->machine_name))
+            ->with('success', 'Data analisa Spintest Underflow CST berhasil diperbarui.');
+    }
+
+    public function destroyAnalisaSpintestUnderflowCst(SpintestCst $spintestCst)
+    {
+        $tanggal = $spintestCst->tanggal?->toDateString();
+        $machineName = $spintestCst->machine_name;
+        $spintestCst->delete();
+
+        return redirect()
+            ->route('analisa-moisture.spintest-underflow-cst', $this->buildAnalysisListQuery($tanggal, $machineName))
+            ->with('success', 'Data analisa Spintest Underflow CST berhasil dihapus.');
+    }
+
+    public function exportAnalisaSpintestUnderflowCst(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+        $selectedMachine = trim((string) $request->input('machine_name', 'all'));
+
+        if ($selectedMachine !== 'all' && !in_array($selectedMachine, $this->getCstMachinesForOffice(), true)) {
+            $selectedMachine = 'all';
+        }
+
+        $rows = SpintestCst::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('machine_name')
+            ->get()
+            ->map(function (SpintestCst $row): array {
+                return [
+                    Carbon::parse($row->tanggal)->format('d-m-Y'),
+                    $row->jam,
+                    $row->machine_name,
+                    $row->oil,
+                    $row->emulsi,
+                    $row->air,
+                    $row->nos,
+                ];
+            })
+            ->values();
+
+        return $this->downloadAnalysisExport(
+            'Data Analisa Spintest Underflow CST',
+            $startDate,
+            $endDate,
+            $rows,
+            ['Tanggal', 'Jam', 'Mesin', 'OIL', 'EMULSI', 'AIR', 'NOS'],
+            'Spintest_CST_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
+    }
+
+    public function analisaSpintestFeedDecanter(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+        $selectedMachine = trim((string) $request->input('machine_name', 'all'));
+
+        if ($selectedMachine !== 'all' && !in_array($selectedMachine, $this->getDecanterMachinesForOffice(), true)) {
+            $selectedMachine = 'all';
+        }
+
+        $rows = SpintestFeedDecanter::query()
+            ->with('user')
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('machine_name')
+            ->paginate(25)
+            ->appends($request->except('page'));
+
+        return view('process.analisa-moisture.spintest-feed-decanter', [
+            'rows' => $rows,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'machineOptions' => $this->getDecanterMachinesForOffice(),
+            'selectedMachine' => $selectedMachine,
+        ]);
+    }
+
+    public function editAnalisaSpintestFeedDecanter(SpintestFeedDecanter $spintestFeedDecanter)
+    {
+        return view('process.analisa-moisture.edit-spintest-feed-decanter', [
+            'row' => $spintestFeedDecanter,
+            'machineOptions' => $this->getDecanterMachinesForOffice(),
+        ]);
+    }
+
+    public function updateAnalisaSpintestFeedDecanter(Request $request, SpintestFeedDecanter $spintestFeedDecanter)
+    {
+        $validated = $request->validate([
+            'tanggal' => ['required', 'date'],
+            'jam' => ['required', 'date_format:H:i'],
+            'machine_name' => ['required', Rule::in($this->getDecanterMachinesForOffice())],
+            'oil' => ['nullable', 'numeric'],
+            'emulsi' => ['nullable', 'numeric'],
+            'air' => ['nullable', 'numeric'],
+            'nos' => ['nullable', 'numeric'],
+        ]);
+
+        $spintestFeedDecanter->update([
+            'tanggal' => $validated['tanggal'],
+            'jam' => $validated['jam'],
+            'machine_name' => $validated['machine_name'],
+            'oil' => $this->numericOrZero($validated['oil'] ?? null),
+            'emulsi' => $this->numericOrZero($validated['emulsi'] ?? null),
+            'air' => $this->numericOrZero($validated['air'] ?? null),
+            'nos' => $this->numericOrZero($validated['nos'] ?? null),
+        ]);
+
+        return redirect()
+            ->route('analisa-moisture.spintest-feed-decanter', $this->buildAnalysisListQuery($spintestFeedDecanter->tanggal?->toDateString(), $spintestFeedDecanter->machine_name))
+            ->with('success', 'Data analisa Spintest Feed Decanter berhasil diperbarui.');
+    }
+
+    public function destroyAnalisaSpintestFeedDecanter(SpintestFeedDecanter $spintestFeedDecanter)
+    {
+        $tanggal = $spintestFeedDecanter->tanggal?->toDateString();
+        $machineName = $spintestFeedDecanter->machine_name;
+        $spintestFeedDecanter->delete();
+
+        return redirect()
+            ->route('analisa-moisture.spintest-feed-decanter', $this->buildAnalysisListQuery($tanggal, $machineName))
+            ->with('success', 'Data analisa Spintest Feed Decanter berhasil dihapus.');
+    }
+
+    public function exportAnalisaSpintestFeedDecanter(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+        $selectedMachine = trim((string) $request->input('machine_name', 'all'));
+
+        if ($selectedMachine !== 'all' && !in_array($selectedMachine, $this->getDecanterMachinesForOffice(), true)) {
+            $selectedMachine = 'all';
+        }
+
+        $rows = SpintestFeedDecanter::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('machine_name')
+            ->get()
+            ->map(function (SpintestFeedDecanter $row): array {
+                return [
+                    Carbon::parse($row->tanggal)->format('d-m-Y'),
+                    $row->jam,
+                    $row->machine_name,
+                    $row->oil,
+                    $row->emulsi,
+                    $row->air,
+                    $row->nos,
+                ];
+            })
+            ->values();
+
+        return $this->downloadAnalysisExport(
+            'Data Analisa Spintest Feed Decanter',
+            $startDate,
+            $endDate,
+            $rows,
+            ['Tanggal', 'Jam', 'Mesin', 'OIL', 'EMULSI', 'AIR', 'NOS'],
+            'Spintest_Feed_Decanter_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
+    }
+
+    public function analisaSpintestLightPhase(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+        $selectedMachine = trim((string) $request->input('machine_name', 'all'));
+
+        if ($selectedMachine !== 'all' && !in_array($selectedMachine, $this->getLightPhaseMachinesForOffice(), true)) {
+            $selectedMachine = 'all';
+        }
+
+        $rows = SpintestLightPhase::query()
+            ->with('user')
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('machine_name')
+            ->paginate(25)
+            ->appends($request->except('page'));
+
+        return view('process.analisa-moisture.spintest-light-phase', [
+            'rows' => $rows,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'machineOptions' => $this->getLightPhaseMachinesForOffice(),
+            'selectedMachine' => $selectedMachine,
+        ]);
+    }
+
+    public function editAnalisaSpintestLightPhase(SpintestLightPhase $spintestLightPhase)
+    {
+        return view('process.analisa-moisture.edit-spintest-light-phase', [
+            'row' => $spintestLightPhase,
+            'machineOptions' => $this->getLightPhaseMachinesForOffice(),
+        ]);
+    }
+
+    public function updateAnalisaSpintestLightPhase(Request $request, SpintestLightPhase $spintestLightPhase)
+    {
+        $validated = $request->validate([
+            'tanggal' => ['required', 'date'],
+            'jam' => ['required', 'date_format:H:i'],
+            'machine_name' => ['required', Rule::in($this->getLightPhaseMachinesForOffice())],
+            'oil' => ['nullable', 'numeric'],
+            'emulsi' => ['nullable', 'numeric'],
+            'air' => ['nullable', 'numeric'],
+            'nos' => ['nullable', 'numeric'],
+        ]);
+
+        $spintestLightPhase->update([
+            'tanggal' => $validated['tanggal'],
+            'jam' => $validated['jam'],
+            'machine_name' => $validated['machine_name'],
+            'oil' => $this->numericOrZero($validated['oil'] ?? null),
+            'emulsi' => $this->numericOrZero($validated['emulsi'] ?? null),
+            'air' => $this->numericOrZero($validated['air'] ?? null),
+            'nos' => $this->numericOrZero($validated['nos'] ?? null),
+        ]);
+
+        return redirect()
+            ->route('analisa-moisture.spintest-light-phase', $this->buildAnalysisListQuery($spintestLightPhase->tanggal?->toDateString(), $spintestLightPhase->machine_name))
+            ->with('success', 'Data analisa Spintest Light Phase berhasil diperbarui.');
+    }
+
+    public function destroyAnalisaSpintestLightPhase(SpintestLightPhase $spintestLightPhase)
+    {
+        $tanggal = $spintestLightPhase->tanggal?->toDateString();
+        $machineName = $spintestLightPhase->machine_name;
+        $spintestLightPhase->delete();
+
+        return redirect()
+            ->route('analisa-moisture.spintest-light-phase', $this->buildAnalysisListQuery($tanggal, $machineName))
+            ->with('success', 'Data analisa Spintest Light Phase berhasil dihapus.');
+    }
+
+    public function exportAnalisaSpintestLightPhase(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+        $selectedMachine = trim((string) $request->input('machine_name', 'all'));
+
+        if ($selectedMachine !== 'all' && !in_array($selectedMachine, $this->getLightPhaseMachinesForOffice(), true)) {
+            $selectedMachine = 'all';
+        }
+
+        $rows = SpintestLightPhase::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('machine_name')
+            ->get()
+            ->map(function (SpintestLightPhase $row): array {
+                return [
+                    Carbon::parse($row->tanggal)->format('d-m-Y'),
+                    $row->jam,
+                    $row->machine_name,
+                    $row->oil,
+                    $row->emulsi,
+                    $row->air,
+                    $row->nos,
+                ];
+            })
+            ->values();
+
+        return $this->downloadAnalysisExport(
+            'Data Analisa Spintest Light Phase',
+            $startDate,
+            $endDate,
+            $rows,
+            ['Tanggal', 'Jam', 'Mesin', 'OIL', 'EMULSI', 'AIR', 'NOS'],
+            'Spintest_Light_Phase_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── LAP JANGKOS ───────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public function lapJangkosInputUsb()
+    {
+        return view('process.lap-jangkos.input-usb', [
+            'rowNumbers' => $this->getUsbRowNumbersForOffice(),
+            'shiftOptions' => [1, 2],
+        ]);
+    }
+
+    public function lapJangkosStoreUsb(Request $request)
+    {
+        $validated = $request->validate([
+            'rows' => ['required', 'array', 'size:' . count($this->getUsbRowNumbersForOffice())],
+            'rows.*.tanggal' => ['nullable', 'date'],
+            'rows.*.jam' => ['nullable', 'date_format:H:i'],
+            'rows.*.shift' => ['nullable', Rule::in([1, 2, '1', '2'])],
+            'rows.*.diamati_jlh_janjang' => ['nullable', 'numeric', 'min:0'],
+            'rows.*.lolos_jlh_janjang' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $savedCount = 0;
+        $userId = auth()->id();
+        $createdBy = (string) (auth()->user()->name ?? 'System');
+
+        DB::transaction(function () use ($validated, $userId, $createdBy, &$savedCount) {
+            foreach ($this->getUsbRowNumbersForOffice() as $index) {
+                $row = $validated['rows'][$index] ?? [];
+
+                if (!$this->hasAnyMeaningfulValue($row)) {
+                    continue;
+                }
+
+                $diamati = $this->numericOrZero($row['diamati_jlh_janjang'] ?? null);
+                $lolos = $this->numericOrZero($row['lolos_jlh_janjang'] ?? null);
+                $persenUsb = $diamati > 0 ? round(($lolos / $diamati) * 100, 2) : 0;
+
+                AnalisaUsb::create([
+                    'user_id' => $userId,
+                    'created_by' => $createdBy,
+                    'tanggal' => $row['tanggal'] ?? now()->toDateString(),
+                    'jam' => $row['jam'] ?? now()->format('H:i'),
+                    'shift' => (int) ($row['shift'] ?? 1),
+                    'no_rebusan' => $index,
+                    'diamati_jlh_janjang' => $diamati,
+                    'lolos_jlh_janjang' => $lolos,
+                    'persen_usb' => $persenUsb,
+                ]);
+
+                $savedCount++;
+            }
+        });
+
+        if ($savedCount === 0) {
+            throw ValidationException::withMessages([
+                'rows' => 'Minimal satu form rebusan harus diisi agar data bisa disimpan.',
+            ]);
+        }
+
+        return redirect()->route('lap-jangkos.data-usb')
+            ->with('success', 'Data USB berhasil disimpan.');
+    }
+
+    public function lapJangkosDataUsb(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $rowNumbers = $this->getUsbRowNumbersForOffice();
+        $officeScope = $this->getUserOfficeScope();
+
+        $records = AnalisaUsb::query()
+            ->with('user')
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('no_rebusan')
+            ->orderBy('id')
+            ->get();
+
+        [$detailRows] = $this->buildUsbReportData($records, $startDate, $endDate, $rowNumbers);
+
+        return view('process.lap-jangkos.data-usb', [
+            'detailRows' => $detailRows,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'rowNumbers' => $rowNumbers,
+        ]);
+    }
+
+    public function lapJangkosEditUsb(AnalisaUsb $analisaUsb)
+    {
+        return view('process.lap-jangkos.edit-usb', [
+            'record' => $analisaUsb,
+            'shiftOptions' => [1, 2],
+            'rowNumbers' => $this->getUsbRowNumbersForOffice(),
+        ]);
+    }
+
+    public function lapJangkosUpdateUsb(Request $request, AnalisaUsb $analisaUsb)
+    {
+        $validated = $request->validate([
+            'tanggal' => ['required', 'date'],
+            'jam' => ['required', 'date_format:H:i'],
+            'shift' => ['required', Rule::in([1, 2, '1', '2'])],
+            'diamati_jlh_janjang' => ['required', 'numeric', 'min:0'],
+            'lolos_jlh_janjang' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $diamati = (float) $validated['diamati_jlh_janjang'];
+        $lolos = (float) $validated['lolos_jlh_janjang'];
+        $persenUsb = $diamati > 0 ? round(($lolos / $diamati) * 100, 2) : 0;
+
+        $analisaUsb->update([
+            'tanggal' => $validated['tanggal'],
+            'jam' => $validated['jam'],
+            'shift' => (int) $validated['shift'],
+            'diamati_jlh_janjang' => $diamati,
+            'lolos_jlh_janjang' => $lolos,
+            'persen_usb' => $persenUsb,
+        ]);
+
+        return redirect()->route('lap-jangkos.data-usb')
+            ->with('success', 'Data USB berhasil diperbarui.');
+    }
+
+    public function lapJangkosDestroyUsb(AnalisaUsb $analisaUsb)
+    {
+        $analisaUsb->delete();
+
+        return redirect()->route('lap-jangkos.data-usb')
+            ->with('success', 'Data USB berhasil dihapus.');
+    }
+
+    public function lapJangkosRekapUsb(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $rowNumbers = $this->getUsbRowNumbersForOffice();
+        $officeScope = $this->getUserOfficeScope();
+
+        $records = AnalisaUsb::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('no_rebusan')
+            ->orderBy('id')
+            ->get();
+
+        [, $recapData] = $this->buildUsbReportData($records, $startDate, $endDate, $rowNumbers);
+
+        return view('process.lap-jangkos.rekap-usb', [
+            'recapData' => $recapData,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'rowNumbers' => $rowNumbers,
+        ]);
+    }
+
+    public function lapJangkosRekapUsbExport(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $rowNumbers = $this->getUsbRowNumbersForOffice();
+        $officeScope = $this->getUserOfficeScope();
+
+        $records = AnalisaUsb::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->orderBy('tanggal')
+            ->orderBy('jam')
+            ->orderBy('no_rebusan')
+            ->orderBy('id')
+            ->get();
+
+        [, $recapData] = $this->buildUsbReportData($records, $startDate, $endDate, $rowNumbers);
+
+        $headings = array_merge(
+            ['No Rebusan'],
+            collect($recapData['dates'])->map(fn(string $date): string => Carbon::parse($date)->format('d-m-Y'))->all()
+        );
+        $rows = collect();
+
+        foreach ($recapData['row_numbers'] as $rowNumber) {
+            $row = ['no_rebusan' => $rowNumber];
+            foreach ($recapData['dates'] as $date) {
+                $value = $recapData['matrix'][$rowNumber][$date] ?? null;
+                $row[$date] = $value === null ? null : round((float) $value, 2);
+            }
+            $rows->push($row);
+        }
+
+        $avgRow = ['no_rebusan' => 'Avg'];
+        foreach ($recapData['dates'] as $date) {
+            $value = $recapData['date_averages'][$date] ?? null;
+            $avgRow[$date] = $value === null ? null : round((float) $value, 2);
+        }
+        $rows->push($avgRow);
+
+        return $this->downloadAnalysisExport(
+            'Rekap USB',
+            $startDate,
+            $endDate,
+            $rows,
+            $headings,
+            'Rekap_USB_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
+    }
+
+    private function buildUsbReportData(Collection $records, ?string $startDate = null, ?string $endDate = null, ?array $rowNumbers = null): array
+    {
+        $rowNumbers = $rowNumbers ?? $this->getUsbRowNumbersForOffice();
+        $dateKeys = [];
+
+        if ($startDate !== null && $endDate !== null) {
+            foreach (\Carbon\CarbonPeriod::create($startDate, $endDate) as $date) {
+                $dateKeys[] = $date->format('Y-m-d');
+            }
+        } else {
+            $dateKeys = $records
+                ->pluck('tanggal')
+                ->filter()
+                ->map(fn($date) => Carbon::parse($date)->toDateString())
+                ->unique()
+                ->sort()
+                ->values()
+                ->all();
+        }
+
+        $dailyGrouped = [];
+        $dailyAllValues = [];
+
+        foreach ($records as $record) {
+            $dateKey = Carbon::parse($record->tanggal)->toDateString();
+            $rowNumber = (int) $record->no_rebusan;
+
+            if ($rowNumber < 1 || $rowNumber > 8) {
+                continue;
+            }
+
+            $dailyGrouped[$dateKey][$rowNumber][] = (float) $record->persen_usb;
+            $dailyAllValues[$dateKey][] = (float) $record->persen_usb;
+        }
+
+        $dailyRowAverages = [];
+        foreach ($dailyGrouped as $dateKey => $rows) {
+            foreach ($rows as $rowNumber => $values) {
+                $dailyRowAverages[$dateKey][$rowNumber] = round(array_sum($values) / count($values), 2);
+            }
+        }
+
+        $dailyAllAverages = [];
+        foreach ($dailyAllValues as $dateKey => $values) {
+            $dailyAllAverages[$dateKey] = round(array_sum($values) / count($values), 2);
+        }
+
+        $detailRows = $records->map(function (AnalisaUsb $record) use ($dailyAllAverages): array {
+            $dateKey = Carbon::parse($record->tanggal)->toDateString();
+            $rowNumber = (int) $record->no_rebusan;
+
+            return [
+                'id' => (int) $record->id,
+                'tanggal' => Carbon::parse($record->tanggal)->format('d-m-Y'),
+                'jam' => substr((string) $record->jam, 0, 5),
+                'created_by' => (string) ($record->created_by ?: ($record->user?->name ?? '-')),
+                'shift' => (int) $record->shift,
+                'no_rebusan' => $rowNumber,
+                'diamati_jlh_janjang' => (float) $record->diamati_jlh_janjang,
+                'lolos_jlh_janjang' => (float) $record->lolos_jlh_janjang,
+                'persen_usb' => (float) $record->persen_usb,
+                'average' => $dailyAllAverages[$dateKey] ?? (float) $record->persen_usb,
+            ];
+        })->values()->all();
+
+        $matrix = [];
+        foreach ($rowNumbers as $rowNumber) {
+            foreach ($dateKeys as $dateKey) {
+                $matrix[$rowNumber][$dateKey] = $dailyRowAverages[$dateKey][$rowNumber] ?? null;
+            }
+        }
+
+        $dateAverages = [];
+        foreach ($dateKeys as $dateKey) {
+            $values = collect($rowNumbers)
+                ->map(fn(int $rowNumber) => $matrix[$rowNumber][$dateKey] ?? null)
+                ->filter(fn($value) => $value !== null)
+                ->values();
+
+            $dateAverages[$dateKey] = $values->isEmpty()
+                ? null
+                : round($values->avg(), 2);
+        }
+
+        $recapData = [
+            'dates' => $dateKeys,
+            'row_numbers' => $rowNumbers,
+            'matrix' => $matrix,
+            'date_averages' => $dateAverages,
+        ];
+
+        return [$detailRows, $recapData];
+    }
+
+    public function oilLossFossInput()
+    {
+        $this->ensureOilFossAvailableForCurrentOffice();
+
+        $operatorOptions = $this->getOperatorOptionsByOffice(auth()->user()->office ?? null, 'oil');
+
+        return view('process.oil-loss-foss.input', [
+            'machineGroups' => $this->oilFossMachineGroups(),
+            'operatorOptions' => $operatorOptions,
+            'defaultOperator' => $this->resolveOilFossOperator($operatorOptions),
+            'shiftOptions' => [1, 2],
+        ]);
+    }
+
+    public function oilLossFossStore(Request $request)
+    {
+        $this->ensureOilFossAvailableForCurrentOffice();
+
+        $operatorOptions = $this->getOperatorOptionsByOffice(auth()->user()->office ?? null, 'oil');
+        $operatorRule = !empty($operatorOptions) ? Rule::in($operatorOptions) : null;
+
+        $validated = $request->validate([
+            'rows' => ['required', 'array'],
+            'rows.*.tanggal' => ['nullable', 'date'],
+            'rows.*.waktu' => ['nullable', 'date_format:H:i'],
+            'rows.*.operator' => array_values(array_filter(['nullable', $operatorRule])),
+            'rows.*.shift' => ['nullable', Rule::in([1, 2, '1', '2'])],
+            'rows.*.moist' => ['nullable', 'numeric', 'min:0'],
+            'rows.*.olwb' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $definitions = collect($this->oilFossMachineDefinitions())->keyBy('key');
+        $savedCount = 0;
+        $userId = auth()->id();
+        $createdBy = (string) (auth()->user()->name ?? 'System');
+
+        $defaultOperator = $this->resolveOilFossOperator($operatorOptions);
+
+        DB::transaction(function () use ($validated, $definitions, $userId, $createdBy, $defaultOperator, &$savedCount) {
+            foreach ($validated['rows'] as $rowKey => $row) {
+                if (!$definitions->has($rowKey)) {
+                    continue;
+                }
+
+                $moistRaw = $row['moist'] ?? null;
+                $olwbRaw = $row['olwb'] ?? null;
+
+                $moistFilled = $moistRaw !== null && $moistRaw !== '';
+                $olwbFilled = $olwbRaw !== null && $olwbRaw !== '';
+
+                if (!$moistFilled && !$olwbFilled) {
+                    continue;
+                }
+
+                $moist = $this->nullableNumeric($moistRaw);
+                $olwb = $this->nullableNumeric($olwbRaw);
+
+                $hasNonZeroValue = ($moistFilled && (float) $moist !== 0.0)
+                    || ($olwbFilled && (float) $olwb !== 0.0);
+
+                if (!$hasNonZeroValue && !($moistFilled && $olwbFilled)) {
+                    continue;
+                }
+
+                $definition = $definitions->get($rowKey);
+                $operator = trim((string) ($row['operator'] ?? $defaultOperator));
+                if ($operator === '') {
+                    $operator = $defaultOperator;
+                }
+
+                OilFoss::create([
+                    'user_id' => $userId,
+                    'created_by' => $createdBy,
+                    'tanggal' => $row['tanggal'] ?? now()->toDateString(),
+                    'waktu' => $row['waktu'] ?? now()->format('H:i'),
+                    'operator' => $operator,
+                    'shift' => (int) ($row['shift'] ?? 1),
+                    'machine_group' => $definition['group'],
+                    'machine_name' => $definition['label'],
+                    'moist' => $moist,
+                    'olwb' => $olwb,
+                ]);
+
+                $savedCount++;
+            }
+        });
+
+        if ($savedCount === 0) {
+            throw ValidationException::withMessages([
+                'rows' => 'Minimal satu form Oil Loss Foss harus terisi agar data dapat disimpan.',
+            ]);
+        }
+
+        return redirect()->route('oil-loss-foss.data')
+            ->with('success', 'Data Oil Loss Foss berhasil disimpan.');
+    }
+
+    public function oilLossFossData(Request $request)
+    {
+        $this->ensureOilFossAvailableForCurrentOffice();
+        $officeScope = $this->getUserOfficeScope();
+
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+
+        $operator = trim((string) $request->input('operator', 'ALL'));
+        if ($operator === '' || strtoupper($operator) === 'ALL') {
+            $operator = 'ALL';
+        }
+
+        $shift = (string) $request->input('shift', 'all');
+        if (!in_array($shift, ['all', '1', '2'], true)) {
+            $shift = 'all';
+        }
+
+        $machineName = trim((string) $request->input('machine_name', 'all'));
+        $definitions = collect($this->oilFossMachineDefinitions());
+        $definitionMap = $definitions
+            ->mapWithKeys(fn(array $definition) => [(string) $definition['label'] => $definition])
+            ->all();
+        $machineOptions = $definitions
+            ->pluck('label')
+            ->values()
+            ->all();
+
+        if ($machineName !== 'all' && !in_array($machineName, $machineOptions, true)) {
+            $machineName = 'all';
+        }
+
+        $rows = OilFoss::query()
+            ->with('user')
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
+            ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))
+            ->when($machineName !== 'all', fn($query) => $query->where('machine_name', $machineName))
+            ->orderByDesc('tanggal')
+            ->orderByDesc('waktu')
+            ->orderBy('machine_name')
+            ->paginate(25)
+            ->appends($request->except('page'));
+
+        $operatorOptions = OilFoss::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereNotNull('operator')
+            ->where('operator', '!=', '')
+            ->select('operator')
+            ->distinct()
+            ->orderBy('operator')
+            ->pluck('operator')
+            ->values()
+            ->all();
+
+        return view('process.oil-loss-foss.data', [
+            'rows' => $rows,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'operator' => $operator,
+            'shift' => $shift,
+            'machineName' => $machineName,
+            'machineOptions' => $machineOptions,
+            'operatorOptions' => $operatorOptions,
+            'definitionMap' => $definitionMap,
+        ]);
+    }
+
+    public function oilLossFossDataExport(Request $request)
+    {
+        $this->ensureOilFossAvailableForCurrentOffice();
+        $officeScope = $this->getUserOfficeScope();
+
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+
+        $operator = trim((string) $request->input('operator', 'ALL'));
+        if ($operator === '' || strtoupper($operator) === 'ALL') {
+            $operator = 'ALL';
+        }
+
+        $shift = (string) $request->input('shift', 'all');
+        if (!in_array($shift, ['all', '1', '2'], true)) {
+            $shift = 'all';
+        }
+
+        $machineName = trim((string) $request->input('machine_name', 'all'));
+        $definitions = collect($this->oilFossMachineDefinitions());
+        $definitionMap = $definitions
+            ->mapWithKeys(fn(array $definition) => [(string) $definition['label'] => $definition])
+            ->all();
+        $machineOptions = $definitions
+            ->pluck('label')
+            ->values()
+            ->all();
+
+        if ($machineName !== 'all' && !in_array($machineName, $machineOptions, true)) {
+            $machineName = 'all';
+        }
+
+        $rows = OilFoss::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
+            ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))
+            ->when($machineName !== 'all', fn($query) => $query->where('machine_name', $machineName))
+            ->orderBy('tanggal')
+            ->orderBy('waktu')
+            ->orderBy('machine_name')
+            ->get()
+            ->map(function (OilFoss $row) use ($definitionMap): array {
+                $code = (string) $row->machine_name;
+                $definition = $definitionMap[$code] ?? null;
+
+                $moist = $row->moist === null ? null : (float) $row->moist;
+                $dmwm = $moist === null ? null : (100 - $moist);
+                $olwb = $row->olwb === null ? null : (float) $row->olwb;
+                $oldb = ($olwb !== null && $dmwm !== null && $dmwm != 0.0)
+                    ? ($olwb / $dmwm)
+                    : null;
+
+                $massPercent = $definition['mass_balance_percent'] ?? null;
+                $massPercent2 = $definition['mass_balance_percent_2'] ?? null;
+                $oilLossesTon = ($olwb !== null && $massPercent !== null)
+                    ? ($olwb * (float) $massPercent)
+                    : null;
+
+                $operatorMap = [
+                    '<=' => '≤',
+                    '>=' => '≥',
+                    '<' => '<',
+                    '>' => '>',
+                    '=' => '=',
+                ];
+
+                $limitOlwb = null;
+                if (($definition['limit_olwb'] ?? null) !== null) {
+                    $symbol = $operatorMap[$definition['limit_olwb_operator'] ?? '<='] ?? ($definition['limit_olwb_operator'] ?? '<=');
+                    $limitOlwb = $symbol . ' ' . number_format((float) $definition['limit_olwb'], 2);
+                }
+
+                $limitOldb = null;
+                if (($definition['limit_oldb'] ?? null) !== null) {
+                    $symbol = $operatorMap[$definition['limit_oldb_operator'] ?? '<='] ?? ($definition['limit_oldb_operator'] ?? '<=');
+                    $limitOldb = $symbol . ' ' . number_format((float) $definition['limit_oldb'], 2);
+                }
+
+                $limitOilLoss = null;
+                if (($definition['limit_oil_losses'] ?? null) !== null) {
+                    $symbol = $operatorMap[$definition['limit_oil_losses_operator'] ?? '<='] ?? ($definition['limit_oil_losses_operator'] ?? '<=');
+                    $limitOilLoss = $symbol . ' ' . number_format((float) $definition['limit_oil_losses'], 2);
+                }
+
+                return [
+                    Carbon::parse($row->tanggal)->format('d-m-Y'),
+                    $code,
+                    $definition['sample_name'] ?? $code,
+                    $moist === null ? null : round($moist, 2),
+                    $dmwm === null ? null : round($dmwm, 2),
+                    $olwb === null ? null : round($olwb, 2),
+                    $limitOlwb,
+                    $oldb === null ? null : round($oldb, 4),
+                    $limitOldb,
+                    $oilLossesTon === null ? null : round($oilLossesTon, 4),
+                    $limitOilLoss,
+                    $massPercent,
+                    $massPercent2,
+                ];
+            })
+            ->values();
+
+        return $this->downloadAnalysisExport(
+            'Data Oil Loss Foss',
+            $startDate,
+            $endDate,
+            $rows,
+            ['Tanggal', 'Kode', 'Nama Sample', 'MOIST (%)', 'DM/WM (%)', 'OLWB (%)', 'LIMIT (%)', 'OLDB (%)', 'LIMIT (%)2', 'OIL LOSSES/TON TBS (%)', 'LIMIT (%)3', '%', '%2'],
+            'Data_Oil_Loss_Foss_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
+    }
+
+    public function oilLossFossRekap(Request $request)
+    {
+        $this->ensureOilFossAvailableForCurrentOffice();
+        $officeScope = $this->getUserOfficeScope();
+
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+
+        $operator = trim((string) $request->input('operator', 'ALL'));
+        if ($operator === '' || strtoupper($operator) === 'ALL') {
+            $operator = 'ALL';
+        }
+
+        $shift = (string) $request->input('shift', 'all');
+        if (!in_array($shift, ['all', '1', '2'], true)) {
+            $shift = 'all';
+        }
+
+        $records = OilFoss::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
+            ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))
+            ->select(
+                DB::raw('DATE(tanggal) as tanggal'),
+                'machine_name',
+                DB::raw('AVG(olwb) as avg_olwb'),
+                DB::raw('COUNT(*) as total_data')
+            )
+            ->groupBy('tanggal', 'machine_name')
+            ->orderBy('tanggal')
+            ->orderBy('machine_name')
+            ->get();
+
+        $dates = $records
+            ->pluck('tanggal')
+            ->filter()
+            ->map(fn($tanggal) => (string) $tanggal)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        $columns = $this->oilFossRekapColumns();
+
+        $matrix = [];
+        foreach ($dates as $date) {
+            $matrix[$date] = [];
+            foreach ($columns as $column) {
+                $matrix[$date][$column['code']] = null;
+            }
+        }
+
+        foreach ($records as $record) {
+            $dateKey = (string) $record->tanggal;
+            $code = (string) $record->machine_name;
+
+            if (!array_key_exists($dateKey, $matrix) || !array_key_exists($code, $matrix[$dateKey])) {
+                continue;
+            }
+
+            $matrix[$dateKey][$code] = round((float) $record->avg_olwb, 2);
+        }
+
+        $grandTotals = [];
+        foreach ($columns as $column) {
+            $code = $column['code'];
+            $values = collect($dates)
+                ->map(fn($date) => $matrix[$date][$code] ?? null)
+                ->filter(fn($value) => $value !== null)
+                ->values();
+
+            $grandTotals[$code] = $values->isEmpty() ? null : round((float) $values->avg(), 2);
+        }
+
+        $operatorOptions = OilFoss::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereNotNull('operator')
+            ->where('operator', '!=', '')
+            ->select('operator')
+            ->distinct()
+            ->orderBy('operator')
+            ->pluck('operator')
+            ->values()
+            ->all();
+
+        return view('process.oil-loss-foss.rekap', [
+            'dates' => $dates,
+            'columns' => $columns,
+            'matrix' => $matrix,
+            'grandTotals' => $grandTotals,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'operator' => $operator,
+            'operatorOptions' => $operatorOptions,
+            'shift' => $shift,
+        ]);
+    }
+
+    public function oilLossFossRekapExport(Request $request)
+    {
+        $this->ensureOilFossAvailableForCurrentOffice();
+        $officeScope = $this->getUserOfficeScope();
+
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+
+        $operator = trim((string) $request->input('operator', 'ALL'));
+        if ($operator === '' || strtoupper($operator) === 'ALL') {
+            $operator = 'ALL';
+        }
+
+        $shift = (string) $request->input('shift', 'all');
+        if (!in_array($shift, ['all', '1', '2'], true)) {
+            $shift = 'all';
+        }
+
+        $records = OilFoss::query()
+            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
+            ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))
+            ->select(
+                DB::raw('DATE(tanggal) as tanggal'),
+                'machine_name',
+                DB::raw('AVG(olwb) as avg_olwb')
+            )
+            ->groupBy('tanggal', 'machine_name')
+            ->orderBy('tanggal')
+            ->orderBy('machine_name')
+            ->get();
+
+        $dates = $records
+            ->pluck('tanggal')
+            ->filter()
+            ->map(fn($tanggal) => (string) $tanggal)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        $columns = $this->oilFossRekapColumns();
+
+        $matrix = [];
+        foreach ($dates as $date) {
+            $matrix[$date] = [];
+            foreach ($columns as $column) {
+                $matrix[$date][$column['code']] = null;
+            }
+        }
+
+        foreach ($records as $record) {
+            $dateKey = (string) $record->tanggal;
+            $code = (string) $record->machine_name;
+
+            if (!array_key_exists($dateKey, $matrix) || !array_key_exists($code, $matrix[$dateKey])) {
+                continue;
+            }
+
+            $matrix[$dateKey][$code] = round((float) $record->avg_olwb, 2);
+        }
+
+        $grandTotals = [];
+        foreach ($columns as $column) {
+            $code = $column['code'];
+            $values = collect($dates)
+                ->map(fn($date) => $matrix[$date][$code] ?? null)
+                ->filter(fn($value) => $value !== null)
+                ->values();
+
+            $grandTotals[$code] = $values->isEmpty() ? null : round((float) $values->avg(), 2);
+        }
+
+        $rows = collect($dates)
+            ->map(function (string $date) use ($columns, $matrix): array {
+                $cells = [$date];
+
+                foreach ($columns as $column) {
+                    $cells[] = $matrix[$date][$column['code']] ?? null;
+                }
+
+                return $cells;
+            })
+            ->values();
+
+        $grandTotalRow = ['Grand Total'];
+        foreach ($columns as $column) {
+            $grandTotalRow[] = $grandTotals[$column['code']] ?? null;
+        }
+        $rows->push($grandTotalRow);
+
+        return $this->downloadAnalysisExport(
+            'Rekap Oil Loss Foss',
+            $startDate,
+            $endDate,
+            $rows,
+            array_merge(['Row Labels'], array_map(fn(array $column) => $column['sample_name'], $columns)),
+            'Rekap_Oil_Loss_Foss_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
+    }
+
+    public function oilLossFossEdit(OilFoss $oilFoss)
+    {
+        $this->ensureOilFossAvailableForCurrentOffice();
+        abort_unless(auth()->user()?->hasRole('Super Admin'), 403, 'Akses ditolak.');
+
+        return view('process.oil-loss-foss.edit', [
+            'row' => $oilFoss,
+            'operatorOptions' => $this->getOperatorOptionsByOffice($oilFoss->user?->office ?? auth()->user()->office ?? null, 'oil'),
+            'shiftOptions' => [1, 2],
+        ]);
+    }
+
+    public function oilLossFossUpdate(Request $request, OilFoss $oilFoss)
+    {
+        $this->ensureOilFossAvailableForCurrentOffice();
+        abort_unless(auth()->user()?->hasRole('Super Admin'), 403, 'Akses ditolak.');
+
+        $validated = $request->validate([
+            'tanggal' => ['required', 'date'],
+            'waktu' => ['required', 'date_format:H:i'],
+            'operator' => ['nullable', 'string', 'max:255'],
+            'shift' => ['required', Rule::in([1, 2, '1', '2'])],
+            'moist' => ['nullable', 'numeric', 'min:0'],
+            'olwb' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $operatorOptions = $this->getOperatorOptionsByOffice($oilFoss->user?->office ?? auth()->user()->office ?? null, 'oil');
+        $operator = trim((string) ($validated['operator'] ?? ''));
+        if ($operator === '' && !empty($operatorOptions)) {
+            $operator = (string) $operatorOptions[0];
+        }
+
+        $oilFoss->update([
+            'tanggal' => $validated['tanggal'],
+            'waktu' => $validated['waktu'],
+            'operator' => $operator,
+            'shift' => (int) $validated['shift'],
+            'moist' => $this->nullableNumeric($validated['moist'] ?? null),
+            'olwb' => $this->nullableNumeric($validated['olwb'] ?? null),
+        ]);
+
+        return redirect()
+            ->route('oil-loss-foss.data', $this->buildAnalysisListQuery($oilFoss->tanggal?->toDateString()))
+            ->with('success', 'Data Oil Loss Foss berhasil diperbarui.');
+    }
+
+    public function oilLossFossDestroy(OilFoss $oilFoss)
+    {
+        $this->ensureOilFossAvailableForCurrentOffice();
+        abort_unless(auth()->user()?->hasRole('Super Admin'), 403, 'Akses ditolak.');
+
+        $tanggal = $oilFoss->tanggal?->toDateString();
+        $oilFoss->delete();
+
+        return redirect()
+            ->route('oil-loss-foss.data', $this->buildAnalysisListQuery($tanggal))
+            ->with('success', 'Data Oil Loss Foss berhasil dihapus.');
+    }
+
+    private function numericOrZero(mixed $value): float
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+
+        return (float) $value;
+    }
+
+    private function stringOrDefault(mixed $value, string $default): string
+    {
+        $stringValue = trim((string) ($value ?? ''));
+
+        return $stringValue !== '' ? $stringValue : $default;
+    }
+
+    private function nullableNumeric(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (float) $value;
+    }
+
+    private function resolveCurrentOffice(?string $office = null): string
+    {
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? 'YBS')));
+
+        return $officeCode !== '' ? $officeCode : 'YBS';
+    }
+
+    private function isSunOffice(?string $office = null): bool
+    {
+        return $this->resolveCurrentOffice($office) === 'SUN';
+    }
+
+    private function getCstMachinesForOffice(?string $office = null): array
+    {
+        return $this->isSunOffice($office) ? self::CST_MACHINES_SUN : self::CST_MACHINES_YBS;
+    }
+
+    private function getDecanterMachinesForOffice(?string $office = null): array
+    {
+        return $this->isSunOffice($office) ? self::DECANTER_MACHINES_SUN : self::DECANTER_MACHINES_YBS;
+    }
+
+    private function getLightPhaseMachinesForOffice(?string $office = null): array
+    {
+        return $this->isSunOffice($office) ? self::LIGHT_PHASE_MACHINES_SUN : self::LIGHT_PHASE_MACHINES_YBS;
+    }
+
+    private function getUsbRowNumbersForOffice(?string $office = null): array
+    {
+        return $this->isSunOffice($office) ? self::USB_ROW_NUMBERS_SUN : self::USB_ROW_NUMBERS_YBS;
+    }
+
+    private function ensureOilFossAvailableForCurrentOffice(): void
+    {
+        if ($this->isSunOffice()) {
+            abort(404);
+        }
+    }
+
+    private function oilFossMachineGroups(): array
+    {
+        $groups = [];
+
+        foreach ($this->oilFossMachineDefinitions() as $definition) {
+            $group = $definition['group'];
+            if (!isset($groups[$group])) {
+                $groups[$group] = [];
+            }
+
+            $groups[$group][] = $definition;
+        }
+
+        return $groups;
+    }
+
+    private function oilFossRekapColumns(): array
+    {
+        return [
+            ['code' => 'COT IN', 'sample_name' => 'COT INLET to COT 2'],
+            ['code' => 'COT 2', 'sample_name' => 'U/F COT 2'],
+            ['code' => 'CST', 'sample_name' => 'U/F CST'],
+            ['code' => 'FD1', 'sample_name' => 'FEED DECANTER ALVA LAFAL 1'],
+            ['code' => 'FD2', 'sample_name' => 'FEED DECANTER  IHI 2'],
+            ['code' => 'FD3', 'sample_name' => 'FEED DECANTER ALVA LAFAL 2'],
+            ['code' => 'FD4', 'sample_name' => 'FEED DECANTER FLOTTWEG'],
+            ['code' => 'HP1', 'sample_name' => 'HEAVY PHASE ALFA LAVAL 1'],
+            ['code' => 'HP2', 'sample_name' => 'HEAVY PHASE IHI'],
+            ['code' => 'HP3', 'sample_name' => 'HEAVY PHASE ALFA LAVAL 2'],
+            ['code' => 'HP4', 'sample_name' => 'HEAVY PHASE FLOTTWEG'],
+            ['code' => 'SD1', 'sample_name' => 'SOLID ALFA LAVAL 1'],
+            ['code' => 'SD2', 'sample_name' => 'SOLID IHI'],
+            ['code' => 'SD3', 'sample_name' => 'SOLID ALFA LAVAL 2'],
+            ['code' => 'SD4', 'sample_name' => 'SOLID FLOTTWEG'],
+            ['code' => 'HPL1', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 1'],
+            ['code' => 'HPL2', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 2'],
+            ['code' => 'HPL3', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 3'],
+            ['code' => 'FE', 'sample_name' => 'FINAL EFFLUENT'],
+            ['code' => 'FBP1', 'sample_name' => 'FIBRE EX BUNCH PRESS 1'],
+            ['code' => 'FBP2', 'sample_name' => 'FIBRE EX BUNCH PRESS 2'],
+            ['code' => 'FBP3', 'sample_name' => 'FIBRE EX BUNCH PRESS 3'],
+            ['code' => 'FBP4', 'sample_name' => 'FIBRE EX BUNCH PRESS 4'],
+            ['code' => 'FBP5', 'sample_name' => 'FIBRE EX BUNCH PRESS 5'],
+            ['code' => 'FP1', 'sample_name' => 'FIBRE PRESS 1'],
+            ['code' => 'FP2', 'sample_name' => 'FIBRE PRESS 2'],
+            ['code' => 'FP3', 'sample_name' => 'FIBRE PRESS 3'],
+            ['code' => 'FP4', 'sample_name' => 'FIBRE PRESS 4'],
+            ['code' => 'FP5', 'sample_name' => 'FIBRE PRESS 5'],
+            ['code' => 'FP6', 'sample_name' => 'FIBRE PRESS 6'],
+            ['code' => 'FP7', 'sample_name' => 'FIBRE PRESS 7'],
+            ['code' => 'FP8', 'sample_name' => 'FIBRE PRESS 8'],
+            ['code' => 'FP9', 'sample_name' => 'FIBRE PRESS 9'],
+        ];
+    }
+
+    private function resolveOilFossRekapLabel(?string $label): ?string
+    {
+        if ($label === null || trim($label) === '') {
+            return null;
+        }
+
+        $normalizedCurrent = $this->normalizeOilFossLabel($label);
+        $labelMap = $this->oilFossRekapLabelMap();
+
+        if (isset($labelMap[$normalizedCurrent])) {
+            return $labelMap[$normalizedCurrent];
+        }
+
+        return null;
+    }
+
+    private function oilFossRekapLabelMap(): array
+    {
+        $map = [];
+
+        foreach ($this->oilFossMachineDefinitions() as $definition) {
+            $sampleName = (string) ($definition['sample_name'] ?? $definition['label']);
+            $label = (string) ($definition['label'] ?? $sampleName);
+
+            $map[$this->normalizeOilFossLabel($label)] = $sampleName;
+            $map[$this->normalizeOilFossLabel($sampleName)] = $sampleName;
+        }
+
+        return $map;
+    }
+
+    private function normalizeOilFossLabel(string $label): string
+    {
+        $normalized = strtoupper(trim($label));
+        $normalized = preg_replace('/\s+/', ' ', $normalized) ?? $normalized;
+        $normalized = str_replace('ALFA', 'ALVA', $normalized);
+        $normalized = str_replace('LAVAL', 'LAFAL', $normalized);
+
+        return $normalized;
+    }
+
+    private function oilFossMachineDefinitions(): array
+    {
+        return [
+            ['key' => 'cot_in', 'group' => 'COT', 'label' => 'COT IN', 'sample_name' => 'COT INLET to COT 2', 'limit_olwb_operator' => '>', 'limit_olwb' => 45, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'cot_2', 'group' => 'COT', 'label' => 'COT 2', 'sample_name' => 'U/F COT 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 8, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'cst', 'group' => 'CST', 'label' => 'CST', 'sample_name' => 'U/F CST', 'limit_olwb_operator' => '<=', 'limit_olwb' => 6, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'fd_1', 'group' => 'FD', 'label' => 'FD1', 'sample_name' => 'FEED DECANTER ALVA LAFAL 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 6, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'fd_2', 'group' => 'FD', 'label' => 'FD2', 'sample_name' => 'FEED DECANTER  IHI 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 6, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'fd_3', 'group' => 'FD', 'label' => 'FD3', 'sample_name' => 'FEED DECANTER ALVA LAFAL 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 6, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'fd_4', 'group' => 'FD', 'label' => 'FD4', 'sample_name' => 'FEED DECANTER FLOTTWEG', 'limit_olwb_operator' => '<=', 'limit_olwb' => 6, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hp_1', 'group' => 'HP', 'label' => 'HP1', 'sample_name' => 'HEAVY PHASE ALFA LAVAL 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hp_2', 'group' => 'HP', 'label' => 'HP2', 'sample_name' => 'HEAVY PHASE IHI', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hp_3', 'group' => 'HP', 'label' => 'HP3', 'sample_name' => 'HEAVY PHASE ALFA LAVAL 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hp_4', 'group' => 'HP', 'label' => 'HP4', 'sample_name' => 'HEAVY PHASE FLOTTWEG', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'sd_1', 'group' => 'SD', 'label' => 'SD1', 'sample_name' => 'SOLID ALFA LAVAL 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 2.5, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => 0.02, 'mass_balance_percent_2' => null],
+            ['key' => 'sd_2', 'group' => 'SD', 'label' => 'SD2', 'sample_name' => 'SOLID IHI', 'limit_olwb_operator' => '<=', 'limit_olwb' => 2.5, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => 0.02, 'mass_balance_percent_2' => null],
+            ['key' => 'sd_3', 'group' => 'SD', 'label' => 'SD3', 'sample_name' => 'SOLID ALFA LAVAL 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 2.5, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => 0.02, 'mass_balance_percent_2' => null],
+            ['key' => 'sd_4', 'group' => 'SD', 'label' => 'SD4', 'sample_name' => 'SOLID FLOTTWEG', 'limit_olwb_operator' => '<=', 'limit_olwb' => 2.5, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.09, 'mass_balance_percent' => 0.02, 'mass_balance_percent_2' => null],
+            ['key' => 'hpl_1', 'group' => 'HPL', 'label' => 'HPL1', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hpl_2', 'group' => 'HPL', 'label' => 'HPL2', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'hpl_3', 'group' => 'HPL', 'label' => 'HPL3', 'sample_name' => 'HEAVY PHASE CENTRIFUGE 3', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => null, 'limit_oil_losses' => null, 'mass_balance_percent' => null, 'mass_balance_percent_2' => null],
+            ['key' => 'fe', 'group' => 'FE', 'label' => 'FE', 'sample_name' => 'FINAL EFFLUENT', 'limit_olwb_operator' => '<=', 'limit_olwb' => 0.7, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.50, 'mass_balance_percent_2' => null],
+            ['key' => 'fbp_1', 'group' => 'FBP', 'label' => 'FBP1', 'sample_name' => 'FIBRE EX BUNCH PRESS 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1.3, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.75, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => 0],
+            ['key' => 'fbp_2', 'group' => 'FBP', 'label' => 'FBP2', 'sample_name' => 'FIBRE EX BUNCH PRESS 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1.3, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.75, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => 0],
+            ['key' => 'fbp_3', 'group' => 'FBP', 'label' => 'FBP3', 'sample_name' => 'FIBRE EX BUNCH PRESS 3', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1.3, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.75, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => 0],
+            ['key' => 'fbp_4', 'group' => 'FBP', 'label' => 'FBP4', 'sample_name' => 'FIBRE EX BUNCH PRESS 4', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1.3, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.75, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => 0],
+            ['key' => 'fbp_5', 'group' => 'FBP', 'label' => 'FBP5', 'sample_name' => 'FIBRE EX BUNCH PRESS 5', 'limit_olwb_operator' => '<=', 'limit_olwb' => 1.3, 'limit_oldb_operator' => null, 'limit_oldb' => null, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.2, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => 0],
+            ['key' => 'fp_1', 'group' => 'FP', 'label' => 'FP1', 'sample_name' => 'FIBRE PRESS 1', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_2', 'group' => 'FP', 'label' => 'FP2', 'sample_name' => 'FIBRE PRESS 2', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_3', 'group' => 'FP', 'label' => 'FP3', 'sample_name' => 'FIBRE PRESS 3', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_4', 'group' => 'FP', 'label' => 'FP4', 'sample_name' => 'FIBRE PRESS 4', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_5', 'group' => 'FP', 'label' => 'FP5', 'sample_name' => 'FIBRE PRESS 5', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_6', 'group' => 'FP', 'label' => 'FP6', 'sample_name' => 'FIBRE PRESS 6', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_7', 'group' => 'FP', 'label' => 'FP7', 'sample_name' => 'FIBRE PRESS 7', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_8', 'group' => 'FP', 'label' => 'FP8', 'sample_name' => 'FIBRE PRESS 8', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+            ['key' => 'fp_9', 'group' => 'FP', 'label' => 'FP9', 'sample_name' => 'FIBRE PRESS 9', 'limit_olwb_operator' => '<=', 'limit_olwb' => 3.8, 'limit_oldb_operator' => '<=', 'limit_oldb' => 7.5, 'limit_oil_losses_operator' => '<=', 'limit_oil_losses' => 0.5, 'mass_balance_percent' => 0.13, 'mass_balance_percent_2' => null],
+        ];
+    }
+
+    private function getOperatorOptionsByOffice(?string $office, string $module): array
+    {
+        $office = strtoupper(trim((string) $office));
+
+        if ($office === '') {
+            $office = 'YBS';
+        }
+
+        return config('operator-options.' . $module . '.' . $office, []);
+    }
+
+    private function resolveOilFossOperator(array $operatorOptions = []): string
+    {
+        if (!empty($operatorOptions)) {
+            return (string) $operatorOptions[0];
+        }
+
+        $office = strtoupper(trim((string) (auth()->user()->office ?? '')));
+
+        if ($office === 'SUN') {
+            return 'SUN';
+        }
+
+        return 'YBS';
+    }
+
+    private function hasAnyMeaningfulValue(array $row, array $ignoredKeys = []): bool
+    {
+        foreach ($row as $key => $value) {
+            if (in_array((string) $key, $ignoredKeys, true)) {
+                continue;
+            }
+
+            if (is_string($value) && trim($value) !== '') {
+                return true;
+            }
+
+            if (is_numeric($value) && (float) $value !== 0.0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function buildAnalysisListQuery(?string $date = null, ?string $machineName = null): array
+    {
+        $targetDate = $date ?: now()->toDateString();
+
+        $query = [
+            'start_date' => $targetDate,
+            'end_date' => $targetDate,
+        ];
+
+        if ($machineName !== null && $machineName !== '') {
+            $query['machine_name'] = $machineName;
+        }
+
+        return $query;
+    }
+
+    private function resolveAnalysisDateRange(Request $request): array
+    {
+        $startDate = Carbon::parse($request->input('start_date', now()->startOfMonth()->toDateString()))->toDateString();
+        $endDate = Carbon::parse($request->input('end_date', now()->toDateString()))->toDateString();
+
+        if ($startDate > $endDate) {
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
+
+        return [$startDate, $endDate];
+    }
+
+    private function downloadAnalysisExport(string $title, string $startDate, string $endDate, array|Collection $rows, array $headings, string $filename)
+    {
+        $subtitle = 'Periode: ' . Carbon::parse($startDate)->format('d-m-Y') . ' s/d ' . Carbon::parse($endDate)->format('d-m-Y');
+
+        return Excel::download(
+            new ProcessAnalysisExport(collect($rows), $headings, $title, $subtitle),
+            $filename
+        );
+    }
 }
+
+

@@ -334,6 +334,182 @@ Route::middleware('auth')->group(function () {
     });
 
     // ══════════════════════════════════════════════════════════════════════════
+    // ── ANALISA MOISTURE & SPINTES ────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('analisa-moisture')->name('analisa-moisture.')->group(function () {
+        // Halaman inputan Analisa moisture & spintes
+        Route::get('/input', [ProcessController::class, 'analisisaMoistureInput'])
+            ->name('input');
+
+        Route::post('/input', [ProcessController::class, 'analisisaMoistureStore'])
+            ->name('store');
+
+        // Data analisa FFA dan Moisture
+        Route::get('/ffa-moisture', [ProcessController::class, 'analisaFfaMoisture'])
+            ->name('ffa-moisture');
+
+        Route::get('/ffa-moisture/{ffaMoisture}/edit', [ProcessController::class, 'editAnalisaFfaMoisture'])
+            ->name('ffa-moisture.edit');
+
+        Route::put('/ffa-moisture/{ffaMoisture}', [ProcessController::class, 'updateAnalisaFfaMoisture'])
+            ->name('ffa-moisture.update')
+            ->middleware('role:Super Admin');
+
+        Route::delete('/ffa-moisture/{ffaMoisture}', [ProcessController::class, 'destroyAnalisaFfaMoisture'])
+            ->name('ffa-moisture.destroy')
+            ->middleware('role:Super Admin');
+
+        Route::post('/ffa-moisture/export', [ProcessController::class, 'exportAnalisaFfaMoisture'])
+            ->name('ffa-moisture.export');
+
+        // Data analisa spintest COT
+        Route::get('/spintest-cot', [ProcessController::class, 'analisaSpintestCot'])
+            ->name('spintest-cot');
+
+        Route::get('/spintest-cot/{spintestCot}/edit', [ProcessController::class, 'editAnalisaSpintestCot'])
+            ->name('spintest-cot.edit')
+            ->middleware('role:Super Admin');
+
+        Route::put('/spintest-cot/{spintestCot}', [ProcessController::class, 'updateAnalisaSpintestCot'])
+            ->name('spintest-cot.update')
+            ->middleware('role:Super Admin');
+
+        Route::delete('/spintest-cot/{spintestCot}', [ProcessController::class, 'destroyAnalisaSpintestCot'])
+            ->name('spintest-cot.destroy')
+            ->middleware('role:Super Admin');
+
+        Route::post('/spintest-cot/export', [ProcessController::class, 'exportAnalisaSpintestCot'])
+            ->name('spintest-cot.export');
+
+        // Data analisa spintest Underflow CST
+        Route::get('/spintest-underflow-cst', [ProcessController::class, 'analisaSpintestUnderflowCst'])
+            ->name('spintest-underflow-cst');
+
+        Route::get('/spintest-underflow-cst/{spintestCst}/edit', [ProcessController::class, 'editAnalisaSpintestUnderflowCst'])
+            ->name('spintest-underflow-cst.edit')
+            ->middleware('role:Super Admin');
+
+        Route::put('/spintest-underflow-cst/{spintestCst}', [ProcessController::class, 'updateAnalisaSpintestUnderflowCst'])
+            ->name('spintest-underflow-cst.update')
+            ->middleware('role:Super Admin');
+
+        Route::delete('/spintest-underflow-cst/{spintestCst}', [ProcessController::class, 'destroyAnalisaSpintestUnderflowCst'])
+            ->name('spintest-underflow-cst.destroy')
+            ->middleware('role:Super Admin');
+
+        Route::post('/spintest-underflow-cst/export', [ProcessController::class, 'exportAnalisaSpintestUnderflowCst'])
+            ->name('spintest-underflow-cst.export');
+
+        // Data analisa spintest Feed Decanter
+        Route::get('/spintest-feed-decanter', [ProcessController::class, 'analisaSpintestFeedDecanter'])
+            ->name('spintest-feed-decanter');
+
+        Route::get('/spintest-feed-decanter/{spintestFeedDecanter}/edit', [ProcessController::class, 'editAnalisaSpintestFeedDecanter'])
+            ->name('spintest-feed-decanter.edit')
+            ->middleware('role:Super Admin');
+
+        Route::put('/spintest-feed-decanter/{spintestFeedDecanter}', [ProcessController::class, 'updateAnalisaSpintestFeedDecanter'])
+            ->name('spintest-feed-decanter.update')
+            ->middleware('role:Super Admin');
+
+        Route::delete('/spintest-feed-decanter/{spintestFeedDecanter}', [ProcessController::class, 'destroyAnalisaSpintestFeedDecanter'])
+            ->name('spintest-feed-decanter.destroy')
+            ->middleware('role:Super Admin');
+
+        Route::post('/spintest-feed-decanter/export', [ProcessController::class, 'exportAnalisaSpintestFeedDecanter'])
+            ->name('spintest-feed-decanter.export');
+
+        // Data analisa spintest Light Phase
+        Route::get('/spintest-light-phase', [ProcessController::class, 'analisaSpintestLightPhase'])
+            ->name('spintest-light-phase');
+
+        Route::get('/spintest-light-phase/{spintestLightPhase}/edit', [ProcessController::class, 'editAnalisaSpintestLightPhase'])
+            ->name('spintest-light-phase.edit')
+            ->middleware('role:Super Admin');
+
+        Route::put('/spintest-light-phase/{spintestLightPhase}', [ProcessController::class, 'updateAnalisaSpintestLightPhase'])
+            ->name('spintest-light-phase.update')
+            ->middleware('role:Super Admin');
+
+        Route::delete('/spintest-light-phase/{spintestLightPhase}', [ProcessController::class, 'destroyAnalisaSpintestLightPhase'])
+            ->name('spintest-light-phase.destroy')
+            ->middleware('role:Super Admin');
+
+        Route::post('/spintest-light-phase/export', [ProcessController::class, 'exportAnalisaSpintestLightPhase'])
+            ->name('spintest-light-phase.export');
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── LAP JANGKOS ───────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('lap-jangkos')->name('lap-jangkos.')->group(function () {
+        // Inputan USB dengan data USB
+        Route::get('/input-usb', [ProcessController::class, 'lapJangkosInputUsb'])
+            ->name('input-usb');
+
+        Route::post('/input-usb', [ProcessController::class, 'lapJangkosStoreUsb'])
+            ->name('store-usb');
+
+        // Data USB
+        Route::get('/data-usb', [ProcessController::class, 'lapJangkosDataUsb'])
+            ->name('data-usb');
+
+        Route::get('/data-usb/{analisaUsb}/edit', [ProcessController::class, 'lapJangkosEditUsb'])
+            ->name('edit-usb')
+            ->middleware('role:Super Admin');
+
+        Route::put('/data-usb/{analisaUsb}', [ProcessController::class, 'lapJangkosUpdateUsb'])
+            ->name('update-usb')
+            ->middleware('role:Super Admin');
+
+        Route::delete('/data-usb/{analisaUsb}', [ProcessController::class, 'lapJangkosDestroyUsb'])
+            ->name('destroy-usb')
+            ->middleware('role:Super Admin');
+
+        // Rekap USB
+        Route::get('/rekap-usb', [ProcessController::class, 'lapJangkosRekapUsb'])
+            ->name('rekap-usb');
+
+        Route::get('/rekap-usb/export', [ProcessController::class, 'lapJangkosRekapUsbExport'])
+            ->name('rekap-usb.export');
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── OIL LOSS FOSS ────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    Route::prefix('oil-loss-foss')->name('oil-loss-foss.')->group(function () {
+        Route::get('/input', [ProcessController::class, 'oilLossFossInput'])
+            ->name('input');
+
+        Route::post('/input', [ProcessController::class, 'oilLossFossStore'])
+            ->name('store');
+
+        Route::get('/data', [ProcessController::class, 'oilLossFossData'])
+            ->name('data');
+
+        Route::get('/data/{oilFoss}/edit', [ProcessController::class, 'oilLossFossEdit'])
+            ->name('edit')
+            ->middleware('role:Super Admin');
+
+        Route::put('/data/{oilFoss}', [ProcessController::class, 'oilLossFossUpdate'])
+            ->name('update')
+            ->middleware('role:Super Admin');
+
+        Route::delete('/data/{oilFoss}', [ProcessController::class, 'oilLossFossDestroy'])
+            ->name('destroy')
+            ->middleware('role:Super Admin');
+
+        Route::get('/data/export', [ProcessController::class, 'oilLossFossDataExport'])
+            ->name('data.export');
+
+        Route::get('/rekap', [ProcessController::class, 'oilLossFossRekap'])
+            ->name('rekap');
+
+        Route::get('/rekap/export', [ProcessController::class, 'oilLossFossRekapExport'])
+            ->name('rekap.export');
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
     // ── MANAJEMEN PENGGUNA ────────────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════════════════
     Route::prefix('users')->name('users.')->group(function () {

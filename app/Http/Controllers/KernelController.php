@@ -2158,7 +2158,7 @@ class KernelController extends Controller
         $endDate = $request->input('end_date', now()->toDateString());
         $officeFilter = $this->resolveOfficeFilter($request);
 
-        [$reportData, $allKodesData, $operators, $operatorActivities, $reportDates, $dailyPerformance] = $this->buildPerformanceData($startDate, $endDate, $officeFilter);
+        [$reportData, $allKodesData, $operators, $operatorActivities, $reportDates, $dailyPerformance, $allIndividualRecords, $operatorDailyPerformance] = $this->buildPerformanceData($startDate, $endDate, $officeFilter);
 
         $this->logExport('Performance Kernel Losses', [
             'start_date' => $startDate,
@@ -2171,7 +2171,15 @@ class KernelController extends Controller
             . Carbon::parse($endDate)->format('Ymd') . '.xlsx';
 
         return Excel::download(
-            new KernelPerformanceExport($reportData, $allKodesData, $operators, $reportDates, $dailyPerformance, $startDate, $endDate),
+            new KernelPerformanceExport(
+                $allIndividualRecords,
+                $operators,
+                $reportDates,
+                $operatorDailyPerformance,
+                $startDate,
+                $endDate,
+                $officeFilter
+            ),
             $filename
         );
     }

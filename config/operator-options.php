@@ -20,6 +20,8 @@ return [
             "PRANS HARDIANSYAH SIMANJUNTAK ",
             "EKA ARDIANSYAH LUBIS ",
             "PANTAS JEKSON LIBERTO TAMPUBOLON ",
+            "GANDA SUPRAPTO",
+            "RUDI SAPUTRA"
         ],
         'YBS' => [
             'DONI SAPUTRA',

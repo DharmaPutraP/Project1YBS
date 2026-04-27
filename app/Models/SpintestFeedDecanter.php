@@ -15,6 +15,7 @@ class SpintestFeedDecanter extends Model
     protected $fillable = [
         'user_id',
         'created_by',
+        'office',
         'tanggal',
         'jam',
         'machine_name',

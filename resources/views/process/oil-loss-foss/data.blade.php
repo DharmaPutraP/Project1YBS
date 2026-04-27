@@ -66,7 +66,7 @@
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50 text-slate-700">
                         <tr>
-                            <th colspan="13" class="px-4 py-3 text-left font-bold tracking-wide text-slate-800">DATA OIL LOSS FOSS</th>
+                            <th colspan="14" class="px-4 py-3 text-left font-bold tracking-wide text-slate-800">DATA OIL LOSS FOSS</th>
                             <th colspan="2" class="px-4 py-3 text-left font-bold tracking-wide text-slate-800">MASS BALANCE</th>
                             @role('Super Admin')
                                 <th rowspan="2" class="px-4 py-3 text-center font-bold tracking-wide text-slate-800">Aksi</th>
@@ -76,6 +76,7 @@
                             <th class="px-4 py-3 text-left font-semibold">Tanggal</th>
                             <th class="px-4 py-3 text-left font-semibold">Jam</th>
                             <th class="px-4 py-3 text-left font-semibold">Created By</th>
+                            <th class="px-4 py-3 text-left font-semibold">Office</th>
                             <th class="px-4 py-3 text-left font-semibold">Kode</th>
                             <th class="px-4 py-3 text-left font-semibold">Nama Sample</th>
                             <th class="px-4 py-3 text-left font-semibold">MOIST (%)</th>
@@ -177,6 +178,7 @@
                                 <td class="px-4 py-3 text-slate-700">{{ $row->tanggal?->format('d-m-Y') }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ substr((string) $row->waktu, 0, 5) }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $row->created_by ?: ($row->user?->name ?? '-') }}</td>
+                                <td class="px-4 py-3 text-slate-700">{{ $row->office ?: '-' }}</td>
                                 <td class="px-4 py-3 text-slate-700 font-semibold">{{ $code }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $definition['sample_name'] ?? $code }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $moist === null ? '-' : number_format($moist, 2) }}</td>

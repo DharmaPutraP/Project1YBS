@@ -47,6 +47,7 @@
                             <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">Tgl</th>
                             <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">JAM</th>
                             <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">Created By</th>
+                            <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">Office</th>
                             <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">Shift</th>
                             <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">No Rebusan / Sterilizer</th>
                             <th class="px-4 py-3 text-right font-semibold whitespace-nowrap">Diamati (Jlh Janjang)</th>
@@ -64,6 +65,7 @@
                                 <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['tanggal'] }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['jam'] }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['created_by'] ?? '-' }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['office'] ?? '-' }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['shift'] }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-slate-700">{{ $row['no_rebusan'] }}</td>
                                 <td class="px-4 py-3 text-right whitespace-nowrap text-slate-700">{{ number_format((float) $row['diamati_jlh_janjang'], 2, ',', '.') }}</td>
@@ -85,7 +87,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ auth()->user()?->hasRole('Super Admin') ? 10 : 9 }}" class="px-4 py-8 text-center text-slate-500">Belum ada data USB pada periode ini.</td>
+                                <td colspan="{{ auth()->user()?->hasRole('Super Admin') ? 11 : 10 }}" class="px-4 py-8 text-center text-slate-500">Belum ada data USB pada periode ini.</td>
                             </tr>
                         @endforelse
                     </tbody>

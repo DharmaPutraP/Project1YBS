@@ -19,6 +19,7 @@
                             <th class="px-4 py-3 text-left font-semibold">Tanggal</th>
                             <th class="px-4 py-3 text-left font-semibold">Jam</th>
                             <th class="px-4 py-3 text-left font-semibold">Created By</th>
+                            <th class="px-4 py-3 text-left font-semibold">Office</th>
                             <th class="px-4 py-3 text-left font-semibold">Mesin</th>
                             <th class="px-4 py-3 text-left font-semibold">OIL</th>
                             <th class="px-4 py-3 text-left font-semibold">EMULSI</th>
@@ -35,6 +36,7 @@
                                 <td class="px-4 py-3 text-slate-700">{{ $row->tanggal?->format('d-m-Y') }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $row->jam }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $row->created_by ?: ($row->user?->name ?? '-') }}</td>
+                                <td class="px-4 py-3 text-slate-700">{{ $row->office ?: '-' }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $row->machine_name }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $row->oil }}</td>
                                 <td class="px-4 py-3 text-slate-700">{{ $row->emulsi }}</td>

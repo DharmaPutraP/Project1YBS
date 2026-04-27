@@ -2558,12 +2558,13 @@ class ProcessController extends Controller
                     FfaMoisture::create([
                         'user_id' => $userId,
                         'created_by' => $createdBy,
+                        'office' => $this->resolveCurrentOffice(),
                         'tanggal' => $validated['ffa']['tanggal'] ?? now()->toDateString(),
                         'jam' => $validated['ffa']['jam'] ?? now()->format('H:i'),
                         'moisture' => $this->stringOrDefault($validated['ffa']['moisture'] ?? null, '0'),
                         'bst1_ffa' => $this->numericOrZero($validated['ffa']['bst1_ffa'] ?? null),
                         'bst2_ffa' => $this->numericOrZero($validated['ffa']['bst2_ffa'] ?? null),
-                        'bst3_ffa' => $this->isSunOffice() ? null : $this->numericOrZero($validated['ffa']['bst3_ffa'] ?? null),
+                        'bst3_ffa' => $this->isSunOffice() ? 0 : $this->numericOrZero($validated['ffa']['bst3_ffa'] ?? null),
                         'impurities' => $this->numericOrZero($validated['ffa']['impurities'] ?? null),
                     ]);
                     $savedCount++;
@@ -2573,6 +2574,7 @@ class ProcessController extends Controller
                     SpintestCot::create([
                         'user_id' => $userId,
                         'created_by' => $createdBy,
+                        'office' => $this->resolveCurrentOffice(),
                         'tanggal' => $validated['cot']['tanggal'] ?? now()->toDateString(),
                         'jam' => $validated['cot']['jam'] ?? now()->format('H:i'),
                         'oil' => $this->numericOrZero($validated['cot']['oil'] ?? null),
@@ -2591,6 +2593,7 @@ class ProcessController extends Controller
                     SpintestCst::create([
                         'user_id' => $userId,
                         'created_by' => $createdBy,
+                        'office' => $this->resolveCurrentOffice(),
                         'tanggal' => $row['tanggal'] ?? now()->toDateString(),
                         'jam' => $row['jam'] ?? now()->format('H:i'),
                         'machine_name' => $row['machine_name'] ?? $this->getCstMachinesForOffice()[0],
@@ -2610,6 +2613,7 @@ class ProcessController extends Controller
                     SpintestFeedDecanter::create([
                         'user_id' => $userId,
                         'created_by' => $createdBy,
+                        'office' => $this->resolveCurrentOffice(),
                         'tanggal' => $row['tanggal'] ?? now()->toDateString(),
                         'jam' => $row['jam'] ?? now()->format('H:i'),
                         'machine_name' => $row['machine_name'] ?? $this->getDecanterMachinesForOffice()[0],
@@ -2629,6 +2633,7 @@ class ProcessController extends Controller
                     SpintestLightPhase::create([
                         'user_id' => $userId,
                         'created_by' => $createdBy,
+                        'office' => $this->resolveCurrentOffice(),
                         'tanggal' => $row['tanggal'] ?? now()->toDateString(),
                         'jam' => $row['jam'] ?? now()->format('H:i'),
                         'machine_name' => $row['machine_name'] ?? $this->getLightPhaseMachinesForOffice()[0],
@@ -2675,7 +2680,8 @@ class ProcessController extends Controller
                     FfaMoisture::create(array_merge($validated, [
                         'user_id' => $userId,
                         'created_by' => $createdBy,
-                        'bst3_ffa' => $isSunOffice ? null : ($validated['bst3_ffa'] ?? null),
+                        'office' => $this->resolveCurrentOffice(),
+                        'bst3_ffa' => $isSunOffice ? 0 : ($validated['bst3_ffa'] ?? null),
                     ]));
                     $redirectRoute = 'analisa-moisture.ffa-moisture';
                     $successMessage = 'Data analisa FFA dan Moisture berhasil disimpan.';
@@ -2691,7 +2697,7 @@ class ProcessController extends Controller
                         'nos' => ['required', 'numeric'],
                     ]);
 
-                    SpintestCot::create($validated + ['user_id' => $userId, 'created_by' => $createdBy]);
+                    SpintestCot::create($validated + ['user_id' => $userId, 'created_by' => $createdBy, 'office' => $this->resolveCurrentOffice()]);
                     $redirectRoute = 'analisa-moisture.spintest-cot';
                     $successMessage = 'Data analisa Spintest COT berhasil disimpan.';
                     break;
@@ -2707,7 +2713,7 @@ class ProcessController extends Controller
                         'nos' => ['required', 'numeric'],
                     ]);
 
-                    SpintestCst::create($validated + ['user_id' => $userId, 'created_by' => $createdBy]);
+                    SpintestCst::create($validated + ['user_id' => $userId, 'created_by' => $createdBy, 'office' => $this->resolveCurrentOffice()]);
                     $redirectRoute = 'analisa-moisture.spintest-underflow-cst';
                     $successMessage = 'Data analisa Spintest Underflow CST berhasil disimpan.';
                     break;
@@ -2723,7 +2729,7 @@ class ProcessController extends Controller
                         'nos' => ['required', 'numeric'],
                     ]);
 
-                    SpintestFeedDecanter::create($validated + ['user_id' => $userId, 'created_by' => $createdBy]);
+                    SpintestFeedDecanter::create($validated + ['user_id' => $userId, 'created_by' => $createdBy, 'office' => $this->resolveCurrentOffice()]);
                     $redirectRoute = 'analisa-moisture.spintest-feed-decanter';
                     $successMessage = 'Data analisa Spintest Feed Decanter berhasil disimpan.';
                     break;
@@ -2739,7 +2745,7 @@ class ProcessController extends Controller
                         'nos' => ['required', 'numeric'],
                     ]);
 
-                    SpintestLightPhase::create($validated + ['user_id' => $userId, 'created_by' => $createdBy]);
+                    SpintestLightPhase::create($validated + ['user_id' => $userId, 'created_by' => $createdBy, 'office' => $this->resolveCurrentOffice()]);
                     $redirectRoute = 'analisa-moisture.spintest-light-phase';
                     $successMessage = 'Data analisa Spintest Light Phase berhasil disimpan.';
                     break;
@@ -2798,7 +2804,7 @@ class ProcessController extends Controller
             'moisture' => $this->stringOrDefault($validated['moisture'] ?? null, '0'),
             'bst1_ffa' => $this->numericOrZero($validated['bst1_ffa'] ?? null),
             'bst2_ffa' => $this->numericOrZero($validated['bst2_ffa'] ?? null),
-            'bst3_ffa' => $isSunOffice ? null : $this->numericOrZero($validated['bst3_ffa'] ?? null),
+            'bst3_ffa' => $isSunOffice ? 0 : $this->numericOrZero($validated['bst3_ffa'] ?? null),
             'impurities' => $this->numericOrZero($validated['impurities'] ?? null),
         ]);
 
@@ -3347,6 +3353,7 @@ class ProcessController extends Controller
                 AnalisaUsb::create([
                     'user_id' => $userId,
                     'created_by' => $createdBy,
+                    'office' => $this->resolveCurrentOffice(),
                     'tanggal' => $row['tanggal'] ?? now()->toDateString(),
                     'jam' => $row['jam'] ?? now()->format('H:i'),
                     'shift' => (int) ($row['shift'] ?? 1),
@@ -3570,6 +3577,7 @@ class ProcessController extends Controller
                 'tanggal' => Carbon::parse($record->tanggal)->format('d-m-Y'),
                 'jam' => substr((string) $record->jam, 0, 5),
                 'created_by' => (string) ($record->created_by ?: ($record->user?->name ?? '-')),
+                'office' => (string) ($record->office ?: '-'),
                 'shift' => (int) $record->shift,
                 'no_rebusan' => $rowNumber,
                 'diamati_jlh_janjang' => (float) $record->diamati_jlh_janjang,
@@ -3681,6 +3689,7 @@ class ProcessController extends Controller
                 OilFoss::create([
                     'user_id' => $userId,
                     'created_by' => $createdBy,
+                    'office' => $this->resolveCurrentOffice(),
                     'tanggal' => $row['tanggal'] ?? now()->toDateString(),
                     'waktu' => $row['waktu'] ?? now()->format('H:i'),
                     'operator' => $operator,

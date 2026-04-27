@@ -17,6 +17,7 @@
                             <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Tanggal</th>
                             <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Jam</th>
                             <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Created By</th>
+                            <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Office</th>
                             <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Moisture</th>
                             <th colspan="{{ $isSunOffice ? 2 : 3 }}" class="px-4 py-2 text-center font-semibold">FFA</th>
                             <th rowspan="2" class="px-4 py-3 text-left font-semibold align-middle">Impurities</th>
@@ -38,6 +39,7 @@
                             <td class="px-4 py-3 text-slate-700">{{ $row->tanggal?->format('d-m-Y') }}</td>
                             <td class="px-4 py-3 text-slate-700">{{ $row->jam }}</td>
                             <td class="px-4 py-3 text-slate-700">{{ $row->created_by ?: ($row->user?->name ?? '-') }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ $row->office ?: '-' }}</td>
                             <td class="px-4 py-3 text-slate-700">{{ $row->moisture }}</td>
                             <td class="px-4 py-3 text-slate-700">{{ $row->bst1_ffa }}</td>
                             <td class="px-4 py-3 text-slate-700">{{ $row->bst2_ffa }}</td>
@@ -60,7 +62,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $isSunOffice ? (auth()->user()?->hasRole('Super Admin') ? 8 : 7) : (auth()->user()?->hasRole('Super Admin') ? 9 : 8) }}" class="px-4 py-8 text-center text-slate-500">Belum ada data pada periode ini.</td>
+                            <td colspan="{{ $isSunOffice ? (auth()->user()?->hasRole('Super Admin') ? 9 : 8) : (auth()->user()?->hasRole('Super Admin') ? 10 : 9) }}" class="px-4 py-8 text-center text-slate-500">Belum ada data pada periode ini.</td>
                         </tr>
                     @endforelse
                 </tbody>

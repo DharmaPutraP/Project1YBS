@@ -251,9 +251,14 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
         </p>
 
         @can('view informasi proses mesin')
-            <x-sidebar-item href="{{ route('process.index') }}" :active="request()->routeIs('process.*')"
+            <x-sidebar-item href="{{ route('process.index') }}" :active="request()->routeIs('process.index') || request()->routeIs('process.show') || request()->routeIs('process.edit') || request()->routeIs('process.machines.*')"
                 icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
                 <span class="sidebar-item-text">Informasi Proses Mesin</span>
+            </x-sidebar-item>
+
+            <x-sidebar-item href="{{ route('process.spintest.index') }}" :active="request()->routeIs('process.spintest.index')"
+                icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'>
+                <span class="sidebar-item-text">Informasi Proses Mesin Spintest</span>
             </x-sidebar-item>
         @endcan
 
@@ -304,6 +309,12 @@ Setiap menu item dijaga dengan @can agar hanya tampil sesuai hak akses role.
             :active="request()->routeIs('analisa-moisture.spintest-light-phase')"
             icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'>
             <span class="sidebar-item-text">Spintest Light Phase</span>
+        </x-sidebar-item>
+
+        <x-sidebar-item href="{{ route('analisa-moisture.rekap') }}"
+            :active="request()->routeIs('analisa-moisture.rekap')"
+            icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18"/></svg>'>
+            <span class="sidebar-item-text">Rekap Analisa Moisture &amp; Spintest</span>
         </x-sidebar-item>
 
         {{-- ── Lap Jangkos ──────────────────────────────────── --}}

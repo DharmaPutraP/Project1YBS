@@ -302,6 +302,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [ProcessController::class, 'index'])
             ->name('index');
 
+        Route::get('/spintest', [ProcessController::class, 'spintestIndex'])
+            ->name('spintest.index');
+
+        Route::post('/spintest', [ProcessController::class, 'spintestStore'])
+            ->name('spintest.store');
+
         Route::get('/performance-sampel-boy', [ProcessController::class, 'performanceSampelBoy'])
             ->name('performance-sampel-boy');
 
@@ -437,6 +443,13 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/spintest-light-phase/export', [ProcessController::class, 'exportAnalisaSpintestLightPhase'])
             ->name('spintest-light-phase.export');
+
+        // Rekap analisa moisture dan spintest (average per hari)
+        Route::get('/rekap', [ProcessController::class, 'rekapAnalisaMoistureSpintest'])
+            ->name('rekap');
+
+        Route::post('/rekap/export', [ProcessController::class, 'exportRekapAnalisaMoistureSpintest'])
+            ->name('rekap.export');
     });
 
     // ══════════════════════════════════════════════════════════════════════════

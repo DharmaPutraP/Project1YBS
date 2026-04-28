@@ -33,6 +33,12 @@
         <p class="mt-2 text-sm text-gray-600">Form monitoring proses spintest USB dan Oil Foss per tanggal untuk Tim 1 dan Tim 2.</p>
     </div>
 
+    @if (session('success'))
+        <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <x-ui.card title="Form Informasi Proses Mesin Spintest">
         <form action="{{ route('process.spintest.store') }}" method="POST" class="space-y-6" id="spintest-form">
             @csrf
@@ -635,20 +641,4 @@
         });
     </script>
 
-    @if(session('success'))
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                try {
-                    alert({{ json_encode(session('success')) }});
-                } catch (e) {
-                    console.log('Success:', {{ json_encode(session('success')) }});
-                }
-
-                const form = document.getElementById('spintest-form');
-                if (form) {
-                    try { form.reset(); } catch (e) { /* ignore */ }
-                }
-            });
-        </script>
-    @endif
 </x-layouts.app>

@@ -15,6 +15,7 @@ use App\Models\KernelProsses;
 use App\Models\KernelQwt;
 use App\Models\KernelRippleMill;
 use App\Models\OilFoss;
+use App\Models\SpintestMesin;
 use App\Models\SpintestProsses;
 use App\Models\SpintestCot;
 use App\Models\SpintestCst;
@@ -454,7 +455,11 @@ class ProcessController extends Controller
 
         $machinePayload = $this->extractSpintestMachinePayload($request, $inputTeam);
         if (!empty($machinePayload)) {
-            $process->mesin()->createMany($machinePayload);
+            foreach ($machinePayload as $machineRow) {
+                SpintestMesin::create($machineRow + [
+                    'spintest_prosses_id' => $process->id,
+                ]);
+            }
         }
 
         return redirect()

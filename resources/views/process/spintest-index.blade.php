@@ -227,7 +227,7 @@
                     </div>
 
                     <div class="pt-2">
-                        <button type="button" data-input-team="Tim 1" class="submit-team-button inline-flex items-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <button type="submit" data-input-team="Tim 1" onclick="document.getElementById('input_team_field').value='Tim 1'" class="submit-team-button inline-flex items-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                             Simpan Informasi Proses Spintest Tim 1
                         </button>
                     </div>
@@ -407,7 +407,7 @@
                     </div>
 
                     <div class="pt-2">
-                        <button type="button" data-input-team="Tim 2" class="submit-team-button inline-flex items-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                        <button type="submit" data-input-team="Tim 2" onclick="document.getElementById('input_team_field').value='Tim 2'" class="submit-team-button inline-flex items-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
                             Simpan Informasi Proses Spintest Tim 2
                         </button>
                     </div>

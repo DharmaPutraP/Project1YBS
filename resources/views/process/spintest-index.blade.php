@@ -634,4 +634,21 @@
             });
         });
     </script>
+
+    @if(session('success'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                try {
+                    alert({{ json_encode(session('success')) }});
+                } catch (e) {
+                    console.log('Success:', {{ json_encode(session('success')) }});
+                }
+
+                const form = document.getElementById('spintest-form');
+                if (form) {
+                    try { form.reset(); } catch (e) { /* ignore */ }
+                }
+            });
+        </script>
+    @endif
 </x-layouts.app>

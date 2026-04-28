@@ -452,16 +452,9 @@ class ProcessController extends Controller
             'team_2_other_conditions' => $isTeamOneInput ? [] : ($otherConditionsByTeam['Tim 2'] ?? []),
         ]);
 
-        // persist machine inputs from the form into informasi_mesin_spintest
-        try {
-            $machinePayload = $this->extractMachinePayload($request, $inputTeam, $office);
-            if (!empty($machinePayload)) {
-                $process->mesin()->createMany($machinePayload);
-            }
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // rollback process if machine payload invalid
-            $process->delete();
-            throw $e;
+        $machinePayload = $this->extractSpintestMachinePayload($request, $inputTeam);
+        if (!empty($machinePayload)) {
+            $process->mesin()->createMany($machinePayload);
         }
 
         return redirect()
@@ -3039,6 +3032,75 @@ class ProcessController extends Controller
         }
 
         return $grouped;
+    }
+
+    private function extractSpintestMachinePayload(Request $request, ?string $inputTeam = null): array
+    {
+        $entries = [];
+
+        foreach ((array) $request->input('machines', []) as $machine) {
+            if (!is_array($machine) || !$this->toBool($machine['selected'] ?? false)) {
+                continue;
+            }
+
+            $teamName = trim((string) ($machine['team_name'] ?? ''));
+            $machineName = trim((string) ($machine['machine_name'] ?? ''));
+            $machineGroup = trim((string) ($machine['machine_group'] ?? ''));
+            $startTime = trim((string) ($machine['start_time'] ?? ''));
+            $endTime = trim((string) ($machine['end_time'] ?? ''));
+
+            if ($inputTeam !== null && $teamName !== $inputTeam) {
+                continue;
+            }
+
+            if ($teamName === '' || $machineName === '' || !$this->isValidTime($startTime) || !$this->isValidTime($endTime)) {
+                continue;
+            }
+
+            $entries[] = [
+                'team_name' => $teamName,
+                'machine_group' => $machineGroup !== '' ? $machineGroup : 'SPINTEST',
+                'machine_name' => $machineName,
+                'production_start_time' => $startTime,
+                'production_end_time' => $endTime,
+                'total_production_hours' => round($this->minutesBetween($startTime, $endTime) / 60, 2),
+                'is_spare_input' => false,
+                'is_spare' => 0,
+            ];
+        }
+
+        foreach ((array) $request->input('spare_machines', []) as $machine) {
+            if (!is_array($machine)) {
+                continue;
+            }
+
+            $teamName = trim((string) ($machine['team_name'] ?? ''));
+            $selected = $this->toBool($machine['selected'] ?? false);
+            $machineName = trim((string) ($machine['machine_name'] ?? ''));
+            $startTime = trim((string) ($machine['start_time'] ?? ''));
+            $endTime = trim((string) ($machine['end_time'] ?? ''));
+
+            if ($inputTeam !== null && $teamName !== $inputTeam) {
+                continue;
+            }
+
+            if (!$selected || $teamName === '' || $machineName === '' || !$this->isValidTime($startTime) || !$this->isValidTime($endTime)) {
+                continue;
+            }
+
+            $entries[] = [
+                'team_name' => $teamName,
+                'machine_group' => 'SPARE INPUT',
+                'machine_name' => $machineName,
+                'production_start_time' => $startTime,
+                'production_end_time' => $endTime,
+                'total_production_hours' => round($this->minutesBetween($startTime, $endTime) / 60, 2),
+                'is_spare_input' => true,
+                'is_spare' => round($this->minutesBetween($startTime, $endTime) / 60, 2),
+            ];
+        }
+
+        return $entries;
     }
 
     private function requestContainsTeamConditions(Request $request, string $teamName): bool

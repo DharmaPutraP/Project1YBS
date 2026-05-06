@@ -9,9 +9,10 @@
         @endif
 
             @if ($errors->any())
-                <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                    <h4 class="text-sm font-semibold text-red-900 mb-2">Data belum bisa disimpan</h4>
-                    <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                    <h4 class="font-semibold text-red-900">Data belum bisa disimpan</h4>
+                    <p class="mt-1 text-red-700">Ada field yang kosong, format salah, atau nilai tidak lolos validasi. Periksa pesan berikut sebelum kirim ulang.</p>
+                    <ul class="mt-3 list-inside list-disc space-y-1 text-red-700">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
@@ -223,3 +224,30 @@
         </x-ui.card>
     </div>
 </x-layouts.app>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function roundDownTo30(time) {
+            if (!time) return time;
+            const parts = time.split(':');
+            if (parts.length < 2) return time;
+            let h = parseInt(parts[0], 10);
+            let m = parseInt(parts[1], 10);
+            const rm = m < 30 ? 0 : 30;
+            return String(h).padStart(2, '0') + ':' + String(rm).padStart(2, '0');
+        }
+
+        const timeInputs = Array.from(document.querySelectorAll('form input[type="time"]'));
+        timeInputs.forEach(function (inp) {
+            function applyRound() {
+                const v = inp.value;
+                if (!v) return;
+                const r = roundDownTo30(v);
+                if (r !== v) inp.value = r;
+            }
+            inp.addEventListener('change', applyRound);
+            inp.addEventListener('blur', applyRound);
+            applyRound();
+        });
+    });
+</script>

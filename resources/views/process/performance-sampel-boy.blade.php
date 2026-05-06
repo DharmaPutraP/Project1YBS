@@ -1,8 +1,4 @@
 <x-layouts.app title="Performance Sampel Boy">
-    @php
-        $spintestColumns = $spintestColumns ?? [];
-    @endphp
-
     <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-900">Performance Sampel Boy</h1>
         <p class="mt-2 text-sm text-gray-600">Performa sampling berdasarkan data proses, mesin, dan input sampling aktual.</p>
@@ -69,91 +65,144 @@
 
     <x-ui.card title="Data Performance" class="mt-6">
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[1800px] text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Tanggal</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Tim</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Jam Mulai Proses</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Jam Akhir Proses</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Total Hours</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Nama Sampel Boy</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Fiber Cyclone</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">LTDS</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Claybath Wet Shell</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Inlet Kernel Silo</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Outlet Kernel Silo</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Press</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Eficiency</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Destoner</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Perf Total</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                    @forelse ($rows as $row)
+            @php($isSunOffice = strtoupper((string) ($selectedOffice ?? '')) === 'SUN')
+            @if ($isSunOffice)
+                <table class="w-full min-w-[1400px] text-sm">
+                    <thead class="bg-gray-50">
                         <tr>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['tanggal'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['team_name'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['jam_mulai'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['jam_akhir'] }}</td>
-                            <td class="px-3 py-2 font-medium text-gray-800">{{ $row['total_hours'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['nama_sampel_boy'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['fibre_cyclone'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['ltds'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['claybath_wet_shell'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['inlet_kernel_silo'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['outlet_kernel_silo'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['press'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['eficiency'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['destoner'] }}</td>
-                            <td class="px-3 py-2 font-semibold text-blue-700">{{ $row['perf_total'] }}</td>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Tanggal</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Tim</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Jam Mulai Proses</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Jam Akhir Proses</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Total Hours</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Nama Sampel Boy</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Fiber Cyclone</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">LTDS</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Claybath Wet Shell</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Inlet Kernel Silo</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Outlet Kernel Silo</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Press</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Eficiency</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Destoner</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">FFA dan Moisture</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Spintest COT</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Underflow CST (CST 1 &amp; CST 2)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Feed Decanter (GEA1, GEA2)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Light Phase (GEA1, GEA2)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Sterilizer 1-4</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Perf Total</th>
                         </tr>
-                    @empty
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 bg-white">
+                        @forelse ($rows as $row)
+                            <tr>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['tanggal'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['team_name'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['jam_mulai'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['jam_akhir'] }}</td>
+                                <td class="px-3 py-2 font-medium text-gray-800">{{ $row['total_hours'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['nama_sampel_boy'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['fibre_cyclone'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['ltds'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['claybath_wet_shell'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['inlet_kernel_silo'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['outlet_kernel_silo'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['press'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['eficiency'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['destoner'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['ffa_moisture'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['spintest_cot'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['underflow_cst'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['feed_decanter'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['light_phase'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['sterilizer'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 font-semibold text-blue-700">{{ $row['perf_total'] }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="21" class="px-3 py-4 text-center text-gray-500">Belum ada data performance untuk tanggal ini.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            @else
+                <table class="w-full min-w-[1800px] text-sm">
+                    <thead class="bg-gray-50">
                         <tr>
-                            <td colspan="15" class="px-3 py-4 text-center text-gray-500">Belum ada data performance untuk tanggal ini.</td>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Tanggal</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Tim</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Jam Mulai Proses</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Jam Akhir Proses</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Total Hours</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Nama Sampel Boy</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Fiber Cyclone</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">LTDS</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Claybath Wet Shell</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Inlet Kernel Silo</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Outlet Kernel Silo</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Press</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Eficiency</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Destoner</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">FFA dan Moisture</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Spintest COT</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Underflow CST (CST 1 &amp; CST 2)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Feed Decanter (Alfa Laval 1, Alfa Laval 2, GEA, Flottweg)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Light Phase (Alfa Laval 1, Alfa Laval 2, GEA, Flottweg)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Sterilizer 1-8</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">COT (COT IN &amp; COT 2)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">CST</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">FD (FD1-4)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">HP (HP 1-4)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">SD (SD1-4)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">HPL (HPL1-3)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">FE</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">FBP (FBP1-5)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">FP (FP1-9)</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-700">Perf Total</th>
                         </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </x-ui.card>
-
-    <x-ui.card title="Data Performance Spintess" class="mt-6">
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[4200px] text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Tanggal</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Tim</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Jam Mulai Proses</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Jam Akhir Proses</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Total Hours</th>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-700">Nama Sample Boy</th>
-                        @foreach ($spintestColumns as $column)
-                            <th class="px-3 py-2 text-left font-semibold text-gray-700 whitespace-normal">{{ $column['label'] }}</th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                    @forelse (($spintestRows ?? []) as $row)
-                        <tr>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['tanggal'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['tim'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['jam_mulai_proses'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['jam_akhir_proses'] }}</td>
-                            <td class="px-3 py-2 font-medium text-gray-800">{{ $row['total_hours'] }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ $row['nama_sample_boy'] }}</td>
-                            @foreach ($spintestColumns as $column)
-                                <td class="px-3 py-2 text-gray-700">{{ $row[$column['key']] ?? 0 }}</td>
-                            @endforeach
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="{{ 6 + count($spintestColumns) }}" class="px-3 py-4 text-center text-gray-500">Belum ada data performance spintess untuk tanggal ini.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 bg-white">
+                        @forelse ($rows as $row)
+                            <tr>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['tanggal'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['team_name'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['jam_mulai'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['jam_akhir'] }}</td>
+                                <td class="px-3 py-2 font-medium text-gray-800">{{ $row['total_hours'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['nama_sampel_boy'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['fibre_cyclone'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['ltds'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['claybath_wet_shell'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['inlet_kernel_silo'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['outlet_kernel_silo'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['press'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['eficiency'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['destoner'] }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['ffa_moisture'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['spintest_cot'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['underflow_cst'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['feed_decanter'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['light_phase'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['sterilizer'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['cot'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['cst'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['fd'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['hp'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['sd'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['hpl'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['fe'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['fbp'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $row['fp'] ?? '0/0' }}</td>
+                                <td class="px-3 py-2 font-semibold text-blue-700">{{ $row['perf_total'] }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="31" class="px-3 py-4 text-center text-gray-500">Belum ada data performance untuk tanggal ini.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            @endif
         </div>
     </x-ui.card>
 </x-layouts.app>

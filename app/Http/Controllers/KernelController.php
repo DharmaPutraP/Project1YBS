@@ -4118,6 +4118,40 @@ class KernelController extends Controller
                 ];
             });
 
+        $moistRows = KernelDirtMoistCalculation::with('user')
+            ->whereBetween('created_at', $range)
+            ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
+            ->get()
+            ->map(function ($row) {
+                $metricPercent = (float) ($row->moist_percent ?? 0);
+
+                return (object) [
+                    'created_at' => $row->created_at,
+                    'rounded_time' => $row->rounded_time,
+                    'kegiatan_dispek' => $row->kegiatan_dispek,
+                    'office' => $row->office,
+                    'kode' => $row->kode,
+                    'jenis' => $row->jenis,
+                    'operator' => $row->operator,
+                    'sampel_boy' => $row->sampel_boy,
+                    'remarks' => $row->remarks,
+                    'berat_sampel' => $row->berat_sampel,
+                    'nut_utuh_nut' => null,
+                    'nut_utuh_kernel' => null,
+                    'nut_pecah_nut' => null,
+                    'nut_pecah_kernel' => null,
+                    'kernel_utuh' => null,
+                    'kernel_pecah' => null,
+                    'kernel_to_sampel_nut_utuh' => null,
+                    'kernel_to_sampel_nut_pecah' => null,
+                    'kernel_utuh_to_sampel' => null,
+                    'kernel_pecah_to_sampel' => null,
+                    'kernel_losses' => $metricPercent / 100,
+                    'user' => $row->user,
+                    'source_module' => 'Dirt & Moist (%Moist)',
+                ];
+            });
+
         $qwtRows = KernelQwt::with('user')
             ->whereBetween('created_at', $range)
             ->when($officeFilter !== 'all', fn($q) => $q->where('office', $officeFilter))
@@ -4223,6 +4257,7 @@ class KernelController extends Controller
         return collect()
             ->concat($kernelRows)
             ->concat($dirtMoistRows)
+            ->concat($moistRows)
             ->concat($qwtRows)
             ->concat($rippleRows)
             ->concat($destonerRows);

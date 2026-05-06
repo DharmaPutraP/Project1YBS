@@ -128,15 +128,16 @@
                                         <th
                                             class="px-2 py-2 text-center text-[10px] font-semibold text-gray-700 border-r border-b border-gray-300 min-w-[100px] {{ $cIdx === 0 ? 'border-l-2 border-l-gray-400' : '' }}">
                                             <div class="whitespace-nowrap">{{ $col['label'] }}</div>
-                                            @if(isset($masterMap[$col['kode']]))
+                                            @php $masterKey = str_replace('_MOIST', '', $col['kode']); @endphp
+                                            @if(isset($masterMap[$masterKey]))
                                                                 <div class="text-[9px] font-normal text-orange-600 mt-0.5">
-                                                                    Limit: {{ match ($masterMap[$col['kode']]['limit_operator']) {
+                                                                    Limit: {{ match ($masterMap[$masterKey]['limit_operator']) {
                                                     'lt' => '<',
                                                     'ge' => '≥',
                                                     'gt' => '>',
                                                     default => '≤',
                                                 } }}
-                                                                    {{ number_format((float) $masterMap[$col['kode']]['limit_value'], 2) }}%
+                                                                    {{ number_format((float) $masterMap[$masterKey]['limit_value'], 2) }}%
                                                                 </div>
                                             @endif
                                         </th>

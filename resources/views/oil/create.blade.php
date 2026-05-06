@@ -2,6 +2,8 @@
 
     @php
         $defaultSampleDate = now()->toDateString();
+        $oldMode1Rows = old('mode1_rows', []);
+        $oldMode2Rows = old('mode2_rows', []);
     @endphp
 
     {{-- Select2 CSS --}}
@@ -63,6 +65,16 @@
             border-color: #f87171 !important;
             background-color: #fef2f2 !important;
         }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
     </style>
 
     {{-- Form Input Data Oil Losses dengan Dual-Mode --}}
@@ -95,404 +107,182 @@
 
             <hr class="my-6 border-gray-200">
 
-            {{-- MODE 1: Non-Angka (Bisa Multiple per Day) --}}
-            <div id="mode1Section" class="border-2 border-blue-200 bg-blue-50 rounded-lg p-5">
-                <div class="flex items-center mb-4">
+            {{-- MODE 1: Non-Angka --}}
+            <section class="space-y-3">
+                <div class="flex items-center gap-3">
                     <div
-                        class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
+                        class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
                         1
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-800">
-                        Mode Non-Angka <span class="text-sm text-gray-600 font-normal">(Bisa input berkali-kali per
-                            hari)</span>
-                    </h3>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Mode Non-Angka</h3>
+                        <p class="text-sm text-gray-600">Kartu mesin ditampilkan langsung per office. Kartu kosong
+                            diabaikan, kartu yang diisi wajib lengkap.</p>
+                    </div>
                 </div>
 
-                {{-- Info Alert --}}
-                <div class="mb-4 p-3 bg-blue-100 border border-blue-200 rounded-lg text-xs text-blue-800">
-                    <strong>💡 Tips:</strong> Jika Anda mengisi <strong>Kode</strong> atau <strong>Operator</strong>,
-                    maka keduanya harus diisi.
-                    <br><strong>Jenis</strong> dan <strong>Sampel Boy</strong> sudah terisi otomatis.
-                </div>
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-4" id="mode1RowsContainer">
+                    @foreach($kodeOptions as $kodeValue => $kodeLabel)
+                        @php $rowIndex = $loop->index; @endphp
+                        <div class="mode1-row oil-machine-card rounded-xl border border-blue-200 bg-blue-50/70 p-3 space-y-3"
+                            data-row-type="mode1">
+                            <div class="flex items-center justify-between gap-2">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-blue-900 leading-tight">{{ $kodeLabel }}</h4>
+                                    <p class="text-[11px] text-blue-700">Kode: {{ $kodeValue }}</p>
+                                </div>
+                                <span
+                                    class="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">Non-Angka</span>
+                            </div>
 
-                <div class="space-y-4">
-                    <div>
-                        <label for="tanggal_sampel_mode1" class="block text-sm font-medium text-gray-700 mb-2">
-                            Tanggal Sampel
-                        </label>
-                        <input type="date" name="tanggal_sampel_mode1" id="tanggal_sampel_mode1"
-                            value="{{ old('tanggal_sampel_mode1', $defaultSampleDate) }}" max="{{ $defaultSampleDate }}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
+                            <input type="hidden" name="mode1_rows[{{ $rowIndex }}][kode]" value="{{ $kodeValue }}"
+                                class="mode1-code-field" disabled>
 
-                    <div>
-                        <label for="kode" class="block text-sm font-medium text-gray-700 mb-2">
-                            Kode <span class="text-gray-400 text-xs">(wajib bersama Operator)</span>
-                        </label>
-                        <select name="kode" id="kode" class="w-full select2-kode
-                                @error('kode') border-red-400 bg-red-50 @enderror">
-                            <option value="">-- Pilih atau ketik untuk cari --</option>
-                            @foreach($kodeOptions as $kodeValue => $kodeLabel)
-                                <option value="{{ $kodeValue }}" {{ old('kode') == $kodeValue ? 'selected' : '' }}>
-                                    {{ $kodeLabel }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Description. Description hanya
-                            untuk informasi.</p>
-                        @error('kode')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                                    Tanggal Sampel
+                                </label>
+                                <input type="date" name="mode1_rows[{{ $rowIndex }}][tanggal_sampel]"
+                                    value="{{ $oldMode1Rows[$rowIndex]['tanggal_sampel'] ?? $defaultSampleDate }}"
+                                    max="{{ $defaultSampleDate }}"
+                                    class="mode1-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
 
-                    {{-- Jenis (Searchable Dropdown) --}}
-                    <div>
-                        <label for="jenis" class="block text-sm font-medium text-gray-700 mb-2">
-                            Jenis <span class="text-gray-400 text-xs">(Default: TBS)</span>
-                        </label>
-                        <select name="jenis" id="jenis" class="w-full select2-jenis
-                                @error('jenis') border-red-400 bg-red-50 @enderror">
-                            @foreach($jenisOptions as $jenisValue => $jenisLabel)
-                                <option value="{{ $jenisValue }}" {{ (old('jenis', 'TBS') == $jenisValue) ? 'selected' : '' }}>
-                                    {{ $jenisLabel }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('jenis')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Operator & Sampel Boy --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="operator" class="block text-sm font-medium text-gray-700 mb-2">
-                                Operator <span class="text-gray-400 text-xs">(wajib bersama Kode)</span>
-                            </label>
-                            @if(!empty($operatorOptions))
-                                <select name="operator" id="operator" class="w-full select2-operator
-                                        @error('operator') border-red-400 bg-red-50 @enderror">
-                                    <option value="">-- Pilih Operator --</option>
-                                    @foreach($operatorOptions as $operatorName)
-                                        <option value="{{ $operatorName }}" {{ old('operator') == $operatorName ? 'selected' : '' }}>
-                                            {{ $operatorName }}
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                                    Jenis
+                                </label>
+                                <select name="mode1_rows[{{ $rowIndex }}][jenis]"
+                                    class="mode1-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    @foreach($jenisOptions as $jenisValue => $jenisLabel)
+                                        <option value="{{ $jenisValue }}" {{ ($oldMode1Rows[$rowIndex]['jenis'] ?? 'TBS') == $jenisValue ? 'selected' : '' }}>
+                                            {{ $jenisLabel }}
                                         </option>
                                     @endforeach
                                 </select>
-                                <p class="mt-1 text-xs text-gray-500">Daftar operator mengikuti office
-                                    {{ Auth::user()->office ?? '-' }}.</p>
-                            @else
-                                <input type="text" name="operator" id="operator" value="{{ old('operator') }}"
-                                    placeholder="Nama operator" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500
-                                               @error('operator') border-red-400 bg-red-50 @enderror">
-                                <p class="mt-1 text-xs text-gray-500">Dropdown operator belum tersedia untuk office
-                                    {{ Auth::user()->office ?? '-' }}.</p>
-                            @endif
-                            @error('operator')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                                    Operator
+                                </label>
+                                @if(!empty($operatorOptions))
+                                    <select name="mode1_rows[{{ $rowIndex }}][operator]"
+                                        class="mode1-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">-- Pilih Operator --</option>
+                                        @foreach($operatorOptions as $operatorName)
+                                            <option value="{{ $operatorName }}" {{ ($oldMode1Rows[$rowIndex]['operator'] ?? '') == $operatorName ? 'selected' : '' }}>
+                                                {{ $operatorName }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @else
+                                    <input type="text" name="mode1_rows[{{ $rowIndex }}][operator]"
+                                        value="{{ $oldMode1Rows[$rowIndex]['operator'] ?? '' }}" placeholder="Nama operator"
+                                        class="mode1-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                @endif
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                                    Sampel Boy
+                                </label>
+                                <input type="text" name="mode1_rows[{{ $rowIndex }}][sampel_boy]"
+                                    value="{{ Auth::user()->name }}" readonly
+                                    class="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-600">
+                            </div>
                         </div>
-
-                        <div>
-                            <label for="sampel_boy" class="block text-sm font-medium text-gray-700 mb-2">
-                                Sampel Boy <span class="text-gray-400 text-xs">(Otomatis)</span>
-                            </label>
-                            <input type="text" name="sampel_boy" id="sampel_boy" value="{{ Auth::user()->name }}"
-                                data-default-value="{{ Auth::user()->name }}" readonly class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 cursor-not-allowed
-                                       @error('sampel_boy') border-red-400 bg-red-50 @enderror">
-                            @error('sampel_boy')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div id="mode1RowsContainer" class="space-y-4"></div>
-
-                    <div>
-                        <button type="button" id="addMode1Row"
-                            class="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium">
-                            + Add Form Mode Non-Angka
-                        </button>
-                    </div>
+                    @endforeach
                 </div>
-            </div>
+            </section>
 
             {{-- MODE 2: Angka (Phase-Based) --}}
-            <div id="mode2Section" class="border-2 border-green-200 bg-green-50 rounded-lg p-5">
-                <div class="flex items-center mb-4">
+            <section class="space-y-3">
+                <div class="flex items-center gap-3">
                     <div
-                        class="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
+                        class="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">
                         2
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-800">
-                        Mode Angka <span class="text-sm text-gray-600 font-normal">(Tahap 1, Tahap 2, lalu Tahap
-                            Akhir)</span>
-                    </h3>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Mode Angka</h3>
+                        <p class="text-sm text-gray-600">Kartu mesin ditampilkan langsung per office. Jika kartu diisi,
+                            seluruh field wajib lengkap.</p>
+                    </div>
                 </div>
 
-                <div class="space-y-4">
-                    <div>
-                        <label for="tanggal_sampel_mode2" class="block text-sm font-medium text-gray-700 mb-2">
-                            Tanggal Sampel
-                        </label>
-                        <input type="date" name="tanggal_sampel_mode2" id="tanggal_sampel_mode2"
-                            value="{{ old('tanggal_sampel_mode2', $defaultSampleDate) }}" max="{{ $defaultSampleDate }}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500">
-                    </div>
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-4" id="mode2RowsContainer">
+                    @foreach($kodeOptions as $kodeValue => $kodeLabel)
+                        @php $rowIndex = $loop->index; @endphp
+                        <div class="mode2-row oil-machine-card rounded-xl border border-green-200 bg-green-50/70 p-3 space-y-3"
+                            data-row-type="mode2">
+                            <div class="flex items-center justify-between gap-2">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-green-900 leading-tight">{{ $kodeLabel }}</h4>
+                                    <p class="text-[11px] text-green-700">Kode: {{ $kodeValue }}</p>
+                                </div>
+                                <span
+                                    class="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700">Angka</span>
+                            </div>
 
-                    <div class="text-sm text-green-800 bg-green-100 border border-green-300 rounded-lg p-3">
-                        <p>
-                            ℹ️ <strong>Perhatian:</strong> Urutan input: <strong>Tahap 1</strong> (Cawan Kosong, Berat
-                            Sampel Basah, Labu Kosong), <strong>Tahap 2</strong> (Cawan + Sampel Kering), lalu
-                            <strong>Tahap Akhir</strong> (Oil + Labu). Tahap terdeteksi otomatis dari field yang diisi.
-                        </p>
-                    </div>
+                            <input type="hidden" name="mode2_rows[{{ $rowIndex }}][kode_mode2]" value="{{ $kodeValue }}"
+                                class="mode2-code-field" disabled>
 
-                    {{-- Kode Selection for Mode 2 --}}
-                    <div>
-                        <label for="kode_mode2" class="block text-sm font-medium text-gray-700 mb-2">
-                            Kode <span class="text-red-500">*</span>
-                        </label>
-                        <select name="kode_mode2" id="kode_mode2" class="w-full select2-kode
-                                   @error('kode_mode2') border-red-400 bg-red-50 @enderror">
-                            <option value="">-- Pilih Kode --</option>
-                            @foreach ($kodeOptions as $kodeValue => $kodeName)
-                                <option value="{{ $kodeValue }}" {{ old('kode_mode2') == $kodeValue ? 'selected' : '' }}>
-                                    {{ $kodeName }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Description. Description hanya
-                            untuk informasi.</p>
-                        @error('kode_mode2')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div id="initialPhaseFields">
-                        <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap 1</div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label for="cawan_kosong" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Cawan Kosong
+                                <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                                    Tanggal Sampel
                                 </label>
-                                <input type="number" step="0.000001" name="cawan_kosong" id="cawan_kosong"
-                                    value="{{ old('cawan_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                           @error('cawan_kosong') border-red-400 bg-red-50 @enderror">
-                                @error('cawan_kosong')
-                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                @enderror
+                                <input type="date" name="mode2_rows[{{ $rowIndex }}][tanggal_sampel]"
+                                    value="{{ $oldMode2Rows[$rowIndex]['tanggal_sampel'] ?? $defaultSampleDate }}"
+                                    max="{{ $defaultSampleDate }}"
+                                    class="mode2-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500">
                             </div>
 
                             <div>
-                                <label for="berat_basah" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Berat Sampel Basah
-                                </label>
-                                <input type="number" step="0.000001" name="berat_basah" id="berat_basah"
-                                    value="{{ old('berat_basah') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                           @error('berat_basah') border-red-400 bg-red-50 @enderror">
-                                @error('berat_basah')
-                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label for="labu_kosong" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Labu Kosong
-                                </label>
-                                <input type="number" step="0.000001" name="labu_kosong" id="labu_kosong"
-                                    value="{{ old('labu_kosong') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                           @error('labu_kosong') border-red-400 bg-red-50 @enderror">
-                                @error('labu_kosong')
-                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                @enderror
+                                <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1.5">Cawan Kosong</label>
+                                        <input type="number" step="0.000001"
+                                            name="mode2_rows[{{ $rowIndex }}][cawan_kosong]"
+                                            value="{{ $oldMode2Rows[$rowIndex]['cawan_kosong'] ?? '' }}"
+                                            placeholder="0.000000"
+                                            class="mode2-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1.5">Berat Sampel
+                                            Basah</label>
+                                        <input type="number" step="0.000001" name="mode2_rows[{{ $rowIndex }}][berat_basah]"
+                                            value="{{ $oldMode2Rows[$rowIndex]['berat_basah'] ?? '' }}"
+                                            placeholder="0.000000"
+                                            class="mode2-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1.5">Labu Kosong</label>
+                                        <input type="number" step="0.000001" name="mode2_rows[{{ $rowIndex }}][labu_kosong]"
+                                            value="{{ $oldMode2Rows[$rowIndex]['labu_kosong'] ?? '' }}"
+                                            placeholder="0.000000"
+                                            class="mode2-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1.5">Cawan + Sample
+                                            Kering</label>
+                                        <input type="number" step="0.000001"
+                                            name="mode2_rows[{{ $rowIndex }}][cawan_sample_kering]"
+                                            value="{{ $oldMode2Rows[$rowIndex]['cawan_sample_kering'] ?? '' }}"
+                                            placeholder="0.000000"
+                                            class="mode2-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1.5">Oil + Labu</label>
+                                        <input type="number" step="0.000001" name="mode2_rows[{{ $rowIndex }}][oil_labu]"
+                                            value="{{ $oldMode2Rows[$rowIndex]['oil_labu'] ?? '' }}" placeholder="0.000000"
+                                            class="mode2-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div id="middlePhaseFields">
-                        <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap 2</div>
-                        <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
-                            <div>
-                                <label for="cawan_sample_kering" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Cawan + Sample Kering
-                                </label>
-                                <input type="number" step="0.000001" name="cawan_sample_kering" id="cawan_sample_kering"
-                                    value="{{ old('cawan_sample_kering') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                           @error('cawan_sample_kering') border-red-400 bg-red-50 @enderror">
-                                @error('cawan_sample_kering')
-                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="finalPhaseFields">
-                        <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap Akhir</div>
-                        <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
-                            <div>
-                                <label for="oil_labu" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Oil + Labu
-                                </label>
-                                <input type="number" step="0.000001" name="oil_labu" id="oil_labu"
-                                    value="{{ old('oil_labu') }}" placeholder="0.000000" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500
-                                           @error('oil_labu') border-red-400 bg-red-50 @enderror">
-                                @error('oil_labu')
-                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="mode2RowsContainer" class="space-y-4"></div>
-
-                    <div>
-                        <button type="button" id="addMode2Row"
-                            class="px-4 py-2 border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition text-sm font-medium">
-                            + Add Form Mode Angka
-                        </button>
-                    </div>
+                    @endforeach
                 </div>
-            </div>
-
-            <template id="mode1RowTemplate">
-                <div class="mode1-row border border-blue-200 bg-white rounded-lg p-4 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-sm font-semibold text-blue-900">Mode Non-Angka Tambahan</h4>
-                        <button type="button"
-                            class="remove-mode1-row text-xs text-red-600 hover:text-red-800">Hapus</button>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Sampel</label>
-                        <input type="date" name="mode1_rows[__INDEX__][tanggal_sampel]" max="{{ $defaultSampleDate }}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Kode</label>
-                        <select name="mode1_rows[__INDEX__][kode]"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                            <option value="">-- Pilih Kode --</option>
-                            @foreach($kodeOptions as $kodeValue => $kodeLabel)
-                                <option value="{{ $kodeValue }}">{{ $kodeLabel }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Jenis</label>
-                            <select name="mode1_rows[__INDEX__][jenis]"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                                @foreach($jenisOptions as $jenisValue => $jenisLabel)
-                                    <option value="{{ $jenisValue }}" {{ $jenisValue === 'TBS' ? 'selected' : '' }}>
-                                        {{ $jenisLabel }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Operator</label>
-                            @if(!empty($operatorOptions))
-                                <select name="mode1_rows[__INDEX__][operator]"
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                                    <option value="">-- Pilih Operator --</option>
-                                    @foreach($operatorOptions as $operatorName)
-                                        <option value="{{ $operatorName }}">{{ $operatorName }}</option>
-                                    @endforeach
-                                </select>
-                            @else
-                                <input type="text" name="mode1_rows[__INDEX__][operator]"
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
-                                    placeholder="Nama operator">
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </template>
-
-            <template id="mode2RowTemplate">
-                <div class="mode2-row border-2 border-green-200 bg-white rounded-lg p-5 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-sm font-semibold text-green-900">Mode Angka Tambahan</h4>
-                        <button type="button"
-                            class="remove-mode2-row text-xs text-red-600 hover:text-red-800">Hapus</button>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Sampel</label>
-                        <input type="date" name="mode2_rows[__INDEX__][tanggal_sampel]" max="{{ $defaultSampleDate }}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Kode</label>
-                        <select name="mode2_rows[__INDEX__][kode_mode2]"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm select2-kode-dynamic">
-                            <option value="">-- Pilih Kode --</option>
-                            @foreach($kodeOptions as $kodeValue => $kodeName)
-                                <option value="{{ $kodeValue }}">{{ $kodeName }}</option>
-                            @endforeach
-                        </select>
-                        <p class="mt-1 text-xs text-gray-500">Format tampilan: Kode - Description. Description hanya
-                            untuk informasi.</p>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap 1</div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Cawan Kosong</label>
-                                    <input type="number" step="0.000001" name="mode2_rows[__INDEX__][cawan_kosong]"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
-                                        placeholder="0.000000">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Berat Sampel
-                                        Basah</label>
-                                    <input type="number" step="0.000001" name="mode2_rows[__INDEX__][berat_basah]"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
-                                        placeholder="0.000000">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Labu Kosong</label>
-                                    <input type="number" step="0.000001" name="mode2_rows[__INDEX__][labu_kosong]"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
-                                        placeholder="0.000000">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap 2</div>
-                            <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Cawan + Sample
-                                        Kering</label>
-                                    <input type="number" step="0.000001"
-                                        name="mode2_rows[__INDEX__][cawan_sample_kering]"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
-                                        placeholder="0.000000">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-green-700">Tahap Akhir
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Oil + Labu</label>
-                                    <input type="number" step="0.000001" name="mode2_rows[__INDEX__][oil_labu]"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
-                                        placeholder="0.000000">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </template>
+            </section>
 
             {{-- Action Buttons --}}
             <div class="flex justify-end gap-3 pt-6 border-t border-gray-200">
@@ -524,6 +314,8 @@
 
     <script>
         $(document).ready(function () {
+            const defaultSampleDate = @json($defaultSampleDate);
+
             // Initialize Select2 for Kode dropdown
             $('.select2-kode').select2({
                 placeholder: '-- Pilih atau ketik untuk cari --',
@@ -595,6 +387,60 @@
             updateClock();
             setInterval(updateClock, 1000);
 
+            function preventNumberWheel(scope = document) {
+                scope.querySelectorAll('input[type="number"]').forEach((input) => {
+                    input.addEventListener('wheel', function (event) {
+                        event.preventDefault();
+                    }, { passive: false });
+                });
+            }
+
+            function getTrimmedValue(element) {
+                if (!element) {
+                    return '';
+                }
+
+                return String(element.value || '').trim();
+            }
+
+            function syncMachineCard(card, codeSelector, userFieldSelector) {
+                const codeField = card.querySelector(codeSelector);
+                const userFields = Array.from(card.querySelectorAll(userFieldSelector));
+                const hasUserValue = userFields.some((field) => {
+                    const value = getTrimmedValue(field);
+
+                    if (!value) {
+                        return false;
+                    }
+
+                    if (field.type === 'date' && value === defaultSampleDate) {
+                        return false;
+                    }
+
+                    if (card.classList.contains('mode1-row') && field.name && field.name.endsWith('[jenis]') && value === 'TBS') {
+                        return false;
+                    }
+
+                    return true;
+                });
+
+                if (codeField) {
+                    codeField.disabled = !hasUserValue;
+                }
+
+                return hasUserValue;
+            }
+
+            function syncAllMachineCards() {
+                document.querySelectorAll('.mode1-row').forEach((card) => {
+                    syncMachineCard(card, '.mode1-code-field', '.mode1-user-field');
+                });
+
+                document.querySelectorAll('.mode2-row').forEach((card) => {
+                    syncMachineCard(card, '.mode2-code-field', '.mode2-user-field');
+                });
+            }
+
             function detectMode2Phase() {
                 const hasStep1 = ['cawan_kosong', 'berat_basah', 'labu_kosong'].some((field) => {
                     const value = $(`#${field}`).val();
@@ -654,11 +500,25 @@
             $('#initialPhaseFields input, #middlePhaseFields input, #finalPhaseFields input').on('input change', togglePhaseFields);
             togglePhaseFields();
 
+            document.querySelectorAll('.mode1-row .mode1-user-field, .mode2-row .mode2-user-field').forEach((field) => {
+                field.addEventListener('input', syncAllMachineCards);
+                field.addEventListener('change', syncAllMachineCards);
+            });
+
+            document.getElementById('labForm')?.addEventListener('reset', function () {
+                window.setTimeout(syncAllMachineCards, 0);
+            });
+
+            preventNumberWheel();
+            syncAllMachineCards();
+
             // Form validation: Jika 1 field di mode diisi, semua field di mode tersebut WAJIB diisi
             $('#labForm').on('submit', function (e) {
                 let hasError = false;
                 let errorMessages = [];
                 const phase = getPhase();
+
+                syncAllMachineCards();
 
                 const clearDynamicRowVisualErrors = () => {
                     document.querySelectorAll('.mode1-row, .mode2-row').forEach((rowEl) => {
@@ -682,76 +542,7 @@
 
                 clearDynamicRowVisualErrors();
 
-                // Mode 1 validation
-                // HANYA cek field yang user bisa edit: kode dan operator
-                // Jenis dan Sampel Boy diabaikan karena punya default value
-                const mode1UserFields = {
-                    'kode': 'Kode',
-                    'operator': 'Operator'
-                };
-
-                const mode1Values = Object.keys(mode1UserFields).map(field => {
-                    const value = $(`#${field}`).val();
-                    return value && value.trim() !== '';
-                });
-
-                const mode1HasAnyValue = mode1Values.some(v => v === true);
-
-                // Jika user mengisi kode atau operator, maka keduanya harus diisi
-                if (mode1HasAnyValue) {
-                    Object.keys(mode1UserFields).forEach(field => {
-                        const value = $(`#${field}`).val();
-                        if (!value || value.trim() === '') {
-                            errorMessages.push(`${mode1UserFields[field]} wajib diisi (Mode Non-Angka)`);
-                            $(`#${field}`).addClass('border-red-400 bg-red-50');
-                            hasError = true;
-                        } else {
-                            $(`#${field}`).removeClass('border-red-400 bg-red-50');
-                        }
-                    });
-
-                    // Jenis dan Sampel Boy selalu valid karena sudah ada default
-                    $('#jenis').removeClass('border-red-400 bg-red-50');
-                    $('#sampel_boy').removeClass('border-red-400 bg-red-50');
-                }
-
-                // Mode 2 validation
-                const mode2Fields = {
-                    'kode_mode2': 'Kode',
-                    'cawan_kosong': 'Cawan Kosong',
-                    'berat_basah': 'Berat Basah',
-                    'labu_kosong': 'Labu Kosong',
-                    'cawan_sample_kering': 'Cawan + Sample Kering',
-                    'oil_labu': 'Oil + Labu'
-                };
-
-                const phaseFields = phase === 'initial'
-                    ? ['kode_mode2', 'cawan_kosong', 'berat_basah', 'labu_kosong']
-                    : phase === 'final'
-                        ? ['kode_mode2', 'cawan_sample_kering']
-                        : ['kode_mode2', 'oil_labu'];
-
-                const mode2Values = phaseFields.map(field => {
-                    const value = $(`#${field}`).val();
-                    return value && value.trim() !== '';
-                });
-
-                const mode2HasAnyValue = mode2Values.some(v => v === true);
-
-                if (mode2HasAnyValue) {
-                    phaseFields.forEach(field => {
-                        const value = $(`#${field}`).val();
-                        if (!value || value.trim() === '') {
-                            errorMessages.push(`${mode2Fields[field]} wajib diisi (Mode Angka)`);
-                            $(`#${field}`).addClass('border-red-400 bg-red-50');
-                            hasError = true;
-                        } else {
-                            $(`#${field}`).removeClass('border-red-400 bg-red-50');
-                        }
-                    });
-                }
-
-                // Mode 1 tambahan validation (per-row)
+                // Mode 1 validation per kartu mesin
                 const mode1Rows = document.querySelectorAll('.mode1-row');
                 mode1Rows.forEach((rowEl, idx) => {
                     const rowNo = idx + 1;
@@ -761,29 +552,35 @@
                         return input ? String(input.value || '').trim() : '';
                     };
 
-                    const kode = getVal('kode');
+                    const jenis = getVal('jenis');
                     const operator = getVal('operator');
+                    const tanggalSampel = getVal('tanggal_sampel');
 
-                    if (kode === '' && operator === '') {
+                    const hasAnyValue = operator !== '' || (tanggalSampel !== '' && tanggalSampel !== defaultSampleDate) || (jenis !== '' && jenis !== 'TBS');
+
+                    if (!hasAnyValue) {
                         return;
                     }
 
                     const missingFields = [];
-                    if (kode === '') {
-                        missingFields.push('kode');
+                    if (tanggalSampel === '') {
+                        missingFields.push('tanggal_sampel');
+                    }
+                    if (jenis === '') {
+                        missingFields.push('jenis');
                     }
                     if (operator === '') {
                         missingFields.push('operator');
                     }
 
                     if (missingFields.length > 0) {
-                        markDynamicRowError(rowEl, missingFields);
-                        errorMessages.push(`Mode Non-Angka Tambahan #${rowNo}: Kode dan Operator wajib diisi berpasangan`);
+                        markDynamicRowError(rowEl, ['kode', ...missingFields]);
+                        errorMessages.push(`Mode Non-Angka Kartu #${rowNo}: jika diisi, Tanggal Sampel, Jenis, dan Operator harus lengkap`);
                         hasError = true;
                     }
                 });
 
-                // Mode 2 tambahan validation (per-row, phase-based)
+                // Mode 2 validation per kartu mesin
                 const mode2Rows = document.querySelectorAll('.mode2-row');
                 mode2Rows.forEach((rowEl, idx) => {
                     const rowNo = idx + 1;
@@ -794,16 +591,18 @@
                     };
 
                     const kode = getVal('kode_mode2');
+                    const tanggalSampel = getVal('tanggal_sampel');
                     const cawanKosong = getVal('cawan_kosong');
                     const beratBasah = getVal('berat_basah');
                     const cawanSampleKering = getVal('cawan_sample_kering');
                     const labuKosong = getVal('labu_kosong');
                     const oilLabu = getVal('oil_labu');
 
+                    const hasDate = tanggalSampel !== '' && tanggalSampel !== defaultSampleDate;
                     const hasStep1 = cawanKosong !== '' || beratBasah !== '' || labuKosong !== '';
                     const hasStep2 = cawanSampleKering !== '';
                     const hasFinal = oilLabu !== '';
-                    const hasAnyNumeric = hasStep1 || hasStep2 || hasFinal;
+                    const hasAnyNumeric = hasDate || hasStep1 || hasStep2 || hasFinal;
 
                     if (!hasAnyNumeric && kode === '') {
                         return;
@@ -811,7 +610,14 @@
 
                     if (kode === '') {
                         markDynamicRowError(rowEl, ['kode_mode2']);
-                        errorMessages.push(`Mode Angka Tambahan #${rowNo}: Kode wajib diisi jika ada input angka`);
+                        errorMessages.push(`Mode Angka Kartu #${rowNo}: Kode wajib terisi jika ada input`);
+                        hasError = true;
+                        return;
+                    }
+
+                    if (tanggalSampel === '') {
+                        markDynamicRowError(rowEl, ['kode_mode2', 'tanggal_sampel']);
+                        errorMessages.push(`Mode Angka Kartu #${rowNo}: Tanggal Sampel wajib diisi jika kartu digunakan`);
                         hasError = true;
                         return;
                     }
@@ -826,19 +632,19 @@
 
                         if (missingFields.length > 0) {
                             markDynamicRowError(rowEl, ['kode_mode2', ...missingFields]);
-                            errorMessages.push(`Mode Angka Tambahan #${rowNo}: Tahap 1 harus lengkap (Cawan Kosong, Berat Sampel Basah, Labu Kosong)`);
+                            errorMessages.push(`Mode Angka Kartu #${rowNo}: Tahap 1 harus lengkap (Cawan Kosong, Berat Sampel Basah, Labu Kosong)`);
                             hasError = true;
                         }
                     } else if (rowPhase === 'final') {
                         if (cawanSampleKering === '') {
                             markDynamicRowError(rowEl, ['kode_mode2', 'cawan_sample_kering']);
-                            errorMessages.push(`Mode Angka Tambahan #${rowNo}: Tahap 2 membutuhkan Cawan + Sample Kering`);
+                            errorMessages.push(`Mode Angka Kartu #${rowNo}: Tahap 2 membutuhkan Cawan + Sample Kering`);
                             hasError = true;
                         }
                     } else {
                         if (oilLabu === '') {
                             markDynamicRowError(rowEl, ['kode_mode2', 'oil_labu']);
-                            errorMessages.push(`Mode Angka Tambahan #${rowNo}: Tahap Akhir membutuhkan Oil + Labu`);
+                            errorMessages.push(`Mode Angka Kartu #${rowNo}: Tahap Akhir membutuhkan Oil + Labu`);
                             hasError = true;
                         }
                     }
@@ -857,7 +663,7 @@
                                 </svg>
                                 <div class="flex-1">
                                     <h4 class="text-sm font-bold text-red-900 mb-2">⚠️ Data Tidak Lengkap</h4>
-                                    <p class="text-sm text-red-800 mb-2">Jika Anda mengisi <strong>Kode</strong> atau <strong>Operator</strong>, maka keduanya harus diisi:</p>
+                                    <p class="text-sm text-red-800 mb-2">Jika satu kartu diisi, maka semua field dalam kartu itu harus lengkap:</p>
                                     <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
                                         ${errorMessages.map(msg => `<li>${msg}</li>`).join('')}
                                     </ul>
@@ -889,134 +695,6 @@
     </script>
 
     <script>
-        // Confirmation handler for form submission
-        let mode1RowIndex = 0;
-        let mode2RowIndex = 0;
-
-        const oldMode1Rows = @json(old('mode1_rows', []));
-        const oldMode2Rows = @json(old('mode2_rows', []));
-
-        function bindDynamicRows() {
-            const mode1Container = document.getElementById('mode1RowsContainer');
-            const mode2Container = document.getElementById('mode2RowsContainer');
-            const mode1Template = document.getElementById('mode1RowTemplate');
-            const mode2Template = document.getElementById('mode2RowTemplate');
-
-            function initMode2KodeSelect2(scopeEl) {
-                if (!window.jQuery || typeof window.jQuery.fn.select2 !== 'function') {
-                    return;
-                }
-
-                const $targets = window.jQuery(scopeEl).find('select.select2-kode-dynamic');
-                $targets.each(function () {
-                    const $el = window.jQuery(this);
-                    if ($el.hasClass('select2-hidden-accessible')) {
-                        return;
-                    }
-
-                    $el.select2({
-                        placeholder: '-- Pilih atau ketik untuk cari --',
-                        allowClear: true,
-                        width: '100%',
-                        theme: 'default',
-                        language: {
-                            noResults: function () {
-                                return 'Tidak ditemukan';
-                            },
-                            searching: function () {
-                                return 'Mencari...';
-                            }
-                        }
-                    });
-                });
-            }
-
-            function addMode1Row(rowData = {}) {
-                const index = mode1RowIndex++;
-                const html = mode1Template.innerHTML.replaceAll('__INDEX__', String(index));
-                mode1Container.insertAdjacentHTML('beforeend', html);
-
-                const rowEl = mode1Container.lastElementChild;
-                if (!rowEl) return;
-
-                const tanggalSampelEl = rowEl.querySelector(`[name="mode1_rows[${index}][tanggal_sampel]"]`);
-                const kodeEl = rowEl.querySelector(`[name="mode1_rows[${index}][kode]"]`);
-                const jenisEl = rowEl.querySelector(`[name="mode1_rows[${index}][jenis]"]`);
-                const operatorEl = rowEl.querySelector(`[name="mode1_rows[${index}][operator]"]`);
-
-                if (tanggalSampelEl && rowData.tanggal_sampel !== undefined && rowData.tanggal_sampel !== null) {
-                    tanggalSampelEl.value = String(rowData.tanggal_sampel);
-                }
-                if (kodeEl && rowData.kode !== undefined && rowData.kode !== null) {
-                    kodeEl.value = String(rowData.kode);
-                }
-                if (jenisEl && rowData.jenis !== undefined && rowData.jenis !== null) {
-                    jenisEl.value = String(rowData.jenis);
-                }
-                if (operatorEl && rowData.operator !== undefined && rowData.operator !== null) {
-                    operatorEl.value = String(rowData.operator);
-                }
-            }
-
-            function addMode2Row(rowData = {}) {
-                const index = mode2RowIndex++;
-                const html = mode2Template.innerHTML.replaceAll('__INDEX__', String(index));
-                mode2Container.insertAdjacentHTML('beforeend', html);
-
-                const rowEl = mode2Container.lastElementChild;
-                if (!rowEl) return;
-
-                initMode2KodeSelect2(rowEl);
-
-                const fields = [
-                    'tanggal_sampel',
-                    'kode_mode2',
-                    'cawan_kosong',
-                    'berat_basah',
-                    'cawan_sample_kering',
-                    'labu_kosong',
-                    'oil_labu',
-                ];
-
-                fields.forEach((field) => {
-                    const input = rowEl.querySelector(`[name="mode2_rows[${index}][${field}]"]`);
-                    if (!input) return;
-
-                    const value = rowData[field];
-                    if (value !== undefined && value !== null) {
-                        input.value = String(value);
-                    }
-                });
-            }
-
-            document.getElementById('addMode1Row')?.addEventListener('click', function () {
-                addMode1Row();
-            });
-
-            document.getElementById('addMode2Row')?.addEventListener('click', function () {
-                addMode2Row();
-            });
-
-            if (Array.isArray(oldMode1Rows) && oldMode1Rows.length > 0) {
-                oldMode1Rows.forEach((row) => addMode1Row(row || {}));
-            }
-
-            if (Array.isArray(oldMode2Rows) && oldMode2Rows.length > 0) {
-                oldMode2Rows.forEach((row) => addMode2Row(row || {}));
-            }
-
-            document.addEventListener('click', function (event) {
-                if (event.target.classList.contains('remove-mode1-row')) {
-                    event.target.closest('.mode1-row')?.remove();
-                }
-                if (event.target.classList.contains('remove-mode2-row')) {
-                    event.target.closest('.mode2-row')?.remove();
-                }
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', bindDynamicRows);
-
         async function handleFormSubmit(event, form) {
             event.preventDefault();
             const confirmed = await window.confirmSave(form); // Pass form element untuk offline save

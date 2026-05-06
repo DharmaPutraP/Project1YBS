@@ -52,6 +52,16 @@
             border-color: #f87171 !important;
             background-color: #fef2f2 !important;
         }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
     </style>
     <x-ui.card title="Input Data Destoner">
         <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
@@ -189,6 +199,14 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
+        function preventNumberWheel(scope = document) {
+            scope.querySelectorAll('input[type="number"]').forEach((input) => {
+                input.addEventListener('wheel', function (event) {
+                    event.preventDefault();
+                }, { passive: false });
+            });
+        }
+
         $(document).ready(function () {
             $('select[name$="[operator]"]').select2({
                 placeholder: '-- Pilih Operator --',
@@ -258,5 +276,6 @@
             toggleRemarksField(checkbox);
         });
         toggleRoundedTimeInput();
+        preventNumberWheel();
     </script>
 </x-layouts.app>

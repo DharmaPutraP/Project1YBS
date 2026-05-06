@@ -62,13 +62,22 @@
                     class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border rounded-lg text-sm">
             </div>
 
+            <div class="flex items-end gap-3 w-full sm:w-auto">
+                <label class="flex items-center gap-2 whitespace-nowrap">
+                    <input type="checkbox" name="numeric_only" value="1" 
+                        {{ request('numeric_only') ? 'checked' : '' }}
+                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    <span class="text-xs sm:text-sm font-medium text-gray-700">Hanya Data Angka</span>
+                </label>
+            </div>
+
             <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <button type="submit"
                     class="px-4 sm:px-6 py-1.5 sm:py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium">
                     Filter
                 </button>
 
-                @if(request()->hasAny(['kode', 'start_date', 'end_date', 'office']))
+                @if(request()->hasAny(['kode', 'start_date', 'end_date', 'office', 'numeric_only']))
                     <a href="{{ route('reports.index') }}"
                         class="px-4 sm:px-6 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm font-medium text-center">
                         Reset
@@ -85,14 +94,7 @@
                 <input type="hidden" name="kode" value="{{ request('kode') }}">
                 <input type="hidden" name="start_date" value="{{ $startDate }}">
                 <input type="hidden" name="end_date" value="{{ $endDate }}">
-
-                <button type="submit"
-                    class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                    <input type="hidden" name="numeric_only" value="{{ request('numeric_only') ? '1' : '0' }}">
                     Export ke Excel
                 </button>
             </form>

@@ -92,7 +92,8 @@ class OilMasterDataSeeder extends Seeder
             ],
             // TODO: office-specific override values can be adjusted directly here.
             'SUN' => [
-                ['kode' => 'FD1', 'column_name' => 'FEED DECANTER 1', 'jenis' => 'FEED DECANTER', 'persen' => 0, 'persen4' => 0, 'pivot' => 'FEED 1', 'limit_operator' => 'le', 'limitOLWB' => 6.00, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Feed Decanter Alva Laval 1', 'is_active' => true],
+                ['kode' => 'FD1', 'column_name' => 'FEED DECANTER 1', 'jenis' => 'FEED DECANTER', 'persen' => 0, 'persen4' => 0, 'pivot' => 'FEED 1', 'limit_operator' => 'le', 'limitOLWB' => 6.00, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Feed Decanter Gea 1', 'is_active' => true],
+                ['kode' => 'FD2', 'column_name' => 'FEED DECANTER 2', 'jenis' => 'FEED DECANTER', 'persen' => 0, 'persen4' => 0, 'pivot' => 'FEED 2', 'limit_operator' => 'le', 'limitOLWB' => 6.00, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Feed Decanter Gea 2', 'is_active' => true],
 
                 // ═══════════════════════════════════════════════════════════════════
                 // HEAVY PHASE (HP1-3)

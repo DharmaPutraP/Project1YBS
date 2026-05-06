@@ -218,6 +218,8 @@ class OilController extends Controller
 
             $savedMode1 = [];
             $savedMode2 = [];
+            $messages = [];
+            $result = ['message' => null, 'results' => []];
 
             $hasPrimaryMode1 = !empty($validated['kode']) || !empty($validated['operator']);
             $hasPrimaryMode2 = !empty($validated['kode_mode2'])

@@ -22,6 +22,7 @@ class ReportController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $kode = $request->input('kode');
+        $numericOnly = $request->input('numeric_only', false);
 
         // Office filter: user dengan office hanya boleh lihat office-nya sendiri
         $userOffice = Auth()->user()->office;
@@ -227,6 +228,7 @@ class ReportController extends Controller
 
         $reports = DB::query()
             ->fromSub($unionQuery, 'reports')
+            ->when($numericOnly, fn($q) => $q->where('priority', 1))
             ->orderBy('tanggal_sampel', 'asc')
             ->orderBy('kode', 'asc')
             ->orderBy('priority', 'asc')
@@ -343,6 +345,7 @@ class ReportController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $kode = $request->input('kode');
+        $numericOnly = $request->input('numeric_only', false);
 
         // Office filter: user dengan office hanya boleh lihat office-nya sendiri
         $userOffice = Auth()->user()->office;
@@ -514,6 +517,7 @@ class ReportController extends Controller
 
         $exportQuery = DB::query()
             ->fromSub($unionQuery, 'reports')
+            ->when($numericOnly, fn($q) => $q->where('priority', 1))
             ->orderBy('tanggal_sampel', 'asc')
             ->orderBy('kode', 'asc')
             ->orderBy('priority', 'asc')

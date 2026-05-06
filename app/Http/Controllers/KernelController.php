@@ -1974,11 +1974,14 @@ class KernelController extends Controller
             ->values();
 
         // Accumulate sum + count per date + kode
+        // For %Moist, append _MOIST suffix to distinguish from %Dirty
         $grouped = [];
         foreach ($calculations as $calc) {
             $displayAt = $this->resolveDisplayTimestamp($calc);
             $date = $this->resolveProductionDateKeyByCutoff($displayAt);
-            $kode = $calc->kode;
+            $kode = ($calc->source_module === 'Dirt & Moist (%Moist)') 
+                ? ($calc->kode . '_MOIST')
+                : $calc->kode;
             if (!isset($grouped[$date][$kode])) {
                 $grouped[$date][$kode] = ['sum' => 0.0, 'count' => 0];
             }
@@ -1991,7 +1994,9 @@ class KernelController extends Controller
         foreach ($grouped as $date => $kodes) {
             foreach ($kodes as $kode => $stats) {
                 $avg = $stats['count'] > 0 ? $stats['sum'] / $stats['count'] : 0.0;
-                $master = $masterMap->get($kode);
+                // Strip _MOIST suffix for master data lookup
+                $masterKode = str_replace('_MOIST', '', $kode);
+                $master = $masterMap->get($masterKode);
                 $dataByDate[$date][$kode] = [
                     'avg_losses' => $avg,
                     'count' => $stats['count'],
@@ -2045,11 +2050,11 @@ class KernelController extends Controller
                 'name' => '%Moist',
                 'color' => 'bg-blue-100 text-blue-800',
                 'columns' => [
-                    ['kode' => 'OUT1', 'label' => 'OUTLET KERNEL SILO 1 TO BUNKER'],
-                    ['kode' => 'OUT2', 'label' => 'OUTLET KERNEL SILO 2 TO BUNKER'],
-                    ['kode' => 'OUT3', 'label' => 'OUTLET KERNEL SILO 3 TO BUNKER'],
-                    ['kode' => 'OUT4', 'label' => 'OUTLET KERNEL SILO 4 TO BUNKER'],
-                    ['kode' => 'OUT5', 'label' => 'OUTLET KERNEL SILO 5 TO BUNKER'],
+                    ['kode' => 'OUT1_MOIST', 'label' => 'OUTLET KERNEL SILO 1 TO BUNKER'],
+                    ['kode' => 'OUT2_MOIST', 'label' => 'OUTLET KERNEL SILO 2 TO BUNKER'],
+                    ['kode' => 'OUT3_MOIST', 'label' => 'OUTLET KERNEL SILO 3 TO BUNKER'],
+                    ['kode' => 'OUT4_MOIST', 'label' => 'OUTLET KERNEL SILO 4 TO BUNKER'],
+                    ['kode' => 'OUT5_MOIST', 'label' => 'OUTLET KERNEL SILO 5 TO BUNKER'],
                 ],
             ],
             [

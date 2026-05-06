@@ -2374,8 +2374,20 @@ class KernelController extends Controller
             ],
         };
 
-        return collect($codeSets)
+        $codes = collect($codeSets)
             ->flatten()
+            ->unique()
+            ->values()
+            ->all();
+
+        $moistCodes = collect($codes)
+            ->filter(fn($code) => str_starts_with((string) $code, 'OUT'))
+            ->map(fn($code) => $code . '_MOIST')
+            ->values()
+            ->all();
+
+        return collect($codes)
+            ->merge($moistCodes)
             ->unique()
             ->values()
             ->all();

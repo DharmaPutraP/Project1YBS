@@ -2584,9 +2584,14 @@ class ProcessController extends Controller
             $mainMachines = $teamMachines->values();
         }
 
+        $machinesForPerformance = $teamMachines->values();
+        if ($machinesForPerformance->isEmpty()) {
+            $machinesForPerformance = $mainMachines;
+        }
+
         $fallbackProcessStart = substr((string) ($isTeamOne ? $record->team_1_start_time : $record->team_2_start_time), 0, 5);
         $fallbackProcessEnd = substr((string) ($isTeamOne ? $record->team_1_end_time : $record->team_2_end_time), 0, 5);
-        $machineWindow = $this->resolvePerformanceWindowFromMachines($mainMachines, $fallbackProcessStart, $fallbackProcessEnd);
+        $machineWindow = $this->resolvePerformanceWindowFromMachines($machinesForPerformance, $fallbackProcessStart, $fallbackProcessEnd);
         $processStart = $machineWindow['start'];
         $processEnd = $machineWindow['end'];
         $downtimeStart = substr((string) ($isTeamOne ? $record->team_1_start_downtime : $record->team_2_start_downtime), 0, 5);
@@ -2600,8 +2605,8 @@ class ProcessController extends Controller
             $office = (string) $record->office;
         }
 
-        $expectedByGroup = $this->buildExpectedSamplesByGroup($record, $teamName, $mainMachines, $office);
-        $machineWindowsByCode = $this->buildMachineWindowsByCode($mainMachines);
+        $expectedByGroup = $this->buildExpectedSamplesByGroup($record, $teamName, $machinesForPerformance, $office);
+        $machineWindowsByCode = $this->buildMachineWindowsByCode($machinesForPerformance);
 
         $actualBundle = $this->buildActualSamplesBundle(
             (string) optional($record->process_date)->format('Y-m-d'),
@@ -2619,7 +2624,7 @@ class ProcessController extends Controller
         $spintestExpectedByGroup = $this->buildExpectedSamplesBySpintestColumns(
             $record,
             $teamName,
-            $mainMachines,
+            $machinesForPerformance,
             $spintestColumns
         );
         $spintestActualByGroup = $this->buildActualSamplesBySpintestColumns(
@@ -3478,36 +3483,19 @@ class ProcessController extends Controller
             return 0;
         }
 
-        $totalEffectiveMinutes = 0;
-        $teamOtherConditions = (array) $this->getTeamOtherConditions($record, $teamName);
+        $segments = $this->buildEffectiveMachineSegmentsForExpected($record, $teamName, $rows);
+        $expectedSamples = 0;
 
-        foreach ($rows as $row) {
-            $start = substr((string) ($row->production_start_time ?? ''), 0, 5);
-            $end = substr((string) ($row->production_end_time ?? ''), 0, 5);
-
-            if (!$this->isValidTime($start) || !$this->isValidTime($end)) {
+        foreach ($segments as $segment) {
+            $durationMinutes = max(0, (int) $segment['end'] - (int) $segment['start']);
+            if ($durationMinutes <= 0) {
                 continue;
             }
 
-            $baseMinutes = $this->minutesBetween($start, $end);
-            if ($baseMinutes <= 0) {
-                continue;
-            }
-
-            $deductionMinutes = $this->calculateOtherConditionDeductionMinutes(
-                $start,
-                $end,
-                $teamOtherConditions
-            );
-
-            $totalEffectiveMinutes += max(0, $baseMinutes - $deductionMinutes);
+            $expectedSamples += intdiv($durationMinutes, $intervalMinutes);
         }
 
-        if ($totalEffectiveMinutes <= 0) {
-            return 0;
-        }
-
-        return intdiv($totalEffectiveMinutes, $intervalMinutes);
+        return $expectedSamples;
     }
 
     private function buildEffectiveMachineSegmentsForExpected(object $record, string $teamName, Collection $rows): array

@@ -35,6 +35,7 @@ use Maatwebsite\Excel\Facades\Excel;
 class ProcessController extends Controller
 {
     private array $timedCodeRowsCache = [];
+    private array $spintestAnalysisRowsCache = [];
 
     private const TEAM_OPTIONS = ['Tim 1', 'Tim 2'];
     private const CST_MACHINES_YBS = ['CST1', 'CST2'];
@@ -45,6 +46,7 @@ class ProcessController extends Controller
     private const LIGHT_PHASE_MACHINES_SUN = ['GEA1', 'GEA2'];
     private const USB_ROW_NUMBERS_YBS = [1, 2, 3, 4, 5, 6, 7, 8];
     private const USB_ROW_NUMBERS_SUN = [1, 2, 3, 4];
+    private const SPINTEST_SAMPLING_INTERVAL_MINUTES = 120;
 
     // Hardcoded master mesin per PT.
     // Silakan ubah daftar di konstanta ini sesuai kebutuhan masing-masing PT.
@@ -102,6 +104,65 @@ class ProcessController extends Controller
             'DESTONER 1',
             'DESTONER 2',
         ],
+        'ANALISA MOISTURE & SPINTEST' => [
+            'FFA & MOISTURE',
+            'SPINTEST COT',
+            'CST 1',
+            'CST 2',
+            'FEED DECANTER ALFA LAVAL 1',
+            'FEED DECANTER ALFA LAVAL 2',
+            'FEED DECANTER GEA',
+            'FEED DECANTER FLOTTWEG',
+            'LIGHT PHASE ALFA LAVAL 1',
+            'LIGHT PHASE ALFA LAVAL 2',
+            'LIGHT PHASE GEA',
+            'LIGHT PHASE FLOTTWEG',
+        ],
+        'LAP JANGKOS' => [
+            'STERILIZER 1',
+            'STERILIZER 2',
+            'STERILIZER 3',
+            'STERILIZER 4',
+            'STERILIZER 5',
+            'STERILIZER 6',
+            'STERILIZER 7',
+            'STERILIZER 8',
+        ],
+        'OIL LOSS FOSS' => [
+            'COT IN',
+            'COT 2',
+            'CST',
+            'FD1',
+            'FD2',
+            'FD3',
+            'FD4',
+            'HP1',
+            'HP2',
+            'HP3',
+            'HP4',
+            'SD1',
+            'SD2',
+            'SD3',
+            'SD4',
+            'HPL1',
+            'HPL2',
+            'HPL3',
+            'FE',
+            'FBP1',
+            'FBP2',
+            'FBP3',
+            'FBP4',
+            'FBP5',
+            'FP1',
+            'FP2',
+            'FP3',
+            'FP4',
+            'FP5',
+            'FP6',
+            'FP7',
+            'FP8',
+            'FP9',
+        ],
     ];
 
     // Ubah jika daftar SUN berbeda dengan YBS.
@@ -141,6 +202,22 @@ class ProcessController extends Controller
         'DESTONER' => [
             'DESTONER 1',
             'DESTONER 2',
+        ],
+        'ANALISA MOISTURE & SPINTEST' => [
+            'FFA & MOISTURE',
+            'SPINTEST COT',
+            'UNDERFLOW CST 1',
+            'UNDERFLOW CST 2',
+            'FEED DECANTER GEA 1',
+            'FEED DECANTER GEA 2',
+            'LIGHT PHASE GEA 1',
+            'LIGHT PHASE GEA 2',
+        ],
+        'LAP JANGKOS' => [
+            'STERILIZER 1',
+            'STERILIZER 2',
+            'STERILIZER 3',
+            'STERILIZER 4',
         ],
     ];
 
@@ -223,59 +300,32 @@ class ProcessController extends Controller
     ];
 
     private const SPINTEST_PERFORMANCE_COLUMNS = [
-        ['key' => 'ffa_moisture', 'label' => 'FFA & Moisture'],
-        ['key' => 'spintest_cot', 'label' => 'Spintest COT'],
-        ['key' => 'underflow_cst_1', 'label' => 'Underflow CST 1'],
-        ['key' => 'underflow_cst_2', 'label' => 'Underflow CST 2'],
-        ['key' => 'feed_decanter_alfa_laval_1', 'label' => 'Feed Decanter Alfa Laval 1'],
-        ['key' => 'feed_decanter_alfa_laval_2', 'label' => 'Feed Decanter Alfa Laval 2'],
-        ['key' => 'feed_decanter_gea', 'label' => 'Feed Decanter GEA'],
-        ['key' => 'feed_decanter_flottweg', 'label' => 'Feed Decanter Flottweg'],
-        ['key' => 'light_phase_alfa_laval_1', 'label' => 'Light Phase Alfa Laval 1'],
-        ['key' => 'light_phase_alfa_laval_2', 'label' => 'Light Phase Alfa Laval 2'],
-        ['key' => 'light_phase_gea', 'label' => 'Light Phase GEA'],
-        ['key' => 'light_phase_flottweg', 'label' => 'Light Phase Flottweg'],
-        ['key' => 'sterilizer_1', 'label' => 'Sterilizer 1'],
-        ['key' => 'sterilizer_2', 'label' => 'Sterilizer 2'],
-        ['key' => 'sterilizer_3', 'label' => 'Sterilizer 3'],
-        ['key' => 'sterilizer_4', 'label' => 'Sterilizer 4'],
-        ['key' => 'sterilizer_5', 'label' => 'Sterilizer 5'],
-        ['key' => 'sterilizer_6', 'label' => 'Sterilizer 6'],
-        ['key' => 'sterilizer_7', 'label' => 'Sterilizer 7'],
-        ['key' => 'sterilizer_8', 'label' => 'Sterilizer 8'],
-        ['key' => 'cot_in', 'label' => 'COT IN'],
-        ['key' => 'cot_2', 'label' => 'COT 2'],
-        ['key' => 'cst', 'label' => 'CST'],
-        ['key' => 'fd1', 'label' => 'FD1'],
-        ['key' => 'fd2', 'label' => 'FD2'],
-        ['key' => 'fd3', 'label' => 'FD3'],
-        ['key' => 'fd4', 'label' => 'FD4'],
-        ['key' => 'hp1', 'label' => 'HP1'],
-        ['key' => 'hp2', 'label' => 'HP2'],
-        ['key' => 'hp3', 'label' => 'HP3'],
-        ['key' => 'hp4', 'label' => 'HP4'],
-        ['key' => 'sd1', 'label' => 'SD1'],
-        ['key' => 'sd2', 'label' => 'SD2'],
-        ['key' => 'sd3', 'label' => 'SD3'],
-        ['key' => 'sd4', 'label' => 'SD4'],
-        ['key' => 'hpl1', 'label' => 'HPL1'],
-        ['key' => 'hpl2', 'label' => 'HPL2'],
-        ['key' => 'hpl3', 'label' => 'HPL3'],
-        ['key' => 'fe', 'label' => 'FE'],
-        ['key' => 'fbp1', 'label' => 'FBP1'],
-        ['key' => 'fbp2', 'label' => 'FBP2'],
-        ['key' => 'fbp3', 'label' => 'FBP3'],
-        ['key' => 'fbp4', 'label' => 'FBP4'],
-        ['key' => 'fbp5', 'label' => 'FBP5'],
-        ['key' => 'fp1', 'label' => 'FP1'],
-        ['key' => 'fp2', 'label' => 'FP2'],
-        ['key' => 'fp3', 'label' => 'FP3'],
-        ['key' => 'fp4', 'label' => 'FP4'],
-        ['key' => 'fp5', 'label' => 'FP5'],
-        ['key' => 'fp6', 'label' => 'FP6'],
-        ['key' => 'fp7', 'label' => 'FP7'],
-        ['key' => 'fp8', 'label' => 'FP8'],
-        ['key' => 'fp9', 'label' => 'FP9'],
+        ['key' => 'ffa_moisture', 'label' => 'FFA dan Moisture', 'detail_keys' => ['ffa_moisture']],
+        ['key' => 'spintest_cot', 'label' => 'Spintest COT', 'detail_keys' => ['spintest_cot']],
+        ['key' => 'underflow_cst', 'label' => 'Underflow CST (CST 1 & CST 2)', 'detail_keys' => ['underflow_cst_1', 'underflow_cst_2']],
+        ['key' => 'feed_decanter', 'label' => 'Feed Decanter (Alfa Laval 1, Alfa Laval 2, GEA, Flottweg)', 'detail_keys' => ['feed_decanter_alfa_laval_1', 'feed_decanter_alfa_laval_2', 'feed_decanter_gea', 'feed_decanter_flottweg']],
+        ['key' => 'light_phase', 'label' => 'Light Phase (Alfa Laval 1, Alfa Laval 2, GEA, Flottweg)', 'detail_keys' => ['light_phase_alfa_laval_1', 'light_phase_alfa_laval_2', 'light_phase_gea', 'light_phase_flottweg']],
+        ['key' => 'sterilizer', 'label' => 'Sterilizer 1-8', 'detail_keys' => ['sterilizer_1','sterilizer_2','sterilizer_3','sterilizer_4','sterilizer_5','sterilizer_6','sterilizer_7','sterilizer_8']],
+        ['key' => 'cot', 'label' => 'COT (COT IN & COT 2)', 'detail_keys' => ['cot_in', 'cot_2']],
+        ['key' => 'cst', 'label' => 'CST', 'detail_keys' => ['cst']],
+        ['key' => 'fd', 'label' => 'FD (FD1-4)', 'detail_keys' => ['fd1', 'fd2', 'fd3', 'fd4']],
+        ['key' => 'hp', 'label' => 'HP (HP 1-4)', 'detail_keys' => ['hp1', 'hp2', 'hp3', 'hp4']],
+        ['key' => 'sd', 'label' => 'SD (SD1-4)', 'detail_keys' => ['sd1', 'sd2', 'sd3', 'sd4']],
+        ['key' => 'hpl', 'label' => 'HPL (HPL1-3)', 'detail_keys' => ['hpl1', 'hpl2', 'hpl3']],
+        ['key' => 'fe', 'label' => 'FE', 'detail_keys' => ['fe']],
+        ['key' => 'fbp', 'label' => 'FBP (FBP1-5)', 'detail_keys' => ['fbp1', 'fbp2', 'fbp3', 'fbp4', 'fbp5']],
+        ['key' => 'fp', 'label' => 'FP (FP1-9)', 'detail_keys' => ['fp1', 'fp2', 'fp3', 'fp4', 'fp5', 'fp6', 'fp7', 'fp8', 'fp9']],
+        ['key' => 'perf_total', 'label' => 'Perf Total', 'detail_keys' => []],
+    ];
+
+    private const SPINTEST_PERFORMANCE_COLUMNS_SUN = [
+        ['key' => 'ffa_moisture', 'label' => 'FFA dan Moisture', 'detail_keys' => ['ffa_moisture']],
+        ['key' => 'spintest_cot', 'label' => 'Spintest COT', 'detail_keys' => ['spintest_cot']],
+        ['key' => 'underflow_cst', 'label' => 'Underflow CST (CST 1 & CST 2)', 'detail_keys' => ['underflow_cst_1', 'underflow_cst_2']],
+        ['key' => 'feed_decanter', 'label' => 'Feed Decanter (GEA1, GEA2)', 'detail_keys' => ['feed_decanter_gea']],
+        ['key' => 'light_phase', 'label' => 'Light Phase (GEA1, GEA2)', 'detail_keys' => ['light_phase_gea']],
+        ['key' => 'sterilizer', 'label' => 'Sterilizer 1-4', 'detail_keys' => ['sterilizer_1', 'sterilizer_2', 'sterilizer_3', 'sterilizer_4']],
+        ['key' => 'perf_total', 'label' => 'Perf Total', 'detail_keys' => []],
     ];
 
     public function index(Request $request)
@@ -365,13 +415,14 @@ class ProcessController extends Controller
                 ];
             });
 
-        $machineGroups = $this->getSpintestMachineGroups();
+        $officeForSpintestConfig = strtoupper(trim($userOffice !== '' ? $userOffice : ($officeFilter !== 'all' ? $officeFilter : 'YBS')));
+        $machineGroups = $this->getSpintestMachineGroups($officeForSpintestConfig);
 
         return view('process.spintest-index', [
             'teamMembers' => $teamMembers,
             'records' => $records,
             'machineGroups' => $machineGroups,
-            'spintestMachineGuide' => $this->getSpintestMachineGuide(),
+            'spintestMachineGuide' => $this->getSpintestMachineGuide($officeForSpintestConfig),
             'officeFilter' => $officeFilter,
             'officeOptions' => $officeOptions,
             'canManageTeamMeta' => $roleFlags['can_manage_team_meta'],
@@ -453,7 +504,7 @@ class ProcessController extends Controller
             'team_2_other_conditions' => $isTeamOneInput ? [] : ($otherConditionsByTeam['Tim 2'] ?? []),
         ]);
 
-        $machinePayload = $this->extractSpintestMachinePayload($request, $inputTeam);
+        $machinePayload = $this->extractSpintestMachinePayload($request, $inputTeam, $office);
         if (!empty($machinePayload)) {
             foreach ($machinePayload as $machineRow) {
                 SpintestMesin::create($machineRow + [
@@ -467,9 +518,256 @@ class ProcessController extends Controller
             ->with('success', 'Informasi proses spintest ' . $inputTeam . ' berhasil disimpan.');
     }
 
-    private function getSpintestMachineGroups(): array
+    public function spintestShow(SpintestProsses $spintestProsses)
     {
-        return [
+        $spintestProsses->load(['mesin', 'user']);
+        $visibleTeam = $this->resolveSpintestVisibleTeam($spintestProsses);
+
+        return view('process.spintest-show', [
+            'record' => $spintestProsses,
+            'team1' => $this->buildSpintestTeamRow($spintestProsses, 'Tim 1'),
+            'team2' => $this->buildSpintestTeamRow($spintestProsses, 'Tim 2'),
+            'visibleTeam' => $visibleTeam,
+            'teamDetail' => $this->buildSpintestMachineDetail($spintestProsses, $visibleTeam ?? 'Tim 1'),
+        ]);
+    }
+
+    public function spintestEdit(SpintestProsses $spintestProsses)
+    {
+        if (!$this->resolveProcessRoleFlags()['can_manage_team_meta']) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah checklist tim dan jam shift.');
+        }
+
+        return view('process.spintest-edit', [
+            'record' => $spintestProsses,
+            'team1' => $this->buildSpintestTeamRow($spintestProsses, 'Tim 1'),
+            'team2' => $this->buildSpintestTeamRow($spintestProsses, 'Tim 2'),
+            'visibleTeam' => $this->resolveSpintestVisibleTeam($spintestProsses),
+            'teamMembers' => $this->getTeamMembersByOffice(),
+        ]);
+    }
+
+    public function spintestUpdate(Request $request, SpintestProsses $spintestProsses)
+    {
+        if (!$this->resolveProcessRoleFlags()['can_manage_team_meta']) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah checklist tim dan jam shift.');
+        }
+
+        $teamMemberRules = $this->buildTeamMemberValidationRules();
+        $visibleTeam = $this->resolveSpintestVisibleTeam($spintestProsses);
+
+        if ($visibleTeam === null) {
+            abort(404, 'Tim spintest tidak valid.');
+        }
+
+        $isTeamOne = $visibleTeam === 'Tim 1';
+
+        $validated = $request->validate([
+            'process_date' => ['required', 'date'],
+            'team_1_start_time' => [$isTeamOne ? 'required' : 'nullable', 'date_format:H:i'],
+            'team_1_end_time' => [$isTeamOne ? 'required' : 'nullable', 'date_format:H:i'],
+            'team_1_members' => ['nullable', 'array'],
+            'team_1_members.*' => $teamMemberRules,
+            'team_2_start_time' => [$isTeamOne ? 'nullable' : 'required', 'date_format:H:i'],
+            'team_2_end_time' => [$isTeamOne ? 'nullable' : 'required', 'date_format:H:i'],
+            'team_2_members' => ['nullable', 'array'],
+            'team_2_members.*' => $teamMemberRules,
+        ]);
+
+        $payload = ['process_date' => $validated['process_date']];
+
+        if ($isTeamOne) {
+            $payload['team_1_start_time'] = $validated['team_1_start_time'] ?? '00:00';
+            $payload['team_1_end_time'] = $validated['team_1_end_time'] ?? '00:00';
+            $payload['team_1_members'] = $validated['team_1_members'] ?? [];
+        } else {
+            $payload['team_2_start_time'] = $validated['team_2_start_time'] ?? '00:00';
+            $payload['team_2_end_time'] = $validated['team_2_end_time'] ?? '00:00';
+            $payload['team_2_members'] = $validated['team_2_members'] ?? [];
+        }
+
+        $spintestProsses->update($payload);
+
+        return redirect()
+            ->route('process.spintest.index')
+            ->with('success', 'Informasi proses spintest berhasil diperbarui.');
+    }
+
+    public function spintestMachineDetail(SpintestProsses $spintestProsses)
+    {
+        $spintestProsses->load(['mesin', 'user']);
+        $visibleTeam = $this->resolveSpintestVisibleTeam($spintestProsses);
+
+        return view('process.spintest-machine-detail', [
+            'record' => $spintestProsses,
+            'visibleTeam' => $visibleTeam,
+            'teamDetail' => $this->buildSpintestMachineDetail($spintestProsses, $visibleTeam ?? 'Tim 1'),
+        ]);
+    }
+
+    public function spintestEditMachines(SpintestProsses $spintestProsses)
+    {
+        if (!$this->resolveProcessRoleFlags()['can_manage_machine_data']) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah jam proses mesin.');
+        }
+
+        $spintestProsses->load('mesin');
+
+        $visibleTeam = $this->resolveSpintestVisibleTeam($spintestProsses);
+        $selectedMainMachines = [];
+        $spareRowsByTeam = [
+            'Tim 1' => [],
+            'Tim 2' => [],
+        ];
+        $otherConditionsByTeam = [
+            'Tim 1' => $this->getSpintestOtherConditionsForTeam($spintestProsses, 'Tim 1'),
+            'Tim 2' => $this->getSpintestOtherConditionsForTeam($spintestProsses, 'Tim 2'),
+        ];
+
+        foreach ($spintestProsses->mesin as $machine) {
+            $teamName = (string) $machine->team_name;
+            if (!in_array($teamName, self::TEAM_OPTIONS, true)) {
+                continue;
+            }
+
+            if ($machine->is_spare_input) {
+                $spareRowsByTeam[$teamName][] = [
+                    'team_name' => $teamName,
+                    'machine_name' => (string) $machine->machine_name,
+                    'start_time' => substr((string) $machine->production_start_time, 0, 5),
+                    'end_time' => substr((string) $machine->production_end_time, 0, 5),
+                    'selected' => true,
+                ];
+                continue;
+            }
+
+            $key = $teamName . '|' . strtoupper(trim((string) $machine->machine_name));
+            if (!isset($selectedMainMachines[$key])) {
+                $selectedMainMachines[$key] = [
+                    'start_time' => substr((string) $machine->production_start_time, 0, 5),
+                    'end_time' => substr((string) $machine->production_end_time, 0, 5),
+                ];
+            }
+        }
+
+        foreach (self::TEAM_OPTIONS as $teamName) {
+            if (empty($spareRowsByTeam[$teamName])) {
+                $spareRowsByTeam[$teamName] = [[
+                    'team_name' => $teamName,
+                    'machine_name' => '',
+                    'start_time' => '',
+                    'end_time' => '',
+                    'selected' => false,
+                ]];
+            }
+
+            if (empty($otherConditionsByTeam[$teamName])) {
+                $otherConditionsByTeam[$teamName] = [[
+                    'team_name' => $teamName,
+                    'reason' => '',
+                    'start_time' => '',
+                    'end_time' => '',
+                ]];
+            }
+        }
+
+        $machineGroups = $this->getSpintestMachineGroups((string) ($spintestProsses->office ?? ''));
+        $machineOptions = collect($machineGroups)->flatten()->unique()->values()->all();
+
+        return view('process.spintest-edit-machines', [
+            'record' => $spintestProsses,
+            'machineGroups' => $machineGroups,
+            'selectedMainMachines' => $selectedMainMachines,
+            'spareRowsByTeam' => $spareRowsByTeam,
+            'otherConditionsByTeam' => $otherConditionsByTeam,
+            'machineOptions' => $machineOptions,
+            'visibleTeam' => $visibleTeam,
+        ]);
+    }
+
+    public function spintestUpdateMachines(Request $request, SpintestProsses $spintestProsses)
+    {
+        if (!$this->resolveProcessRoleFlags()['can_manage_machine_data']) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah jam proses mesin.');
+        }
+
+        $visibleTeam = $this->resolveSpintestVisibleTeam($spintestProsses);
+
+        if ($visibleTeam === null) {
+            abort(404, 'Tim spintest tidak valid.');
+        }
+
+        $request->validate([
+            'machines' => ['nullable', 'array'],
+            'machines.*.selected' => ['nullable'],
+            'machines.*.machine_name' => ['nullable', 'string', 'max:150'],
+            'machines.*.machine_group' => ['nullable', 'string', 'max:120'],
+            'machines.*.team_name' => ['nullable', 'string', 'in:Tim 1,Tim 2'],
+            'machines.*.start_time' => ['nullable', 'date_format:H:i'],
+            'machines.*.end_time' => ['nullable', 'date_format:H:i'],
+            'spare_machines' => ['nullable', 'array'],
+            'spare_machines.*.team_name' => ['nullable', 'string', 'in:Tim 1,Tim 2'],
+            'spare_machines.*.machine_name' => ['nullable', 'string', 'max:150'],
+            'spare_machines.*.start_time' => ['nullable', 'date_format:H:i'],
+            'spare_machines.*.end_time' => ['nullable', 'date_format:H:i'],
+            'other_conditions' => ['nullable', 'array'],
+            'other_conditions.*.team_name' => ['nullable', 'string', 'in:Tim 1,Tim 2'],
+            'other_conditions.*.reason' => ['nullable', 'string', 'max:255', 'required_with:other_conditions.*.start_time,other_conditions.*.end_time'],
+            'other_conditions.*.start_time' => ['nullable', 'date_format:H:i', 'required_with:other_conditions.*.reason,other_conditions.*.end_time'],
+            'other_conditions.*.end_time' => ['nullable', 'date_format:H:i', 'required_with:other_conditions.*.reason,other_conditions.*.start_time'],
+        ]);
+
+        $otherConditionsByTeam = $this->extractOtherConditionsPayload($request, $visibleTeam);
+        $machinePayload = $this->extractSpintestMachinePayload($request, $visibleTeam, (string) ($spintestProsses->office ?? ''));
+
+        $spintestProsses->mesin()
+            ->where('team_name', $visibleTeam)
+            ->delete();
+
+        if (!empty($machinePayload)) {
+            $spintestProsses->mesin()->createMany($machinePayload);
+        }
+
+        if ($visibleTeam === 'Tim 1') {
+            $spintestProsses->update([
+                'team_1_other_conditions' => $otherConditionsByTeam['Tim 1'] ?? [],
+            ]);
+        } else {
+            $spintestProsses->update([
+                'team_2_other_conditions' => $otherConditionsByTeam['Tim 2'] ?? [],
+            ]);
+        }
+
+        return redirect()
+            ->route('process.spintest.index')
+            ->with('success', 'Data mesin spintest berhasil diperbarui.');
+    }
+
+    private function getSpintestMachineGroups(?string $office = null): array
+    {
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? '')));
+        if ($officeCode === 'SUN') {
+            return [
+                'Analisa Moisture & Spintess' => [
+                    'Ffa&moisture',
+                    'Spintest COT',
+                    'Underflow CST 1',
+                    'Underflow CST 2',
+                    'Feed Decanter GEA 1',
+                    'Feed Decanter GEA 2',
+                    'Light Phase GEA 1',
+                    'Light Phase GEA 2',
+                ],
+                'Lap Jangkos' => [
+                    'Sterilizer 1',
+                    'Sterilizer 2',
+                    'Sterilizer 3',
+                    'Sterilizer 4',
+                ],
+            ];
+        }
+
+        $groups = [
             'Analisa Moisture & Spintess' => [
                 'FFA & Moisture',
                 'Spintest COT',
@@ -530,6 +828,11 @@ class ProcessController extends Controller
                 'FP9',
             ],
         ];
+        if ($officeCode === 'SUN') {
+            unset($groups['Oil Loss Foss']);
+        }
+
+        return $groups;
     }
 
     public function store(Request $request)
@@ -770,6 +1073,11 @@ class ProcessController extends Controller
             $selectedOffice = $defaultOffice !== '' ? $defaultOffice : 'all';
         }
 
+        // Normalize office to uppercase for consistent database comparison
+        if ($selectedOffice !== 'all') {
+            $selectedOffice = strtoupper(trim($selectedOffice));
+        }
+
         // Ensure dates are valid and start <= end
         try {
             $startDate = Carbon::parse($dateStart)->startOfDay();
@@ -792,8 +1100,8 @@ class ProcessController extends Controller
             ->get();
 
         $rows = [];
-        $perfTeam1 = []; // Track Tim 1 performance
-        $perfTeam2 = []; // Track Tim 2 performance
+        $team1PerfTotals = [];
+        $team2PerfTotals = [];
 
         foreach ($records as $record) {
             /** @var KernelProsses $record */
@@ -814,7 +1122,7 @@ class ProcessController extends Controller
                 );
                 $rows[] = $row;
                 if (!empty($row['perf_total']) && $row['perf_total'] !== '-') {
-                    $perfTeam1[] = (float) str_replace('%', '', $row['perf_total']);
+                    $team1PerfTotals[] = (float) str_replace('%', '', $row['perf_total']);
                 }
                 continue;
             }
@@ -829,7 +1137,7 @@ class ProcessController extends Controller
                 );
                 $rows[] = $row;
                 if (!empty($row['perf_total']) && $row['perf_total'] !== '-') {
-                    $perfTeam2[] = (float) str_replace('%', '', $row['perf_total']);
+                    $team2PerfTotals[] = (float) str_replace('%', '', $row['perf_total']);
                 }
                 continue;
             }
@@ -843,7 +1151,7 @@ class ProcessController extends Controller
             );
             $rows[] = $row1;
             if (!empty($row1['perf_total']) && $row1['perf_total'] !== '-') {
-                $perfTeam1[] = (float) str_replace('%', '', $row1['perf_total']);
+                $team1PerfTotals[] = (float) str_replace('%', '', $row1['perf_total']);
             }
 
             $row2 = $this->buildPerformanceRow(
@@ -855,20 +1163,20 @@ class ProcessController extends Controller
             );
             $rows[] = $row2;
             if (!empty($row2['perf_total']) && $row2['perf_total'] !== '-') {
-                $perfTeam2[] = (float) str_replace('%', '', $row2['perf_total']);
+                $team2PerfTotals[] = (float) str_replace('%', '', $row2['perf_total']);
             }
         }
 
-        // Calculate average performance per team
-        $avgTeam1 = !empty($perfTeam1)
-            ? number_format(array_sum($perfTeam1) / count($perfTeam1), 2) . '%'
-            : '-';
-        
-        $avgTeam2 = !empty($perfTeam2)
-            ? number_format(array_sum($perfTeam2) / count($perfTeam2), 2) . '%'
-            : '-';
+        $formatAverage = function (array $values): string {
+            if (empty($values)) {
+                return '-';
+            }
 
-        $spintestRows = $this->buildPerformanceSpintestRows($startDate, $endDate, $selectedOffice);
+            return number_format(array_sum($values) / count($values), 2) . '%';
+        };
+
+        $avgTeam1 = $formatAverage($team1PerfTotals);
+        $avgTeam2 = $formatAverage($team2PerfTotals);
 
         return view('process.performance-sampel-boy', [
             'dateStart' => $startDate->format('Y-m-d'),
@@ -876,11 +1184,54 @@ class ProcessController extends Controller
             'selectedOffice' => $selectedOffice,
             'officeOptions' => $officeOptions,
             'rows' => $rows,
-            'spintestRows' => $spintestRows,
-            'spintestColumns' => $this->getSpintestPerformanceColumns(),
             'avgTeam1' => $avgTeam1,
             'avgTeam2' => $avgTeam2,
         ]);
+    }
+
+    public function lapJangkosRekapBreakdown(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+
+        $records = KernelProsses::query()
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
+            ->whereBetween('process_date', [$startDate, $endDate])
+            ->orderBy('process_date')
+            ->orderBy('id')
+            ->get();
+
+        $breakdownData = $this->buildBreakdownReportData($records);
+
+        return view('process.lap-jangkos.rekap-breakdown', [
+            'breakdownData' => $breakdownData,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ]);
+    }
+
+    public function lapJangkosRekapBreakdownExport(Request $request)
+    {
+        [$startDate, $endDate] = $this->resolveAnalysisDateRange($request);
+        $officeScope = $this->getUserOfficeScope();
+
+        $records = KernelProsses::query()
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
+            ->whereBetween('process_date', [$startDate, $endDate])
+            ->orderBy('process_date')
+            ->orderBy('id')
+            ->get();
+
+        $breakdownData = $this->buildBreakdownReportData($records);
+
+        return $this->downloadAnalysisExport(
+            'Rekap Breakdown',
+            $startDate,
+            $endDate,
+            $breakdownData['rows'],
+            ['Tanggal', 'Alasan', 'Jam Awal Breakdown', 'Jam Akhir Breakdown', 'Total Jam Breakdown'],
+            'Rekap_Breakdown_' . $startDate . '_to_' . $endDate . '.xlsx'
+        );
     }
 
     public function exportPerformanceSampelBoy(Request $request)
@@ -893,6 +1244,11 @@ class ProcessController extends Controller
 
         if ($selectedOffice !== 'all' && !in_array($selectedOffice, $officeOptions, true)) {
             $selectedOffice = $defaultOffice !== '' ? $defaultOffice : 'all';
+        }
+
+        // Normalize office to uppercase for consistent database comparison
+        if ($selectedOffice !== 'all') {
+            $selectedOffice = strtoupper(trim($selectedOffice));
         }
 
         // Ensure dates are valid and start <= end
@@ -981,7 +1337,7 @@ class ProcessController extends Controller
     {
         $officeScope = $selectedOffice === 'all' ? null : $selectedOffice;
 
-        // include machine inputs entered via informasi proses mesin spintest
+        // Get Spintest processes with their machines (only checked machines)
         $spintestProcesses = SpintestProsses::with(['mesin', 'user'])
             ->when($officeScope !== null, fn ($q) => $q->where('office', $officeScope))
             ->whereBetween('process_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
@@ -989,18 +1345,38 @@ class ProcessController extends Controller
             ->orderBy('id')
             ->get();
 
-        $machineEntries = collect();
+        $performanceColumns = $this->getSpintestPerformanceColumns($selectedOffice);
+
+        // Collect machine entries with their detail keys (from SpintestMesin records)
+        $machineDetailKeysByProcess = [];
+
         foreach ($spintestProcesses as $proc) {
             $tanggal = optional($proc->process_date)->toDateString();
+            $processId = (int) $proc->id;
             $office = (string) ($proc->office ?? '-');
             $creator = trim((string) ($proc->user?->name ?? '-'));
+            $teamName = $proc->input_team ?? 'Tim 1';
 
+            // Get team's time range
+            $jamMulai = $teamName === 'Tim 1'
+                ? substr((string) $proc->team_1_start_time, 0, 5)
+                : substr((string) $proc->team_2_start_time, 0, 5);
+            $jamAkhir = $teamName === 'Tim 1'
+                ? substr((string) $proc->team_1_end_time, 0, 5)
+                : substr((string) $proc->team_2_end_time, 0, 5);
+
+            // Map machines to detail keys (only checked machines from SpintestMesin)
+            $detailKeysByMachine = [];
+            $detailRowsByKey = [];
             foreach ($proc->mesin as $m) {
+                if ((string) ($m->team_name ?? '') !== (string) $teamName) {
+                    continue;
+                }
+
                 $machineName = strtoupper(trim((string) ($m->machine_name ?? '')));
                 $group = strtoupper(trim((string) ($m->machine_group ?? '')));
 
                 $detailKey = '';
-                // map by group/name similar to previous resolvers
                 if (str_contains($group, 'ANALISA') || str_contains($group, 'MOISTURE') || str_contains($group, 'SPINTES')) {
                     if (str_contains($machineName, 'FFA')) {
                         $detailKey = 'ffa_moisture';
@@ -1028,7 +1404,6 @@ class ProcessController extends Controller
                 }
 
                 if ($detailKey === '' && str_contains($group, 'LAP JANGKOS')) {
-                    // sterilizer mapping
                     if (preg_match('/(\d+)/', $machineName, $mnum)) {
                         $n = (int) $mnum[1];
                         if ($n >= 1 && $n <= 8) {
@@ -1041,24 +1416,349 @@ class ProcessController extends Controller
                     $detailKey = $this->resolveOilFossPerformanceKey($machineName) ?: '';
                 }
 
-                if ($detailKey === '') {
+                // Backward-compatible fallback for legacy spare rows that still store group as SPARE INPUT.
+                if ($detailKey === '' && (str_contains($group, 'SPARE') || $group === '')) {
+                    if (str_contains($machineName, 'FFA')) {
+                        $detailKey = 'ffa_moisture';
+                    } elseif (str_contains($machineName, 'SPINTEST') && str_contains($machineName, 'COT')) {
+                        $detailKey = 'spintest_cot';
+                    } elseif (preg_match('/\bCST\s*1\b|\bCST1\b/', $machineName)) {
+                        $detailKey = 'underflow_cst_1';
+                    } elseif (preg_match('/\bCST\s*2\b|\bCST2\b/', $machineName)) {
+                        $detailKey = 'underflow_cst_2';
+                    } elseif (str_contains($machineName, 'FEED DECANTER') && str_contains($machineName, 'ALFA LAVAL')) {
+                        $detailKey = str_contains($machineName, '2') ? 'feed_decanter_alfa_laval_2' : 'feed_decanter_alfa_laval_1';
+                    } elseif (str_contains($machineName, 'FEED DECANTER') && str_contains($machineName, 'GEA')) {
+                        $detailKey = 'feed_decanter_gea';
+                    } elseif (str_contains($machineName, 'FEED DECANTER') && (str_contains($machineName, 'FLOTT') || str_contains($machineName, 'FLOTTWEG'))) {
+                        $detailKey = 'feed_decanter_flottweg';
+                    } elseif (str_contains($machineName, 'LIGHT PHASE') && str_contains($machineName, 'ALFA LAVAL')) {
+                        $detailKey = str_contains($machineName, '2') ? 'light_phase_alfa_laval_2' : 'light_phase_alfa_laval_1';
+                    } elseif (str_contains($machineName, 'LIGHT PHASE') && str_contains($machineName, 'GEA')) {
+                        $detailKey = 'light_phase_gea';
+                    } elseif (str_contains($machineName, 'LIGHT PHASE') && (str_contains($machineName, 'FLOTT') || str_contains($machineName, 'FLOTTWEG'))) {
+                        $detailKey = 'light_phase_flottweg';
+                    } elseif (preg_match('/\bSTERILIZER\s*(\d+)\b/', $machineName, $mnum)) {
+                        $n = (int) ($mnum[1] ?? 0);
+                        if ($n >= 1 && $n <= 8) {
+                            $detailKey = 'sterilizer_' . $n;
+                        }
+                    } else {
+                        $detailKey = $this->resolveOilFossPerformanceKey($machineName) ?: '';
+                    }
+                }
+
+                if ($detailKey !== '') {
+                    $detailKeysByMachine[$detailKey] = true;
+                    $detailRowsByKey[$detailKey][] = $m;
+                }
+            }
+
+            $expectedByColumn = [];
+            foreach ($performanceColumns as $column) {
+                $columnKey = (string) ($column['key'] ?? '');
+                $columnDetailKeys = (array) ($column['detail_keys'] ?? []);
+
+                if ($columnKey === '' || empty($columnDetailKeys)) {
                     continue;
                 }
 
-                $machineEntries->push([
-                    'tanggal' => $tanggal,
-                    'jam' => substr((string) ($m->production_start_time ?? ''), 0, 5),
-                    'office' => $office,
-                    'created_by' => $creator,
-                    'module_group' => $group,
-                    'module_name' => $m->machine_name,
-                    'detail_key' => $detailKey,
-                ]);
+                $rowsForColumn = collect();
+                foreach ($columnDetailKeys as $detailKey) {
+                    foreach (($detailRowsByKey[$detailKey] ?? []) as $row) {
+                        $rowsForColumn->push($row);
+                    }
+                }
+
+                $expectedByColumn[$columnKey] = $this->calculateExpectedSamplesFromRowsWithConditions(
+                    $proc,
+                    $teamName,
+                    $rowsForColumn,
+                    self::SPINTEST_SAMPLING_INTERVAL_MINUTES
+                );
+            }
+
+            // Store checked machines for this process
+            $machineDetailKeysByProcess[$processId] = [
+                'tanggal' => $tanggal,
+                'office' => $office,
+                'creator' => $creator,
+                'team_name' => $teamName,
+                'jam_mulai' => $jamMulai,
+                'jam_akhir' => $jamAkhir,
+                'detail_keys' => $detailKeysByMachine,
+                'expected_by_column' => $expectedByColumn,
+                'team_1_other_conditions' => (array) ($proc->team_1_other_conditions ?? []),
+                'team_2_other_conditions' => (array) ($proc->team_2_other_conditions ?? []),
+            ];
+        }
+
+        // Collect all analysis entries
+        $analysisEntries = $this->collectAllSpintestAnalysisEntries($startDate, $endDate, $officeScope, $selectedOffice);
+
+        if ($analysisEntries->isEmpty()) {
+            return [];
+        }
+
+        $columnKeys = collect($performanceColumns)->pluck('key')->all();
+        $detailKeyToColumnKey = [];
+        foreach ($performanceColumns as $column) {
+            foreach (($column['detail_keys'] ?? []) as $detailKey) {
+                $detailKeyToColumnKey[$detailKey] = $column['key'];
             }
         }
 
-        $analysisEntries = collect()
-            ->concat($machineEntries)
+        // Enrich analysis entries with team_name based on time overlap
+        $enrichedEntries = $analysisEntries->map(function (array $entry) use ($spintestProcesses): array {
+            $entry['team_name'] = '-';
+            $entryTime = substr((string) ($entry['jam'] ?? ''), 0, 5);
+            
+            if ($entryTime !== '') {
+                $entryTimeMinutes = $this->timeToMinutes($entryTime);
+                
+                foreach ($spintestProcesses as $proc) {
+                    if (optional($proc->process_date)->toDateString() !== $entry['tanggal'] 
+                        || (string) ($proc->office ?? '-') !== $entry['office']) {
+                        continue;
+                    }
+                    
+                    $inputTeam = (string) ($proc->input_team ?? 'Tim 1');
+                    
+                    // Check if entry time falls within Tim 1 time range (only if Tim 1 was input or is default)
+                    if ($inputTeam === 'Tim 1' || $inputTeam === '') {
+                        $team1Start = substr((string) $proc->team_1_start_time, 0, 5);
+                        $team1End = substr((string) $proc->team_1_end_time, 0, 5);
+                        
+                        if ($team1Start !== '' && $team1Start !== '00:00' && $team1End !== '' && $team1End !== '00:00') {
+                            $team1StartMin = $this->timeToMinutes($team1Start);
+                            $team1EndMin = $this->timeToMinutes($team1End);
+                            
+                            if ($team1StartMin <= $team1EndMin) {
+                                if ($entryTimeMinutes >= $team1StartMin && $entryTimeMinutes <= $team1EndMin) {
+                                    $entry['team_name'] = 'Tim 1';
+                                    return $entry;
+                                }
+                            } else {
+                                if ($entryTimeMinutes >= $team1StartMin || $entryTimeMinutes <= $team1EndMin) {
+                                    $entry['team_name'] = 'Tim 1';
+                                    return $entry;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Check if entry time falls within Tim 2 time range (only if Tim 2 was input)
+                    if ($inputTeam === 'Tim 2') {
+                        $team2Start = substr((string) $proc->team_2_start_time, 0, 5);
+                        $team2End = substr((string) $proc->team_2_end_time, 0, 5);
+                        
+                        if ($team2Start !== '' && $team2Start !== '00:00' && $team2End !== '' && $team2End !== '00:00') {
+                            $team2StartMin = $this->timeToMinutes($team2Start);
+                            $team2EndMin = $this->timeToMinutes($team2End);
+                            
+                            if ($team2StartMin <= $team2EndMin) {
+                                if ($entryTimeMinutes >= $team2StartMin && $entryTimeMinutes <= $team2EndMin) {
+                                    $entry['team_name'] = 'Tim 2';
+                                    return $entry;
+                                }
+                            } else {
+                                if ($entryTimeMinutes >= $team2StartMin || $entryTimeMinutes <= $team2EndMin) {
+                                    $entry['team_name'] = 'Tim 2';
+                                    return $entry;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return $entry;
+        })->values();
+
+        return $enrichedEntries
+            ->groupBy(fn (array $entry): string => $entry['tanggal'] . '|' . $entry['office'] . '|' . $entry['team_name'])
+            ->map(function (Collection $entries) use ($machineDetailKeysByProcess, $columnKeys, $detailKeyToColumnKey, $performanceColumns): ?array {
+                $firstEntry = $entries->first();
+                $date = (string) $firstEntry['tanggal'];
+                $office = (string) $firstEntry['office'];
+                $teamName = (string) ($firstEntry['team_name'] ?? '-');
+
+                // Ignore analysis rows that cannot be linked to a valid process team.
+                if ($teamName === '-' || $teamName === '') {
+                    return null;
+                }
+                $sampleBoyNames = $entries
+                    ->pluck('created_by')
+                    ->map(fn ($name): string => trim((string) $name))
+                    ->filter(fn (string $name): bool => $name !== '')
+                    ->unique()
+                    ->values();
+                $sampleBoyText = $sampleBoyNames->isNotEmpty()
+                    ? $sampleBoyNames->implode(', ')
+                    : '-';
+
+                // Find matching SpintestProsses
+                // Match by tanggal, office, and team_name (not by creator, since process creator may differ from analysis entry creator)
+                $matchingProc = null;
+                foreach ($machineDetailKeysByProcess as $procId => $procInfo) {
+                    if ($procInfo['tanggal'] === $date
+                        && $procInfo['office'] === $office
+                        && $procInfo['team_name'] === $teamName) {
+                        $matchingProc = $procInfo;
+                        break;
+                    }
+                }
+
+                if ($matchingProc === null) {
+                    return null;
+                }
+
+                $jamMulai = $matchingProc['jam_mulai'] ?? '-';
+                $jamAkhir = $matchingProc['jam_akhir'] ?? '-';
+                $checkedDetailKeys = $matchingProc['detail_keys'] ?? [];
+                $expectedByColumn = (array) ($matchingProc['expected_by_column'] ?? []);
+
+                $totalHours = '-';
+                if ($jamMulai !== '-' && $jamAkhir !== '-') {
+                    $totalHours = $this->calculateTeamProductionHours($jamMulai, $jamAkhir, '', '') . ' jam';
+                }
+
+                // Filter entries that are within time range of process
+                $filteredEntries = $entries;
+                if ($jamMulai !== '-' && $jamAkhir !== '-') {
+                    $filteredEntries = $entries->filter(function (array $entry) use ($jamMulai, $jamAkhir): bool {
+                        $entryTime = substr((string) ($entry['jam'] ?? ''), 0, 5);
+                        if ($entryTime === '') {
+                            return false;
+                        }
+
+                        // Check if entry time is within range
+                        $jamMulaiMinutes = $this->timeToMinutes($jamMulai);
+                        $jamAkhirMinutes = $this->timeToMinutes($jamAkhir);
+                        $entryTimeMinutes = $this->timeToMinutes($entryTime);
+
+                        if ($jamMulaiMinutes <= $jamAkhirMinutes) {
+                            // Normal case: no wrap around midnight
+                            return $entryTimeMinutes >= $jamMulaiMinutes && $entryTimeMinutes <= $jamAkhirMinutes;
+                        } else {
+                            // Wrap around: e.g., 22:00 to 06:00
+                            return $entryTimeMinutes >= $jamMulaiMinutes || $entryTimeMinutes <= $jamAkhirMinutes;
+                        }
+                    })->values();
+                }
+
+                // Count entries by detail key but deduplicate multiple machines recorded at the same time
+                // so that entries sharing the same 'jam' for the same performance column count as 1.
+                $detailCounts = array_fill_keys($columnKeys, 0);
+
+                // Build bucket: jam -> set of columnKeys observed at that jam
+                $jamBuckets = [];
+                foreach ($filteredEntries as $entry) {
+                    $detailKey = (string) ($entry['detail_key'] ?? '');
+                    $jam = substr((string) ($entry['jam'] ?? ''), 0, 5);
+                    $columnKey = $detailKeyToColumnKey[$detailKey] ?? null;
+
+                    if ($detailKey === '' || $columnKey === null) {
+                        continue;
+                    }
+
+                    // Only count detail keys that were checked in the process
+                    if (!isset($checkedDetailKeys[$detailKey])) {
+                        continue;
+                    }
+
+                    if ($jam === '') {
+                        // fallback: count as its own unique bucket by using index
+                        $jam = uniqid('t', true);
+                    }
+
+                    $jamBuckets[$jam][$columnKey] = true;
+                }
+
+                // For each jam bucket, increment each present column once
+                foreach ($jamBuckets as $bucket) {
+                    foreach (array_keys($bucket) as $col) {
+                        if (array_key_exists($col, $detailCounts)) {
+                            $detailCounts[$col]++;
+                        }
+                    }
+                }
+
+                // Calculate actual total and perf percentage.
+                // Perf total is computed from all checked performance columns and capped at 100%.
+                $actualTotal = array_sum($detailCounts);
+                $totalExpectedAcross = 0;
+                foreach ($performanceColumns as $column) {
+                    $columnKey = (string) ($column['key'] ?? '');
+                    if ($columnKey === 'perf_total') {
+                        continue;
+                    }
+
+                    $columnDetailKeys = (array) ($column['detail_keys'] ?? []);
+                    $isChecked = false;
+                    foreach ($columnDetailKeys as $detailKey) {
+                        if (isset($checkedDetailKeys[$detailKey])) {
+                            $isChecked = true;
+                            break;
+                        }
+                    }
+
+                    if ($isChecked) {
+                        $totalExpectedAcross += (int) ($expectedByColumn[$columnKey] ?? 0);
+                    }
+                }
+
+                $perfPercentage = '-';
+                if ($totalExpectedAcross > 0) {
+                    $val = ($actualTotal / $totalExpectedAcross) * 100;
+                    $val = min(100, $val);
+                    $perfPercentage = number_format($val, 2) . '%';
+                }
+
+                // Convert counts to actual/expected strings
+                // For checked machines: show "count/expected"
+                // For unchecked machines: show "0/0"
+                $detailStrings = [];
+                foreach ($performanceColumns as $column) {
+                    $columnKey = (string) $column['key'];
+                    $columnDetailKeys = (array) ($column['detail_keys'] ?? []);
+                    $isChecked = false;
+
+                    foreach ($columnDetailKeys as $detailKey) {
+                        if (isset($checkedDetailKeys[$detailKey])) {
+                            $isChecked = true;
+                            break;
+                        }
+                    }
+
+                    if ($isChecked) {
+                        $expectedForColumn = (int) ($expectedByColumn[$columnKey] ?? 0);
+                        $detailStrings[$columnKey] = (string) ($detailCounts[$columnKey] . '/' . $expectedForColumn);
+                    } else {
+                        $detailStrings[$columnKey] = '0/0';
+                    }
+                }
+
+                $detailStrings['perf_total'] = $perfPercentage;
+
+                return [
+                    'tanggal' => Carbon::parse($date)->format('d/m/Y'),
+                    'tim' => $teamName,
+                    'jam_mulai_proses' => $jamMulai,
+                    'jam_akhir_proses' => $jamAkhir,
+                    'total_hours' => $totalHours,
+                    'nama_sample_boy' => $sampleBoyText,
+                ] + $detailStrings;
+            })
+                ->filter()
+            ->sortBy(fn (array $row): string => $row['tanggal'] . '|' . $row['tim'])
+            ->values()
+            ->all();
+    }
+
+    private function collectAllSpintestAnalysisEntries(Carbon $startDate, Carbon $endDate, ?string $officeScope, string $selectedOffice = 'all'): Collection
+    {
+        $entries = collect()
             ->concat($this->collectSpintestAnalysisEntries(
                 FfaMoisture::query(),
                 'Analisa Moisture & Spintes',
@@ -1111,7 +1811,7 @@ class ProcessController extends Controller
                     return match ($machineName) {
                         'ALFA LAVAL 1' => 'feed_decanter_alfa_laval_1',
                         'ALFA LAVAL 2' => 'feed_decanter_alfa_laval_2',
-                        'GEA' => 'feed_decanter_gea',
+                        'GEA', 'GEA1', 'GEA 1', 'GEA2', 'GEA 2' => 'feed_decanter_gea',
                         'FLOTTWEG' => 'feed_decanter_flottweg',
                         default => null,
                     };
@@ -1131,7 +1831,7 @@ class ProcessController extends Controller
                     return match ($machineName) {
                         'ALFA LAVAL 1' => 'light_phase_alfa_laval_1',
                         'ALFA LAVAL 2' => 'light_phase_alfa_laval_2',
-                        'GEA' => 'light_phase_gea',
+                        'GEA', 'GEA1', 'GEA 1', 'GEA2', 'GEA 2' => 'light_phase_gea',
                         'FLOTTWEG' => 'light_phase_flottweg',
                         default => null,
                     };
@@ -1152,8 +1852,10 @@ class ProcessController extends Controller
                         ? 'sterilizer_' . $number
                         : null;
                 }
-            ))
-            ->concat($this->collectSpintestAnalysisEntries(
+            ));
+
+        if (strtoupper(trim($selectedOffice)) !== 'SUN') {
+            $entries = $entries->concat($this->collectSpintestAnalysisEntries(
                 OilFoss::query(),
                 'Oil Loss Foss',
                 'Oil Loss Foss',
@@ -1165,134 +1867,21 @@ class ProcessController extends Controller
                     return $this->resolveOilFossPerformanceKey((string) ($row->machine_name ?? ''));
                 }
             ));
-
-        if ($analysisEntries->isEmpty()) {
-            return [];
         }
 
-        $processRecords = KernelProsses::query()
-            ->when($officeScope !== null, fn ($query) => $query->where('office', $officeScope))
-            ->whereBetween('process_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->orderBy('process_date')
-            ->orderBy('id')
-            ->get();
+        return $entries;
+    }
 
-        $columnKeys = collect($this->getSpintestPerformanceColumns())->pluck('key')->all();
+    private function timeToMinutes(string $time): int
+    {
+        if (strlen($time) < 5) {
+            return 0;
+        }
+        $parts = explode(':', substr($time, 0, 5));
+        $hours = (int) ($parts[0] ?? 0);
+        $minutes = (int) ($parts[1] ?? 0);
 
-        return $analysisEntries
-            ->groupBy(fn (array $entry): string => $entry['tanggal'] . '|' . $entry['office'] . '|' . $entry['created_by'])
-            ->map(function (Collection $entries) use ($processRecords, $columnKeys): array {
-                $firstEntry = $entries->first();
-                $date = (string) $firstEntry['tanggal'];
-                $office = (string) $firstEntry['office'];
-                $creator = (string) $firstEntry['created_by'];
-
-                $matchingProcess = $processRecords->first(function (KernelProsses $record) use ($date, $office, $creator): bool {
-                    if ((string) optional($record->process_date)->format('Y-m-d') !== $date) {
-                        return false;
-                    }
-
-                    if ((string) ($record->office ?? '') !== $office) {
-                        return false;
-                    }
-
-                    $team1Members = collect((array) ($record->team_1_members ?? []))
-                        ->filter()
-                        ->map(fn ($name) => trim((string) $name))
-                        ->all();
-                    $team2Members = collect((array) ($record->team_2_members ?? []))
-                        ->filter()
-                        ->map(fn ($name) => trim((string) $name))
-                        ->all();
-
-                    return in_array($creator, $team1Members, true) || in_array($creator, $team2Members, true);
-                });
-
-                $teamName = '-';
-                $jamMulai = '-';
-                $jamAkhir = '-';
-                $totalHours = '-';
-
-                if ($matchingProcess instanceof KernelProsses) {
-                    $team1Members = collect((array) ($matchingProcess->team_1_members ?? []))
-                        ->filter()
-                        ->map(fn ($name) => trim((string) $name))
-                        ->all();
-                    $team2Members = collect((array) ($matchingProcess->team_2_members ?? []))
-                        ->filter()
-                        ->map(fn ($name) => trim((string) $name))
-                        ->all();
-
-                    if (in_array($creator, $team1Members, true)) {
-                        $teamName = 'Tim 1';
-                        $jamMulai = substr((string) $matchingProcess->team_1_start_time, 0, 5) ?: '-';
-                        $jamAkhir = substr((string) $matchingProcess->team_1_end_time, 0, 5) ?: '-';
-                        $totalHours = $this->calculateTeamProductionHours(
-                            $jamMulai !== '-' ? $jamMulai : '',
-                            $jamAkhir !== '-' ? $jamAkhir : '',
-                            substr((string) $matchingProcess->team_1_start_downtime, 0, 5),
-                            substr((string) $matchingProcess->team_1_end_downtime, 0, 5)
-                        ) . ' jam';
-                    } elseif (in_array($creator, $team2Members, true)) {
-                        $teamName = 'Tim 2';
-                        $jamMulai = substr((string) $matchingProcess->team_2_start_time, 0, 5) ?: '-';
-                        $jamAkhir = substr((string) $matchingProcess->team_2_end_time, 0, 5) ?: '-';
-                        $totalHours = $this->calculateTeamProductionHours(
-                            $jamMulai !== '-' ? $jamMulai : '',
-                            $jamAkhir !== '-' ? $jamAkhir : '',
-                            substr((string) $matchingProcess->team_2_start_downtime, 0, 5),
-                            substr((string) $matchingProcess->team_2_end_downtime, 0, 5)
-                        ) . ' jam';
-                    }
-                }
-
-                if ($jamMulai === '-') {
-                    $times = $entries
-                        ->pluck('jam')
-                        ->filter()
-                        ->map(fn ($time) => substr((string) $time, 0, 5))
-                        ->sort()
-                        ->values();
-
-                    $jamMulai = (string) ($times->first() ?: '-');
-                    $jamAkhir = (string) ($times->last() ?: '-');
-                    $totalHours = ($jamMulai !== '-' && $jamAkhir !== '-')
-                        ? $this->calculateTeamProductionHours($jamMulai, $jamAkhir, '', '') . ' jam'
-                        : '-';
-                }
-
-                $detailCounts = array_fill_keys($columnKeys, 0);
-                foreach ($entries as $entry) {
-                    $detailKey = (string) ($entry['detail_key'] ?? '');
-                    if ($detailKey !== '' && array_key_exists($detailKey, $detailCounts)) {
-                        $detailCounts[$detailKey]++;
-                    }
-                }
-
-                // compute expected samples based on process hours (2-hour cycle)
-                $numericHours = ($jamMulai !== '-' && $jamAkhir !== '-')
-                    ? $this->calculateTeamProductionHours($jamMulai, $jamAkhir, '', '')
-                    : 0;
-                $expectedSamples = $numericHours > 0 ? (int) ceil($numericHours / 2) : 0;
-
-                // convert counts to actual/expected strings
-                $detailStrings = [];
-                foreach ($detailCounts as $k => $v) {
-                    $detailStrings[$k] = $expectedSamples > 0 ? (string) ($v . '/' . $expectedSamples) : (string) $v;
-                }
-
-                return [
-                    'tanggal' => Carbon::parse($date)->format('d/m/Y'),
-                    'tim' => $teamName,
-                    'jam_mulai_proses' => $jamMulai,
-                    'jam_akhir_proses' => $jamAkhir,
-                    'total_hours' => $totalHours,
-                    'nama_sample_boy' => $creator !== '' ? $creator : '-',
-                ] + $detailStrings;
-            })
-            ->sortBy(fn (array $row): string => $row['tanggal'] . '|' . $row['tim'] . '|' . $row['nama_sample_boy'])
-            ->values()
-            ->all();
+        return $hours * 60 + $minutes;
     }
 
     private function collectSpintestAnalysisEntries(Builder $query, string $moduleGroup, string $moduleName, string $timeField, Carbon $startDate, Carbon $endDate, ?string $officeScope, ?callable $detailResolver = null): Collection
@@ -1327,9 +1916,9 @@ class ProcessController extends Controller
             ->values();
     }
 
-    private function getSpintestMachineGuide(): array
+    private function getSpintestMachineGuide(?string $office = null): array
     {
-        return [
+        $guide = [
             [
                 'title' => 'Analisa Moisture & Spintes',
                 'items' => [
@@ -1361,11 +1950,139 @@ class ProcessController extends Controller
                 ],
             ],
         ];
+
+        $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? '')));
+        if ($officeCode === 'SUN') {
+            $guide = array_values(array_filter($guide, fn (array $section): bool => (($section['title'] ?? '') !== 'Oil Loss Foss')));
+        }
+
+        return $guide;
     }
 
-    private function getSpintestPerformanceColumns(): array
+    private function getSpintestPerformanceColumns(string $office = 'all'): array
     {
+        $officeCode = strtoupper(trim($office));
+        if ($officeCode === 'SUN') {
+            return self::SPINTEST_PERFORMANCE_COLUMNS_SUN;
+        }
+
+        if ($officeCode !== 'SUN') {
+            return self::SPINTEST_PERFORMANCE_COLUMNS;
+        }
+
         return self::SPINTEST_PERFORMANCE_COLUMNS;
+    }
+
+    private function resolveSpintestVisibleTeam(SpintestProsses $record): ?string
+    {
+        $team = (string) $record->input_team;
+
+        return in_array($team, self::TEAM_OPTIONS, true) ? $team : null;
+    }
+
+    private function buildSpintestTeamRow(SpintestProsses $record, string $teamName): array
+    {
+        $isTeamOne = $teamName === 'Tim 1';
+
+        return [
+            'process_date' => optional($record->process_date)->format('d/m/Y'),
+            'process_start' => substr((string) ($isTeamOne ? $record->team_1_start_time : $record->team_2_start_time), 0, 5),
+            'process_end' => substr((string) ($isTeamOne ? $record->team_1_end_time : $record->team_2_end_time), 0, 5),
+            'team_name' => $teamName,
+            'members' => $isTeamOne ? ($record->team_1_members ?? []) : ($record->team_2_members ?? []),
+            'other_conditions' => $this->getSpintestOtherConditionsForTeam($record, $teamName),
+        ];
+    }
+
+    private function getSpintestOtherConditionsForTeam(SpintestProsses $record, string $teamName): array
+    {
+        $rows = $teamName === 'Tim 1'
+            ? (array) ($record->team_1_other_conditions ?? [])
+            : (array) ($record->team_2_other_conditions ?? []);
+
+        return collect($rows)
+            ->filter(fn ($row): bool => is_array($row))
+            ->map(function (array $row): array {
+                $start = trim((string) ($row['start_time'] ?? ''));
+                $end = trim((string) ($row['end_time'] ?? ''));
+                $minutes = ($this->isValidTime($start) && $this->isValidTime($end))
+                    ? $this->minutesBetween($start, $end)
+                    : 0;
+
+                return [
+                    'reason' => trim((string) ($row['reason'] ?? '')),
+                    'start_time' => $start,
+                    'end_time' => $end,
+                    'duration_minutes' => $minutes,
+                    'duration_hours' => round($minutes / 60, 2),
+                ];
+            })
+            ->filter(fn (array $row): bool => $row['reason'] !== '' && $row['start_time'] !== '' && $row['end_time'] !== '')
+            ->values()
+            ->all();
+    }
+
+    private function buildSpintestMachineDetail(SpintestProsses $record, ?string $teamName): array
+    {
+        $teamName = $teamName ?? 'Tim 1';
+        $machines = $record->mesin
+            ->where('team_name', $teamName)
+            ->values();
+
+        $machineGroups = $machines
+            ->groupBy(fn (SpintestMesin $machine): string => strtoupper(trim((string) $machine->machine_name)))
+            ->map(function (Collection $rows, string $machineName) use ($record, $teamName): array {
+                $rows = $rows->values();
+                $rowDetails = $rows->map(function (SpintestMesin $machine) use ($record, $teamName): array {
+                    $durationMinutes = max(
+                        0,
+                        $this->minutesBetween(
+                            substr((string) $machine->production_start_time, 0, 5),
+                            substr((string) $machine->production_end_time, 0, 5)
+                        )
+                    );
+
+                    return [
+                        'machine' => $machine,
+                        'status' => $machine->is_spare_input ? 'Spare' : 'Operasi',
+                        'duration_minutes' => $durationMinutes,
+                        'expected_samples' => $this->calculateExpectedSamplesFromRowsWithConditions(
+                            $record,
+                            $teamName,
+                            collect([$machine]),
+                            self::SPINTEST_SAMPLING_INTERVAL_MINUTES
+                        ),
+                    ];
+                })->values();
+
+                return [
+                    'machine_name' => $rows->first()?->machine_name ?? $machineName,
+                    'rows' => $rowDetails,
+                    'total_minutes' => (int) $rowDetails->sum('duration_minutes'),
+                    'expected_samples' => $this->calculateExpectedSamplesFromRowsWithConditions(
+                        $record,
+                        $teamName,
+                        $rows,
+                        self::SPINTEST_SAMPLING_INTERVAL_MINUTES
+                    ),
+                ];
+            })
+            ->values();
+
+        return [
+            'team_name' => $teamName,
+            'process_date' => optional($record->process_date)->format('d/m/Y'),
+            'process_start' => $teamName === 'Tim 1'
+                ? substr((string) $record->team_1_start_time, 0, 5)
+                : substr((string) $record->team_2_start_time, 0, 5),
+            'process_end' => $teamName === 'Tim 1'
+                ? substr((string) $record->team_1_end_time, 0, 5)
+                : substr((string) $record->team_2_end_time, 0, 5),
+            'members' => $teamName === 'Tim 1' ? ($record->team_1_members ?? []) : ($record->team_2_members ?? []),
+            'other_conditions' => $this->getSpintestOtherConditionsForTeam($record, $teamName),
+            'machine_groups' => $machineGroups,
+            'total_samples' => (int) $machineGroups->sum('expected_samples'),
+        ];
     }
 
     private function resolveOilFossPerformanceKey(string $machineName): ?string
@@ -1860,18 +2577,27 @@ class ProcessController extends Controller
     private function buildPerformanceRow(KernelProsses $record, string $teamName, array $members, Collection $teamMachines, string $selectedOffice): array
     {
         $isTeamOne = $teamName === 'Tim 1';
+        $mainMachines = $teamMachines
+            ->where('is_spare_input', false)
+            ->values();
+        if ($mainMachines->isEmpty()) {
+            $mainMachines = $teamMachines->values();
+        }
 
-        $processStart = substr((string) ($isTeamOne ? $record->team_1_start_time : $record->team_2_start_time), 0, 5);
-        $processEnd = substr((string) ($isTeamOne ? $record->team_1_end_time : $record->team_2_end_time), 0, 5);
+        $machinesForPerformance = $teamMachines->values();
+        if ($machinesForPerformance->isEmpty()) {
+            $machinesForPerformance = $mainMachines;
+        }
+
+        $fallbackProcessStart = substr((string) ($isTeamOne ? $record->team_1_start_time : $record->team_2_start_time), 0, 5);
+        $fallbackProcessEnd = substr((string) ($isTeamOne ? $record->team_1_end_time : $record->team_2_end_time), 0, 5);
+        $machineWindow = $this->resolvePerformanceWindowFromMachines($machinesForPerformance, $fallbackProcessStart, $fallbackProcessEnd);
+        $processStart = $machineWindow['start'];
+        $processEnd = $machineWindow['end'];
         $downtimeStart = substr((string) ($isTeamOne ? $record->team_1_start_downtime : $record->team_2_start_downtime), 0, 5);
         $downtimeEnd = substr((string) ($isTeamOne ? $record->team_1_end_downtime : $record->team_2_end_downtime), 0, 5);
 
-        $effectiveHours = $this->calculateTeamProductionHours(
-            $processStart,
-            $processEnd,
-            $downtimeStart,
-            $downtimeEnd
-        );
+        $effectiveHours = $this->calculateTeamProductionHours($processStart, $processEnd, '', '');
 
         // Use actual office from record if available, fallback to selectedOffice filter
         $office = $selectedOffice === 'all' ? 'YBS' : $selectedOffice;
@@ -1879,21 +2605,53 @@ class ProcessController extends Controller
             $office = (string) $record->office;
         }
 
-        $expectedByGroup = $this->buildExpectedSamplesByGroup($record, $teamName, $teamMachines, $office);
-        $machineWindowsByCode = $this->buildMachineWindowsByCode($teamMachines);
+        $expectedByGroup = $this->buildExpectedSamplesByGroup($record, $teamName, $machinesForPerformance, $office);
+        $machineWindowsByCode = $this->buildMachineWindowsByCode($machinesForPerformance);
 
         $actualBundle = $this->buildActualSamplesBundle(
             (string) optional($record->process_date)->format('Y-m-d'),
             $office === 'all' ? '' : $office,
             $machineWindowsByCode,
-            $members
+            []
         );
         $actualByGroup = $actualBundle['group'];
 
+        $spintestColumns = array_values(array_filter(
+            $this->getSpintestPerformanceColumns($office),
+            fn (array $column): bool => (string) ($column['key'] ?? '') !== 'perf_total'
+        ));
+
+        $spintestExpectedByGroup = $this->buildExpectedSamplesBySpintestColumns(
+            $record,
+            $teamName,
+            $machinesForPerformance,
+            $spintestColumns
+        );
+        $spintestActualByGroup = $this->buildActualSamplesBySpintestColumns(
+            (string) optional($record->process_date)->format('Y-m-d'),
+            $office,
+            $machineWindowsByCode,
+            [],
+            $spintestColumns
+        );
+
+        foreach ($spintestExpectedByGroup as $groupKey => $expectedValue) {
+            $expectedByGroup[$groupKey] = (int) $expectedValue;
+            $actualByGroup[$groupKey] = (int) ($spintestActualByGroup[$groupKey] ?? 0);
+        }
+
         $perfActualTotal = 0;
         $perfExpectedTotal = 0;
-        $intervalKeys = $this->getIntervalMinutesForOffice($office);
-        foreach (array_keys($intervalKeys) as $groupKey) {
+        $performanceKeys = array_values(array_unique(array_merge(
+            array_keys($this->getIntervalMinutesForOffice($office)),
+            array_map(fn (array $column): string => (string) ($column['key'] ?? ''), $spintestColumns)
+        )));
+
+        foreach ($performanceKeys as $groupKey) {
+            if ($groupKey === '') {
+                continue;
+            }
+
             $perfActualTotal += (int) ($actualByGroup[$groupKey] ?? 0);
             $perfExpectedTotal += (int) ($expectedByGroup[$groupKey] ?? 0);
         }
@@ -1919,8 +2677,207 @@ class ProcessController extends Controller
             'press' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'press'),
             'eficiency' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'eficiency'),
             'destoner' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'destoner'),
+            'ffa_moisture' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'ffa_moisture'),
+            'spintest_cot' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'spintest_cot'),
+            'underflow_cst' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'underflow_cst'),
+            'feed_decanter' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'feed_decanter'),
+            'light_phase' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'light_phase'),
+            'sterilizer' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'sterilizer'),
+            'cot' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'cot'),
+            'cst' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'cst'),
+            'fd' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'fd'),
+            'hp' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'hp'),
+            'sd' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'sd'),
+            'hpl' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'hpl'),
+            'fe' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'fe'),
+            'fbp' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'fbp'),
+            'fp' => $this->formatActualExpected($actualByGroup, $expectedByGroup, 'fp'),
             'perf_total' => $perfTotal,
         ];
+    }
+
+    private function resolvePerformanceWindowFromMachines(Collection $machines, string $fallbackStart, string $fallbackEnd): array
+    {
+        $ranges = [];
+
+        foreach ($machines as $machine) {
+            $start = $this->timeToMinutes(substr((string) ($machine->production_start_time ?? ''), 0, 5));
+            $end = $this->timeToMinutes(substr((string) ($machine->production_end_time ?? ''), 0, 5));
+
+            if ($start === null || $end === null) {
+                continue;
+            }
+
+            if ($end <= $start) {
+                $end += 24 * 60;
+            }
+
+            $ranges[] = [
+                'start' => $start,
+                'end' => $end,
+            ];
+        }
+
+        if (empty($ranges)) {
+            return [
+                'start' => $fallbackStart,
+                'end' => $fallbackEnd,
+            ];
+        }
+
+        $start = (int) min(array_column($ranges, 'start'));
+        $end = (int) max(array_column($ranges, 'end'));
+
+        return [
+            'start' => $this->minutesToTimeLabel($start),
+            'end' => $this->minutesToTimeLabel($end),
+        ];
+    }
+
+    private function buildExpectedSamplesBySpintestColumns(
+        KernelProsses $record,
+        string $teamName,
+        Collection $machines,
+        array $spintestColumns
+    ): array {
+        $expected = [];
+
+        foreach ($spintestColumns as $column) {
+            $columnKey = (string) ($column['key'] ?? '');
+            $detailKeys = (array) ($column['detail_keys'] ?? []);
+
+            if ($columnKey === '' || empty($detailKeys)) {
+                continue;
+            }
+
+            $rowsForColumn = $machines
+                ->filter(function ($machine) use ($detailKeys): bool {
+                    $machineName = strtoupper(trim((string) $machine->machine_name));
+                    $resolvedKey = $this->resolvePerformanceGroupByMachineName($machineName);
+
+                    return $resolvedKey !== null && in_array($resolvedKey, $detailKeys, true);
+                })
+                ->values();
+
+            if ($rowsForColumn->isEmpty()) {
+                $expected[$columnKey] = 0;
+                continue;
+            }
+
+            $expected[$columnKey] = $this->calculateExpectedSamplesFromRowsWithConditions(
+                $record,
+                $teamName,
+                $rowsForColumn,
+                self::SPINTEST_SAMPLING_INTERVAL_MINUTES
+            );
+        }
+
+        return $expected;
+    }
+
+    private function buildActualSamplesBySpintestColumns(
+        string $date,
+        string $office,
+        array $machineWindowsByCode,
+        array $teamMembers,
+        array $spintestColumns
+    ): array {
+        $actual = [];
+        $detailKeyToColumnKey = [];
+
+        foreach ($spintestColumns as $column) {
+            $columnKey = (string) ($column['key'] ?? '');
+            if ($columnKey === '') {
+                continue;
+            }
+
+            $actual[$columnKey] = 0;
+
+            foreach ((array) ($column['detail_keys'] ?? []) as $detailKey) {
+                $detailKeyToColumnKey[(string) $detailKey] = $columnKey;
+            }
+        }
+
+        if (empty($detailKeyToColumnKey)) {
+            return $actual;
+        }
+
+        $rows = $this->getSpintestAnalysisEntriesCached($date, $office);
+        if ($rows->isEmpty()) {
+            return $actual;
+        }
+
+        $normalizedTeamMembers = array_map(
+            fn ($member): string => strtoupper(trim((string) $member)),
+            $teamMembers
+        );
+
+        $slots = [];
+        foreach ($rows as $row) {
+            $detailKey = trim((string) ($row['detail_key'] ?? ''));
+            $columnKey = $detailKeyToColumnKey[$detailKey] ?? null;
+            if ($columnKey === null) {
+                continue;
+            }
+
+            if (!empty($normalizedTeamMembers)) {
+                $sampleBoy = strtoupper(trim((string) ($row['created_by'] ?? '')));
+                if (!in_array($sampleBoy, $normalizedTeamMembers, true)) {
+                    continue;
+                }
+            }
+
+            $time = substr((string) ($row['jam'] ?? ''), 0, 5);
+            $minutes = $this->timeToMinutes($time);
+            if ($minutes === null) {
+                continue;
+            }
+
+            $windows = $machineWindowsByCode[$this->normalizeCode($detailKey)] ?? [];
+            if (empty($windows)) {
+                continue;
+            }
+
+            $inWindow = false;
+            foreach ($windows as $window) {
+                if ($this->isMinutesWithinRange($minutes, (int) $window['start'], (int) $window['end'])) {
+                    $inWindow = true;
+                    break;
+                }
+            }
+
+            if (!$inWindow) {
+                continue;
+            }
+
+            $slots[$columnKey][$time] = true;
+        }
+
+        foreach ($slots as $columnKey => $columnSlots) {
+            $actual[$columnKey] = count($columnSlots);
+        }
+
+        return $actual;
+    }
+
+    private function getSpintestAnalysisEntriesCached(string $date, string $office): Collection
+    {
+        $normalizedOffice = strtoupper(trim($office));
+        $key = $date . '|' . $normalizedOffice;
+
+        if (!isset($this->spintestAnalysisRowsCache[$key])) {
+            $startDate = Carbon::parse($date)->startOfDay();
+            $endDate = Carbon::parse($date)->endOfDay();
+
+            $this->spintestAnalysisRowsCache[$key] = $this->collectAllSpintestAnalysisEntries(
+                $startDate,
+                $endDate,
+                $normalizedOffice !== '' ? $normalizedOffice : null,
+                $normalizedOffice !== '' ? $normalizedOffice : 'all'
+            )->values();
+        }
+
+        return $this->spintestAnalysisRowsCache[$key];
     }
 
     private function formatActualExpected(array $actualByGroup, array $expectedByGroup, string $groupKey): string
@@ -2011,6 +2968,103 @@ class ProcessController extends Controller
 
     private function resolvePerformanceGroupByMachineName(string $machineName): ?string
     {
+        if (str_contains($machineName, 'FFA')) {
+            return 'ffa_moisture';
+        }
+
+        if (str_contains($machineName, 'SPINTEST') && str_contains($machineName, 'COT')) {
+            return 'spintest_cot';
+        }
+
+        if (preg_match('/\bCST\s*1\b|\bCST1\b/', $machineName)) {
+            return 'underflow_cst_1';
+        }
+
+        if (preg_match('/\bCST\s*2\b|\bCST2\b/', $machineName)) {
+            return 'underflow_cst_2';
+        }
+
+        if (str_contains($machineName, 'ALFA LAVAL')) {
+            if (str_contains($machineName, '2')) {
+                return 'feed_decanter_alfa_laval_2';
+            }
+
+            return 'feed_decanter_alfa_laval_1';
+        }
+
+        if (str_contains($machineName, 'GEA')) {
+            return 'feed_decanter_gea';
+        }
+
+        if (str_contains($machineName, 'FLOTT')) {
+            return 'feed_decanter_flottweg';
+        }
+
+        if (str_contains($machineName, 'LIGHT PHASE')) {
+            if (str_contains($machineName, 'ALFA LAVAL') && str_contains($machineName, '2')) {
+                return 'light_phase_alfa_laval_2';
+            }
+
+            if (str_contains($machineName, 'ALFA LAVAL')) {
+                return 'light_phase_alfa_laval_1';
+            }
+
+            if (str_contains($machineName, 'GEA')) {
+                return 'light_phase_gea';
+            }
+
+            return 'light_phase_flottweg';
+        }
+
+        if (preg_match('/\bSTERILIZER\s*(\d+)\b/', $machineName, $matches)) {
+            $number = (int) ($matches[1] ?? 0);
+            if ($number >= 1 && $number <= 8) {
+                return 'sterilizer_' . $number;
+            }
+        }
+
+        if (str_contains($machineName, 'COT IN')) {
+            return 'cot_in';
+        }
+
+        if (preg_match('/\bCOT\s*2\b|\bCOT2\b/', $machineName)) {
+            return 'cot_2';
+        }
+
+        if (preg_match('/\bFD\s*([1-4])\b|\bFD([1-4])\b/', $machineName, $matches)) {
+            $number = (int) ($matches[1] ?: ($matches[2] ?: 0));
+            return $number >= 1 && $number <= 4 ? 'fd' . $number : null;
+        }
+
+        if (preg_match('/\bHP\s*([1-4])\b|\bHP([1-4])\b/', $machineName, $matches)) {
+            $number = (int) ($matches[1] ?: ($matches[2] ?: 0));
+            return $number >= 1 && $number <= 4 ? 'hp' . $number : null;
+        }
+
+        if (preg_match('/\bSD\s*([1-4])\b|\bSD([1-4])\b/', $machineName, $matches)) {
+            $number = (int) ($matches[1] ?: ($matches[2] ?: 0));
+            return $number >= 1 && $number <= 4 ? 'sd' . $number : null;
+        }
+
+        if (preg_match('/\bHPL\s*([1-3])\b|\bHPL([1-3])\b/', $machineName, $matches)) {
+            $number = (int) ($matches[1] ?: ($matches[2] ?: 0));
+            return $number >= 1 && $number <= 3 ? 'hpl' . $number : null;
+        }
+
+        if ($machineName === 'FE') {
+            return 'fe';
+        }
+
+        if (preg_match('/\bFBP\s*([1-5])\b|\bFBP([1-5])\b/', $machineName, $matches)) {
+            $number = (int) ($matches[1] ?: ($matches[2] ?: 0));
+            return $number >= 1 && $number <= 5 ? 'fbp' . $number : null;
+        }
+
+        if (preg_match('/\bFP\s*([1-9])\b|\bFP([1-9])\b/', $machineName, $matches)) {
+            $number = (int) ($matches[1] ?: ($matches[2] ?: 0));
+            return $number >= 1 && $number <= 9 ? 'fp' . $number : null;
+        }
+
         if (str_starts_with($machineName, 'FIBRE CYCLONE')) {
             return 'fibre_cyclone';
         }
@@ -2295,6 +3349,11 @@ class ProcessController extends Controller
             return ['D' . $match[1]];
         }
 
+        $performanceKey = $this->resolvePerformanceGroupByMachineName($machineName);
+        if ($performanceKey !== null) {
+            return [$performanceKey];
+        }
+
         return [];
     }
 
@@ -2349,11 +3408,73 @@ class ProcessController extends Controller
 
         $intervals = $this->getIntervalMinutesForOffice($office);
 
-        return (int) ($intervals[$groupKey] ?? 0);
+        if (isset($intervals[$groupKey])) {
+            return (int) $intervals[$groupKey];
+        }
+
+        if (in_array($groupKey, [
+            'ffa_moisture',
+            'spintest_cot',
+            'underflow_cst_1',
+            'underflow_cst_2',
+            'feed_decanter_alfa_laval_1',
+            'feed_decanter_alfa_laval_2',
+            'feed_decanter_gea',
+            'feed_decanter_flottweg',
+            'light_phase_alfa_laval_1',
+            'light_phase_alfa_laval_2',
+            'light_phase_gea',
+            'light_phase_flottweg',
+            'sterilizer_1',
+            'sterilizer_2',
+            'sterilizer_3',
+            'sterilizer_4',
+            'sterilizer_5',
+            'sterilizer_6',
+            'sterilizer_7',
+            'sterilizer_8',
+            'cot_in',
+            'cot_2',
+            'cst',
+            'fd1',
+            'fd2',
+            'fd3',
+            'fd4',
+            'hp1',
+            'hp2',
+            'hp3',
+            'hp4',
+            'sd1',
+            'sd2',
+            'sd3',
+            'sd4',
+            'hpl1',
+            'hpl2',
+            'hpl3',
+            'fe',
+            'fbp1',
+            'fbp2',
+            'fbp3',
+            'fbp4',
+            'fbp5',
+            'fp1',
+            'fp2',
+            'fp3',
+            'fp4',
+            'fp5',
+            'fp6',
+            'fp7',
+            'fp8',
+            'fp9',
+        ], true)) {
+            return self::SPINTEST_SAMPLING_INTERVAL_MINUTES;
+        }
+
+        return 0;
     }
 
     private function calculateExpectedSamplesFromRowsWithConditions(
-        KernelProsses $record,
+        object $record,
         string $teamName,
         Collection $rows,
         int $intervalMinutes
@@ -2362,22 +3483,22 @@ class ProcessController extends Controller
             return 0;
         }
 
-        $effectiveSegments = $this->buildEffectiveMachineSegmentsForExpected($record, $teamName, $rows);
+        $segments = $this->buildEffectiveMachineSegmentsForExpected($record, $teamName, $rows);
+        $expectedSamples = 0;
 
-        $expected = 0;
-        foreach ($effectiveSegments as $segment) {
-            $length = (int) ($segment['end'] - $segment['start']);
-            if ($length <= 0) {
+        foreach ($segments as $segment) {
+            $durationMinutes = max(0, (int) $segment['end'] - (int) $segment['start']);
+            if ($durationMinutes <= 0) {
                 continue;
             }
 
-            $expected += intdiv($length, $intervalMinutes);
+            $expectedSamples += intdiv($durationMinutes, $intervalMinutes);
         }
 
-        return $expected;
+        return $expectedSamples;
     }
 
-    private function buildEffectiveMachineSegmentsForExpected(KernelProsses $record, string $teamName, Collection $rows): array
+    private function buildEffectiveMachineSegmentsForExpected(object $record, string $teamName, Collection $rows): array
     {
         $baseSegments = [];
         foreach ($rows as $row) {
@@ -2509,19 +3630,6 @@ class ProcessController extends Controller
         return strtoupper(str_replace([' ', '-', '_'], '', trim($code)));
     }
 
-    private function timeToMinutes(string $time): ?int
-    {
-        $normalizedTime = substr(trim($time), 0, 5);
-
-        if (!$this->isValidTime($normalizedTime)) {
-            return null;
-        }
-
-        [$hour, $minute] = array_map('intval', explode(':', $normalizedTime));
-
-        return ($hour * 60) + $minute;
-    }
-
     private function isMinutesWithinRange(int $point, int $start, int $end): bool
     {
         if ($end >= $start) {
@@ -2563,6 +3671,16 @@ class ProcessController extends Controller
         }
 
         return (int) round($hours * 60);
+    }
+
+    private function minutesToTimeLabel(int $minutes): string
+    {
+        $normalized = $minutes % (24 * 60);
+        if ($normalized < 0) {
+            $normalized += 24 * 60;
+        }
+
+        return sprintf('%02d:%02d', intdiv($normalized, 60), $normalized % 60);
     }
 
     private function resolveMachineTotalMinutes(KernelMesin $machine): int
@@ -2787,11 +3905,14 @@ class ProcessController extends Controller
                 continue;
             }
 
-            if (!$selected && $machineName === '' && $startTime === '' && $endTime === '') {
+            if ($machineName === '' && $startTime === '' && $endTime === '') {
                 continue;
             }
 
-            if (!$selected) {
+            // Legacy support: prior forms included an explicit selected flag.
+            // Current informasi proses form sends value-only rows.
+            $isLegacyUnchecked = !$selected && $machineName === '';
+            if ($isLegacyUnchecked) {
                 continue;
             }
 
@@ -2947,14 +4068,20 @@ class ProcessController extends Controller
             ->toArray();
 
         if (!empty($machineGroupsFromMaster)) {
-            return $machineGroupsFromMaster;
+            $base = $machineGroupsFromMaster;
+        } else {
+            $base = match ($officeCode) {
+                'SUN' => self::MACHINE_GROUPS_SUN,
+                'SJN' => self::MACHINE_GROUPS_SJN,
+                default => self::MACHINE_GROUPS_YBS,
+            };
         }
 
-        return match ($officeCode) {
-            'SUN' => self::MACHINE_GROUPS_SUN,
-            'SJN' => self::MACHINE_GROUPS_SJN,
-            default => self::MACHINE_GROUPS_YBS,
-        };
+        // Merge spintest-specific groups so they are visible on the main
+        // informasi proses mesin pages as well.
+        $spintest = $this->getSpintestMachineGroups($officeCode);
+
+        return array_merge($base, $spintest);
     }
 
     private function resolveMachineGroupFromSampleName(string $sampleName): string
@@ -3039,9 +4166,20 @@ class ProcessController extends Controller
         return $grouped;
     }
 
-    private function extractSpintestMachinePayload(Request $request, ?string $inputTeam = null): array
+    private function extractSpintestMachinePayload(Request $request, ?string $inputTeam = null, ?string $office = null): array
     {
         $entries = [];
+        $otherConditionsByTeam = $this->extractOtherConditionsPayload($request, $inputTeam);
+        $machineGroups = $this->getSpintestMachineGroups($office);
+        $machineToGroup = collect($machineGroups)
+            ->flatMap(function (array $machines, string $group): array {
+                $map = [];
+                foreach ($machines as $machine) {
+                    $map[$machine] = $group;
+                }
+
+                return $map;
+            });
 
         foreach ((array) $request->input('machines', []) as $machine) {
             if (!is_array($machine) || !$this->toBool($machine['selected'] ?? false)) {
@@ -3062,13 +4200,17 @@ class ProcessController extends Controller
                 continue;
             }
 
+            $baseMinutes = $this->minutesBetween($startTime, $endTime);
+            $deductionMinutes = $this->calculateOtherConditionDeductionMinutes($startTime, $endTime, $otherConditionsByTeam[$teamName] ?? []);
+            $effectiveMinutes = max(0, $baseMinutes - $deductionMinutes);
+
             $entries[] = [
                 'team_name' => $teamName,
                 'machine_group' => $machineGroup !== '' ? $machineGroup : 'SPINTEST',
                 'machine_name' => $machineName,
                 'production_start_time' => $startTime,
                 'production_end_time' => $endTime,
-                'total_production_hours' => round($this->minutesBetween($startTime, $endTime) / 60, 2),
+                'total_production_hours' => round($effectiveMinutes / 60, 2),
                 'is_spare_input' => false,
                 'is_spare' => 0,
             ];
@@ -3093,15 +4235,16 @@ class ProcessController extends Controller
                 continue;
             }
 
+            $spareMinutes = $this->minutesBetween($startTime, $endTime);
             $entries[] = [
                 'team_name' => $teamName,
-                'machine_group' => 'SPARE INPUT',
+                'machine_group' => (string) $machineToGroup->get($machineName, 'SPARE INPUT'),
                 'machine_name' => $machineName,
                 'production_start_time' => $startTime,
                 'production_end_time' => $endTime,
-                'total_production_hours' => round($this->minutesBetween($startTime, $endTime) / 60, 2),
+                'total_production_hours' => round($spareMinutes / 60, 2),
                 'is_spare_input' => true,
-                'is_spare' => round($this->minutesBetween($startTime, $endTime) / 60, 2),
+                'is_spare' => round($spareMinutes / 60, 2),
             ];
         }
 
@@ -3123,7 +4266,7 @@ class ProcessController extends Controller
         return false;
     }
 
-    private function getTeamOtherConditions(KernelProsses $record, string $teamName): array
+    private function getTeamOtherConditions(object $record, string $teamName): array
     {
         $rows = $teamName === 'Tim 1'
             ? (array) ($record->team_1_other_conditions ?? [])
@@ -3189,7 +4332,7 @@ class ProcessController extends Controller
 
     private function getIntervalMinutesForOffice(string $office): array
     {
-        if ($office === 'SUN') {
+        if (strtoupper(trim($office)) === 'SUN') {
             return self::PERFORMANCE_GROUP_INTERVAL_MINUTES_SUN;
         }
 
@@ -3205,12 +4348,13 @@ class ProcessController extends Controller
             ->distinct()
             ->orderBy('office')
             ->pluck('office')
-            ->map(fn($office) => trim((string) $office))
+            ->map(fn($office) => strtoupper(trim((string) $office)))
             ->filter(fn($office) => $office !== '')
             ->values()
+            ->unique()
             ->all();
 
-        $userOffice = trim((string) (auth()->user()->office ?? ''));
+        $userOffice = strtoupper(trim((string) (auth()->user()->office ?? '')));
         if ($userOffice !== '' && !in_array($userOffice, $offices, true)) {
             $offices[] = $userOffice;
             sort($offices);
@@ -3544,7 +4688,7 @@ class ProcessController extends Controller
 
         $rows = FfaMoisture::query()
             ->with('user')
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderBy('tanggal')
             ->orderBy('jam')
@@ -3608,7 +4752,7 @@ class ProcessController extends Controller
         $isSunOffice = $this->isSunOffice($officeScope);
 
         $rows = FfaMoisture::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderBy('tanggal')
             ->orderBy('jam')
@@ -3653,7 +4797,7 @@ class ProcessController extends Controller
 
         $rows = SpintestCot::query()
             ->with('user')
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderBy('tanggal')
             ->orderBy('jam')
@@ -3711,7 +4855,7 @@ class ProcessController extends Controller
         $officeScope = $this->getUserOfficeScope();
 
         $rows = SpintestCot::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderBy('tanggal')
             ->orderBy('jam')
@@ -3750,7 +4894,7 @@ class ProcessController extends Controller
 
         $rows = SpintestCst::query()
             ->with('user')
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
             ->orderBy('tanggal')
@@ -3825,7 +4969,7 @@ class ProcessController extends Controller
         }
 
         $rows = SpintestCst::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
             ->orderBy('tanggal')
@@ -3867,7 +5011,7 @@ class ProcessController extends Controller
 
         $rows = SpintestFeedDecanter::query()
             ->with('user')
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
             ->orderBy('tanggal')
@@ -3942,7 +5086,7 @@ class ProcessController extends Controller
         }
 
         $rows = SpintestFeedDecanter::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
             ->orderBy('tanggal')
@@ -3984,7 +5128,7 @@ class ProcessController extends Controller
 
         $rows = SpintestLightPhase::query()
             ->with('user')
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
             ->orderBy('tanggal')
@@ -4059,7 +5203,7 @@ class ProcessController extends Controller
         }
 
         $rows = SpintestLightPhase::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->when($selectedMachine !== 'all', fn($query) => $query->where('machine_name', $selectedMachine))
             ->orderBy('tanggal')
@@ -4178,7 +5322,7 @@ class ProcessController extends Controller
     {
 
         $ffaRows = FfaMoisture::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->select(
                 DB::raw('DATE(tanggal) as tanggal'),
@@ -4194,7 +5338,7 @@ class ProcessController extends Controller
             ->keyBy(fn($row) => (string) $row->tanggal);
 
         $cotRows = SpintestCot::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->select(
                 DB::raw('DATE(tanggal) as tanggal'),
@@ -4209,7 +5353,7 @@ class ProcessController extends Controller
             ->keyBy(fn($row) => (string) $row->tanggal);
 
         $cstRows = SpintestCst::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->select(
                 DB::raw('DATE(tanggal) as tanggal'),
@@ -4224,7 +5368,7 @@ class ProcessController extends Controller
             ->keyBy(fn($row) => (string) $row->tanggal);
 
         $feedRows = SpintestFeedDecanter::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->select(
                 DB::raw('DATE(tanggal) as tanggal'),
@@ -4239,7 +5383,7 @@ class ProcessController extends Controller
             ->keyBy(fn($row) => (string) $row->tanggal);
 
         $lightRows = SpintestLightPhase::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->select(
                 DB::raw('DATE(tanggal) as tanggal'),
@@ -4371,7 +5515,7 @@ class ProcessController extends Controller
 
         $records = AnalisaUsb::query()
             ->with('user')
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderBy('tanggal')
             ->orderBy('jam')
@@ -4440,7 +5584,7 @@ class ProcessController extends Controller
         $officeScope = $this->getUserOfficeScope();
 
         $records = AnalisaUsb::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderBy('tanggal')
             ->orderBy('jam')
@@ -4465,7 +5609,7 @@ class ProcessController extends Controller
         $officeScope = $this->getUserOfficeScope();
 
         $records = AnalisaUsb::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderBy('tanggal')
             ->orderBy('jam')
@@ -4602,6 +5746,69 @@ class ProcessController extends Controller
         return [$detailRows, $recapData];
     }
 
+    private function buildBreakdownReportData(Collection $records): array
+    {
+        $rows = collect();
+        $totalMinutes = 0;
+
+        foreach ($records as $record) {
+            $processDate = optional($record->process_date)->toDateString();
+            if ($processDate === null) {
+                continue;
+            }
+
+            foreach ([
+                'Tim 1' => (array) ($record->team_1_other_conditions ?? []),
+                'Tim 2' => (array) ($record->team_2_other_conditions ?? []),
+            ] as $teamName => $conditions) {
+                foreach ($conditions as $condition) {
+                    if (!is_array($condition)) {
+                        continue;
+                    }
+
+                    $reason = trim((string) ($condition['reason'] ?? ''));
+                    $startTime = trim((string) ($condition['start_time'] ?? ''));
+                    $endTime = trim((string) ($condition['end_time'] ?? ''));
+
+                    if ($reason === '' || !$this->isValidTime($startTime) || !$this->isValidTime($endTime)) {
+                        continue;
+                    }
+
+                    $durationMinutes = $this->minutesBetween($startTime, $endTime);
+                    $totalMinutes += $durationMinutes;
+
+                    $rows->push([
+                        '_sort_date' => $processDate,
+                        '_sort_time' => $startTime,
+                        'tanggal' => Carbon::parse($processDate)->format('d-m-Y'),
+                        'alasan' => $reason,
+                        'jam_awal_breakdown' => $startTime,
+                        'jam_akhir_breakdown' => $endTime,
+                        'total_jam_breakdown' => intdiv($durationMinutes, 60) . ' jam ' . ($durationMinutes % 60) . ' menit',
+                        'team_name' => $teamName,
+                    ]);
+                }
+            }
+        }
+
+        $sortedRows = $rows
+            ->sortBy(fn (array $row): string => $row['_sort_date'] . '|' . $row['_sort_time'] . '|' . $row['alasan'] . '|' . $row['team_name'])
+            ->map(function (array $row): array {
+                unset($row['_sort_date'], $row['_sort_time'], $row['team_name']);
+
+                return $row;
+            })
+            ->values()
+            ->all();
+
+        $totalDuration = intdiv($totalMinutes, 60) . ' jam ' . ($totalMinutes % 60) . ' menit';
+
+        return [
+            'rows' => $sortedRows,
+            'total_duration' => $totalDuration,
+        ];
+    }
+
     public function oilLossFossInput()
     {
         $this->ensureOilFossAvailableForCurrentOffice();
@@ -4733,7 +5940,7 @@ class ProcessController extends Controller
 
         $rows = OilFoss::query()
             ->with('user')
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
             ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))
@@ -4745,7 +5952,7 @@ class ProcessController extends Controller
             ->appends($request->except('page'));
 
         $operatorOptions = OilFoss::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereNotNull('operator')
             ->where('operator', '!=', '')
             ->select('operator')
@@ -4800,7 +6007,7 @@ class ProcessController extends Controller
         }
 
         $rows = OilFoss::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
             ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))
@@ -4898,7 +6105,7 @@ class ProcessController extends Controller
         }
 
         $records = OilFoss::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
             ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))
@@ -4955,7 +6162,7 @@ class ProcessController extends Controller
         }
 
         $operatorOptions = OilFoss::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereNotNull('operator')
             ->where('operator', '!=', '')
             ->select('operator')
@@ -4996,7 +6203,7 @@ class ProcessController extends Controller
         }
 
         $records = OilFoss::query()
-            ->when($officeScope !== null, fn($query) => $this->applyUserOfficeScope($query, $officeScope))
+            ->when($officeScope !== null, fn($query) => $query->where('office', $officeScope))
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->when($operator !== 'ALL', fn($query) => $query->where('operator', $operator))
             ->when($shift !== 'all', fn($query) => $query->where('shift', (int) $shift))

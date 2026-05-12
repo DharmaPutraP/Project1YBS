@@ -18,7 +18,9 @@
 
             @if ($errors->any())
                 <div class="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    <ul class="list-inside list-disc">
+                    <h4 class="font-semibold text-rose-900">Data Oil Loss Foss belum bisa disimpan</h4>
+                    <p class="mt-1 text-rose-700">Ada field yang wajib diisi atau format angka/tanggal yang belum sesuai. Lihat pesan berikut untuk mengetahui penyebabnya.</p>
+                    <ul class="mt-3 list-inside list-disc space-y-1">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach

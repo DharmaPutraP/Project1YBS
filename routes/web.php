@@ -308,11 +308,35 @@ Route::middleware('auth')->group(function () {
         Route::post('/spintest', [ProcessController::class, 'spintestStore'])
             ->name('spintest.store');
 
+        Route::get('/spintest/{spintestProsses}/detail', [ProcessController::class, 'spintestShow'])
+            ->name('spintest.show');
+
+        Route::get('/spintest/{spintestProsses}/edit', [ProcessController::class, 'spintestEdit'])
+            ->name('spintest.edit');
+
+        Route::put('/spintest/{spintestProsses}', [ProcessController::class, 'spintestUpdate'])
+            ->name('spintest.update');
+
+        Route::get('/spintest/{spintestProsses}/machines', [ProcessController::class, 'spintestMachineDetail'])
+            ->name('spintest.machines.show');
+
+        Route::get('/spintest/{spintestProsses}/machines/edit', [ProcessController::class, 'spintestEditMachines'])
+            ->name('spintest.machines.edit');
+
+        Route::put('/spintest/{spintestProsses}/machines', [ProcessController::class, 'spintestUpdateMachines'])
+            ->name('spintest.machines.update');
+
         Route::get('/performance-sampel-boy', [ProcessController::class, 'performanceSampelBoy'])
             ->name('performance-sampel-boy');
 
         Route::post('/performance-sampel-boy/export', [ProcessController::class, 'exportPerformanceSampelBoy'])
             ->name('performance-sampel-boy.export');
+
+        Route::get('/rekap-breakdown', [ProcessController::class, 'lapJangkosRekapBreakdown'])
+            ->name('rekap-breakdown');
+
+        Route::post('/rekap-breakdown/export', [ProcessController::class, 'lapJangkosRekapBreakdownExport'])
+            ->name('rekap-breakdown.export');
 
         Route::post('/', [ProcessController::class, 'store'])
             ->name('store');

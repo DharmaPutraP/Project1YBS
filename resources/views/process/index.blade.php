@@ -532,6 +532,10 @@
             const inputTeamField = document.getElementById('input_team_field');
             const team1Section = document.getElementById('team-1-section');
             const team2Section = document.getElementById('team-2-section');
+            const team1StartTime = document.getElementById('team_1_start_time');
+            const team1EndTime = document.getElementById('team_1_end_time');
+            const team2StartTime = document.getElementById('team_2_start_time');
+            const team2EndTime = document.getElementById('team_2_end_time');
             const machineOptions = @json($machineOptions);
             const canManageTeamMeta = @json($canManageTeamMeta);
 
@@ -569,13 +573,52 @@
                     }
 
                     const managedInputs = Array.from(wrapper.querySelectorAll('.machine-time-input'));
+                    const section = check.closest('#team-1-section, #team-2-section');
+                    const startSource = section?.id === 'team-1-section' ? team1StartTime : team2StartTime;
+                    const endSource = section?.id === 'team-1-section' ? team1EndTime : team2EndTime;
 
                     managedInputs.forEach(input => {
                         input.disabled = !check.checked;
-                        input.required = check.checked;
 
                         if (!check.checked) {
                             input.value = '';
+                            return;
+                        }
+
+                        if (input.name.endsWith('[start_time]') && startSource?.value && !input.value) {
+                            input.value = startSource.value;
+                        }
+
+                        if (input.name.endsWith('[end_time]') && endSource?.value && !input.value) {
+                            input.value = endSource.value;
+                        }
+                    });
+                });
+            }
+
+            function syncMachineInputsForSection(sectionElement) {
+                if (!sectionElement) {
+                    return;
+                }
+
+                sectionElement.querySelectorAll('.machine-select').forEach(checkbox => {
+                    const targetId = checkbox.getAttribute('data-target');
+                    const wrapper = targetId ? document.getElementById(targetId) : null;
+
+                    if (!wrapper || !checkbox.checked) {
+                        return;
+                    }
+
+                    const startSource = sectionElement.id === 'team-1-section' ? team1StartTime : team2StartTime;
+                    const endSource = sectionElement.id === 'team-1-section' ? team1EndTime : team2EndTime;
+
+                    wrapper.querySelectorAll('input[type="time"]').forEach(input => {
+                        if (input.name.endsWith('[start_time]') && startSource?.value && !input.value) {
+                            input.value = startSource.value;
+                        }
+
+                        if (input.name.endsWith('[end_time]') && endSource?.value && !input.value) {
+                            input.value = endSource.value;
                         }
                     });
                 });
@@ -631,6 +674,18 @@
 
             [...team1Checks, ...team2Checks].forEach(input => {
                 input.addEventListener('change', syncTeams);
+            });
+
+            [team1StartTime, team1EndTime].forEach(input => {
+                input?.addEventListener('change', function () {
+                    syncMachineInputsForSection(team1Section);
+                });
+            });
+
+            [team2StartTime, team2EndTime].forEach(input => {
+                input?.addEventListener('change', function () {
+                    syncMachineInputsForSection(team2Section);
+                });
             });
 
             machineChecks.forEach(input => {

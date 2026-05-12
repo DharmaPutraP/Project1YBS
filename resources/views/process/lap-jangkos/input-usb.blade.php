@@ -9,7 +9,9 @@
 
             @if ($errors->any())
                 <div class="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    <ul class="list-inside list-disc">
+                    <h4 class="font-semibold text-rose-900">Data USB belum bisa disimpan</h4>
+                    <p class="mt-1 text-rose-700">Biasanya karena tanggal, jam, shift, atau angka janjang belum valid. Periksa detail error di bawah ini.</p>
+                    <ul class="mt-3 list-inside list-disc space-y-1">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
@@ -71,3 +73,30 @@
         </div>
     </div>
 </x-layouts.app>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function roundDownTo30(time) {
+            if (!time) return time;
+            const parts = time.split(':');
+            if (parts.length < 2) return time;
+            let h = parseInt(parts[0], 10);
+            let m = parseInt(parts[1], 10);
+            const rm = m < 30 ? 0 : 30;
+            return String(h).padStart(2, '0') + ':' + String(rm).padStart(2, '0');
+        }
+
+        const timeInputs = Array.from(document.querySelectorAll('form input[type="time"]'));
+        timeInputs.forEach(function (inp) {
+            function applyRound() {
+                const v = inp.value;
+                if (!v) return;
+                const r = roundDownTo30(v);
+                if (r !== v) inp.value = r;
+            }
+            inp.addEventListener('change', applyRound);
+            inp.addEventListener('blur', applyRound);
+            applyRound();
+        });
+    });
+</script>

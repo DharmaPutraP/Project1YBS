@@ -33,13 +33,37 @@ class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMa
 
     public function headings(): array
     {
+        if ($this->isSunOffice()) {
+            return [
+                'Tanggal',
+                'Tim',
+                'Jam Mulai Proses',
+                'Jam Akhir Proses',
+                'Total Hours',
+                'Nama Sampel Boy',
+                'Fiber Cyclone',
+                'LTDS',
+                'Claybath Wet Shell',
+                'Inlet Kernel Silo',
+                'Outlet Kernel Silo',
+                'Press',
+                'Eficiency',
+                'Destoner',
+                'FFA dan Moisture',
+                'Spintest COT',
+                'Underflow CST (CST 1 & CST 2)',
+                'Feed Decanter (GEA1, GEA2)',
+                'Light Phase (GEA1, GEA2)',
+                'Sterilizer 1-4',
+                'Perf Total',
+            ];
+        }
+
         return [
             'Tanggal',
             'Tim',
             'Jam Mulai Proses',
             'Jam Akhir Proses',
-            'Jam Awal Break Time',
-            'Jam Akhir Break Time',
             'Total Hours',
             'Nama Sampel Boy',
             'Fiber Cyclone',
@@ -50,19 +74,58 @@ class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMa
             'Press',
             'Eficiency',
             'Destoner',
+            'FFA dan Moisture',
+            'Spintest COT',
+            'Underflow CST (CST 1 & CST 2)',
+            'Feed Decanter (Alfa Laval 1, Alfa Laval 2, GEA, Flottweg)',
+            'Light Phase (Alfa Laval 1, Alfa Laval 2, GEA, Flottweg)',
+            'Sterilizer 1-8',
+            'COT (COT IN & COT 2)',
+            'CST',
+            'FD (FD1-4)',
+            'HP (HP 1-4)',
+            'SD (SD1-4)',
+            'HPL (HPL1-3)',
+            'FE',
+            'FBP (FBP1-5)',
+            'FP (FP1-9)',
             'Perf Total',
         ];
     }
 
     public function map($row): array
     {
+        if ($this->isSunOffice()) {
+            return [
+                $row['tanggal'] ?? '-',
+                $row['team_name'] ?? '-',
+                $row['jam_mulai'] ?? '-',
+                $row['jam_akhir'] ?? '-',
+                $row['total_hours'] ?? '-',
+                $row['nama_sampel_boy'] ?? '-',
+                $row['fibre_cyclone'] ?? '0/0',
+                $row['ltds'] ?? '0/0',
+                $row['claybath_wet_shell'] ?? '0/0',
+                $row['inlet_kernel_silo'] ?? '0/0',
+                $row['outlet_kernel_silo'] ?? '0/0',
+                $row['press'] ?? '0/0',
+                $row['eficiency'] ?? '0/0',
+                $row['destoner'] ?? '0/0',
+                $row['ffa_moisture'] ?? '0/0',
+                $row['spintest_cot'] ?? '0/0',
+                $row['underflow_cst'] ?? '0/0',
+                $row['feed_decanter'] ?? '0/0',
+                $row['light_phase'] ?? '0/0',
+                $row['sterilizer'] ?? '0/0',
+                $row['perf_total'] ?? '-',
+            ];
+        }
+
         return [
             $row['tanggal'] ?? '-',
             $row['team_name'] ?? '-',
             $row['jam_mulai'] ?? '-',
             $row['jam_akhir'] ?? '-',
-            $row['downtime_awal'] ?? '-',
-            $row['downtime_akhir'] ?? '-',
             $row['total_hours'] ?? '-',
             $row['nama_sampel_boy'] ?? '-',
             $row['fibre_cyclone'] ?? '0/0',
@@ -73,8 +136,28 @@ class PerformanceSampelBoyExport implements FromCollection, WithHeadings, WithMa
             $row['press'] ?? '0/0',
             $row['eficiency'] ?? '0/0',
             $row['destoner'] ?? '0/0',
+            $row['ffa_moisture'] ?? '0/0',
+            $row['spintest_cot'] ?? '0/0',
+            $row['underflow_cst'] ?? '0/0',
+            $row['feed_decanter'] ?? '0/0',
+            $row['light_phase'] ?? '0/0',
+            $row['sterilizer'] ?? '0/0',
+            $row['cot'] ?? '0/0',
+            $row['cst'] ?? '0/0',
+            $row['fd'] ?? '0/0',
+            $row['hp'] ?? '0/0',
+            $row['sd'] ?? '0/0',
+            $row['hpl'] ?? '0/0',
+            $row['fe'] ?? '0/0',
+            $row['fbp'] ?? '0/0',
+            $row['fp'] ?? '0/0',
             $row['perf_total'] ?? '-',
         ];
+    }
+
+    private function isSunOffice(): bool
+    {
+        return strtoupper(trim($this->selectedOffice)) === 'SUN';
     }
 
     public function styles(Worksheet $sheet): array

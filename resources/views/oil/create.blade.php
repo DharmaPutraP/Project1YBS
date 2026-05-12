@@ -168,7 +168,7 @@
                                 </label>
                                 @if(!empty($operatorOptions))
                                     <select name="mode1_rows[{{ $rowIndex }}][operator]"
-                                        class="mode1-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        class="select2-operator mode1-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="">-- Pilih Operator --</option>
                                         @foreach($operatorOptions as $operatorName)
                                             <option value="{{ $operatorName }}" {{ ($oldMode1Rows[$rowIndex]['operator'] ?? '') == $operatorName ? 'selected' : '' }}>
@@ -354,6 +354,7 @@
                 allowClear: true,
                 width: '100%',
                 theme: 'default',
+                minimumInputLength: 0,
                 language: {
                     noResults: function () {
                         return "Tidak ditemukan";

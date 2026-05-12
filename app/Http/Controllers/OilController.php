@@ -617,7 +617,6 @@ class OilController extends Controller
                 'persen' => $result['persen'],
                 'persen4' => $result['persen4'],
                 'tanggal_sampel' => $newSampleDate,
-                'user_id' => Auth::id(),
             ]);
 
             // Update or create related OilRecord (non-numeric data) if provided
@@ -634,7 +633,6 @@ class OilController extends Controller
                         'operator' => $validated['operator'],
                         'sampel_boy' => $validated['sampel_boy'],
                         'tanggal_sampel' => $newSampleDate,
-                        'user_id' => Auth::id(),
                     ]);
                 } else {
                     // Create new record if doesn't exist

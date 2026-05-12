@@ -411,7 +411,6 @@ class KernelController extends Controller
         $kernelLosses = ($ktsNutUtuh + $ktsNutPecah + $kernelUtuhToSampel + $kernelPecahToSampel) / 100;
 
         $kernelCalculation->update([
-            'user_id' => Auth::id(),
             'kode' => $validated['kode'],
             'jenis' => $validated['jenis'],
             'operator' => $validated['operator'],
@@ -1141,7 +1140,6 @@ class KernelController extends Controller
         $kode = $validated['kode'];
 
         $kernelQwt->update([
-            'user_id' => Auth::id(),
             'kode' => $kode,
             'jenis' => $validated['jenis'],
             'operator' => $validated['operator'],
@@ -1481,7 +1479,6 @@ class KernelController extends Controller
         $kode = $validated['kode'];
 
         $kernelRippleMill->update([
-            'user_id' => Auth::id(),
             'kode' => $kode,
             'jenis' => $validated['jenis'],
             'operator' => $validated['operator'],
@@ -1833,7 +1830,6 @@ class KernelController extends Controller
         $kode = $validated['kode'];
 
         $kernelDestoner->update([
-            'user_id' => Auth::id(),
             'kode' => $kode,
             'jenis' => $validated['jenis'],
             'operator' => $validated['operator'],
@@ -1979,7 +1975,7 @@ class KernelController extends Controller
         foreach ($calculations as $calc) {
             $displayAt = $this->resolveDisplayTimestamp($calc);
             $date = $this->resolveProductionDateKeyByCutoff($displayAt);
-            $kode = ($calc->source_module === 'Dirt & Moist (%Moist)') 
+            $kode = ($calc->source_module === 'Dirt & Moist (%Moist)')
                 ? ($calc->kode . '_MOIST')
                 : $calc->kode;
             if (!isset($grouped[$date][$kode])) {

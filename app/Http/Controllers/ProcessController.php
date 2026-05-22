@@ -243,7 +243,7 @@ class ProcessController extends Controller
         'claybath_wet_shell' => 120,
         'inlet_kernel_silo' => 120,
         'outlet_kernel_silo' => 120,
-        'press' => 120,
+        'press' => 240,
         'eficiency' => 120,
         'destoner' => 120,
     ];
@@ -305,7 +305,7 @@ class ProcessController extends Controller
         ['key' => 'underflow_cst', 'label' => 'Underflow CST (CST 1 & CST 2)', 'detail_keys' => ['underflow_cst_1', 'underflow_cst_2']],
         ['key' => 'feed_decanter', 'label' => 'Feed Decanter (Alfa Laval 1, Alfa Laval 2, GEA, Flottweg)', 'detail_keys' => ['feed_decanter_alfa_laval_1', 'feed_decanter_alfa_laval_2', 'feed_decanter_gea', 'feed_decanter_flottweg']],
         ['key' => 'light_phase', 'label' => 'Light Phase (Alfa Laval 1, Alfa Laval 2, GEA, Flottweg)', 'detail_keys' => ['light_phase_alfa_laval_1', 'light_phase_alfa_laval_2', 'light_phase_gea', 'light_phase_flottweg']],
-        ['key' => 'sterilizer', 'label' => 'Sterilizer 1-8', 'detail_keys' => ['sterilizer_1','sterilizer_2','sterilizer_3','sterilizer_4','sterilizer_5','sterilizer_6','sterilizer_7','sterilizer_8']],
+        ['key' => 'sterilizer', 'label' => 'Sterilizer 1-8', 'detail_keys' => ['sterilizer_1', 'sterilizer_2', 'sterilizer_3', 'sterilizer_4', 'sterilizer_5', 'sterilizer_6', 'sterilizer_7', 'sterilizer_8']],
         ['key' => 'cot', 'label' => 'COT (COT IN & COT 2)', 'detail_keys' => ['cot_in', 'cot_2']],
         ['key' => 'cst', 'label' => 'CST', 'detail_keys' => ['cst']],
         ['key' => 'fd', 'label' => 'FD (FD1-4)', 'detail_keys' => ['fd1', 'fd2', 'fd3', 'fd4']],
@@ -652,22 +652,26 @@ class ProcessController extends Controller
 
         foreach (self::TEAM_OPTIONS as $teamName) {
             if (empty($spareRowsByTeam[$teamName])) {
-                $spareRowsByTeam[$teamName] = [[
-                    'team_name' => $teamName,
-                    'machine_name' => '',
-                    'start_time' => '',
-                    'end_time' => '',
-                    'selected' => false,
-                ]];
+                $spareRowsByTeam[$teamName] = [
+                    [
+                        'team_name' => $teamName,
+                        'machine_name' => '',
+                        'start_time' => '',
+                        'end_time' => '',
+                        'selected' => false,
+                    ]
+                ];
             }
 
             if (empty($otherConditionsByTeam[$teamName])) {
-                $otherConditionsByTeam[$teamName] = [[
-                    'team_name' => $teamName,
-                    'reason' => '',
-                    'start_time' => '',
-                    'end_time' => '',
-                ]];
+                $otherConditionsByTeam[$teamName] = [
+                    [
+                        'team_name' => $teamName,
+                        'reason' => '',
+                        'start_time' => '',
+                        'end_time' => '',
+                    ]
+                ];
             }
         }
 
@@ -1339,7 +1343,7 @@ class ProcessController extends Controller
 
         // Get Spintest processes with their machines (only checked machines)
         $spintestProcesses = SpintestProsses::with(['mesin', 'user'])
-            ->when($officeScope !== null, fn ($q) => $q->where('office', $officeScope))
+            ->when($officeScope !== null, fn($q) => $q->where('office', $officeScope))
             ->whereBetween('process_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->orderBy('process_date')
             ->orderBy('id')
@@ -1512,27 +1516,29 @@ class ProcessController extends Controller
         $enrichedEntries = $analysisEntries->map(function (array $entry) use ($spintestProcesses): array {
             $entry['team_name'] = '-';
             $entryTime = substr((string) ($entry['jam'] ?? ''), 0, 5);
-            
+
             if ($entryTime !== '') {
                 $entryTimeMinutes = $this->timeToMinutes($entryTime);
-                
+
                 foreach ($spintestProcesses as $proc) {
-                    if (optional($proc->process_date)->toDateString() !== $entry['tanggal'] 
-                        || (string) ($proc->office ?? '-') !== $entry['office']) {
+                    if (
+                        optional($proc->process_date)->toDateString() !== $entry['tanggal']
+                        || (string) ($proc->office ?? '-') !== $entry['office']
+                    ) {
                         continue;
                     }
-                    
+
                     $inputTeam = (string) ($proc->input_team ?? 'Tim 1');
-                    
+
                     // Check if entry time falls within Tim 1 time range (only if Tim 1 was input or is default)
                     if ($inputTeam === 'Tim 1' || $inputTeam === '') {
                         $team1Start = substr((string) $proc->team_1_start_time, 0, 5);
                         $team1End = substr((string) $proc->team_1_end_time, 0, 5);
-                        
+
                         if ($team1Start !== '' && $team1Start !== '00:00' && $team1End !== '' && $team1End !== '00:00') {
                             $team1StartMin = $this->timeToMinutes($team1Start);
                             $team1EndMin = $this->timeToMinutes($team1End);
-                            
+
                             if ($team1StartMin <= $team1EndMin) {
                                 if ($entryTimeMinutes >= $team1StartMin && $entryTimeMinutes <= $team1EndMin) {
                                     $entry['team_name'] = 'Tim 1';
@@ -1546,16 +1552,16 @@ class ProcessController extends Controller
                             }
                         }
                     }
-                    
+
                     // Check if entry time falls within Tim 2 time range (only if Tim 2 was input)
                     if ($inputTeam === 'Tim 2') {
                         $team2Start = substr((string) $proc->team_2_start_time, 0, 5);
                         $team2End = substr((string) $proc->team_2_end_time, 0, 5);
-                        
+
                         if ($team2Start !== '' && $team2Start !== '00:00' && $team2End !== '' && $team2End !== '00:00') {
                             $team2StartMin = $this->timeToMinutes($team2Start);
                             $team2EndMin = $this->timeToMinutes($team2End);
-                            
+
                             if ($team2StartMin <= $team2EndMin) {
                                 if ($entryTimeMinutes >= $team2StartMin && $entryTimeMinutes <= $team2EndMin) {
                                     $entry['team_name'] = 'Tim 2';
@@ -1571,12 +1577,12 @@ class ProcessController extends Controller
                     }
                 }
             }
-            
+
             return $entry;
         })->values();
 
         return $enrichedEntries
-            ->groupBy(fn (array $entry): string => $entry['tanggal'] . '|' . $entry['office'] . '|' . $entry['team_name'])
+            ->groupBy(fn(array $entry): string => $entry['tanggal'] . '|' . $entry['office'] . '|' . $entry['team_name'])
             ->map(function (Collection $entries) use ($machineDetailKeysByProcess, $columnKeys, $detailKeyToColumnKey, $performanceColumns): ?array {
                 $firstEntry = $entries->first();
                 $date = (string) $firstEntry['tanggal'];
@@ -1589,8 +1595,8 @@ class ProcessController extends Controller
                 }
                 $sampleBoyNames = $entries
                     ->pluck('created_by')
-                    ->map(fn ($name): string => trim((string) $name))
-                    ->filter(fn (string $name): bool => $name !== '')
+                    ->map(fn($name): string => trim((string) $name))
+                    ->filter(fn(string $name): bool => $name !== '')
                     ->unique()
                     ->values();
                 $sampleBoyText = $sampleBoyNames->isNotEmpty()
@@ -1601,9 +1607,11 @@ class ProcessController extends Controller
                 // Match by tanggal, office, and team_name (not by creator, since process creator may differ from analysis entry creator)
                 $matchingProc = null;
                 foreach ($machineDetailKeysByProcess as $procId => $procInfo) {
-                    if ($procInfo['tanggal'] === $date
+                    if (
+                        $procInfo['tanggal'] === $date
                         && $procInfo['office'] === $office
-                        && $procInfo['team_name'] === $teamName) {
+                        && $procInfo['team_name'] === $teamName
+                    ) {
                         $matchingProc = $procInfo;
                         break;
                     }
@@ -1750,8 +1758,8 @@ class ProcessController extends Controller
                     'nama_sample_boy' => $sampleBoyText,
                 ] + $detailStrings;
             })
-                ->filter()
-            ->sortBy(fn (array $row): string => $row['tanggal'] . '|' . $row['tim'])
+            ->filter()
+            ->sortBy(fn(array $row): string => $row['tanggal'] . '|' . $row['tim'])
             ->values()
             ->all();
     }
@@ -1767,7 +1775,7 @@ class ProcessController extends Controller
                 $startDate,
                 $endDate,
                 $officeScope,
-                fn () => 'ffa_moisture'
+                fn() => 'ffa_moisture'
             ))
             ->concat($this->collectSpintestAnalysisEntries(
                 SpintestCot::query(),
@@ -1777,7 +1785,7 @@ class ProcessController extends Controller
                 $startDate,
                 $endDate,
                 $officeScope,
-                fn () => 'spintest_cot'
+                fn() => 'spintest_cot'
             ))
             ->concat($this->collectSpintestAnalysisEntries(
                 SpintestCst::query(),
@@ -1888,7 +1896,7 @@ class ProcessController extends Controller
     {
         return $query
             ->with('user')
-            ->when($officeScope !== null, fn ($builder) => $this->applyUserOfficeScope($builder, $officeScope))
+            ->when($officeScope !== null, fn($builder) => $this->applyUserOfficeScope($builder, $officeScope))
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->orderBy('tanggal')
             ->orderBy($timeField)
@@ -1953,7 +1961,7 @@ class ProcessController extends Controller
 
         $officeCode = strtoupper(trim((string) ($office ?? auth()->user()->office ?? '')));
         if ($officeCode === 'SUN') {
-            $guide = array_values(array_filter($guide, fn (array $section): bool => (($section['title'] ?? '') !== 'Oil Loss Foss')));
+            $guide = array_values(array_filter($guide, fn(array $section): bool => (($section['title'] ?? '') !== 'Oil Loss Foss')));
         }
 
         return $guide;
@@ -2001,7 +2009,7 @@ class ProcessController extends Controller
             : (array) ($record->team_2_other_conditions ?? []);
 
         return collect($rows)
-            ->filter(fn ($row): bool => is_array($row))
+            ->filter(fn($row): bool => is_array($row))
             ->map(function (array $row): array {
                 $start = trim((string) ($row['start_time'] ?? ''));
                 $end = trim((string) ($row['end_time'] ?? ''));
@@ -2017,7 +2025,7 @@ class ProcessController extends Controller
                     'duration_hours' => round($minutes / 60, 2),
                 ];
             })
-            ->filter(fn (array $row): bool => $row['reason'] !== '' && $row['start_time'] !== '' && $row['end_time'] !== '')
+            ->filter(fn(array $row): bool => $row['reason'] !== '' && $row['start_time'] !== '' && $row['end_time'] !== '')
             ->values()
             ->all();
     }
@@ -2030,7 +2038,7 @@ class ProcessController extends Controller
             ->values();
 
         $machineGroups = $machines
-            ->groupBy(fn (SpintestMesin $machine): string => strtoupper(trim((string) $machine->machine_name)))
+            ->groupBy(fn(SpintestMesin $machine): string => strtoupper(trim((string) $machine->machine_name)))
             ->map(function (Collection $rows, string $machineName) use ($record, $teamName): array {
                 $rows = $rows->values();
                 $rowDetails = $rows->map(function (SpintestMesin $machine) use ($record, $teamName): array {
@@ -2618,7 +2626,7 @@ class ProcessController extends Controller
 
         $spintestColumns = array_values(array_filter(
             $this->getSpintestPerformanceColumns($office),
-            fn (array $column): bool => (string) ($column['key'] ?? '') !== 'perf_total'
+            fn(array $column): bool => (string) ($column['key'] ?? '') !== 'perf_total'
         ));
 
         $spintestExpectedByGroup = $this->buildExpectedSamplesBySpintestColumns(
@@ -2644,7 +2652,7 @@ class ProcessController extends Controller
         $perfExpectedTotal = 0;
         $performanceKeys = array_values(array_unique(array_merge(
             array_keys($this->getIntervalMinutesForOffice($office)),
-            array_map(fn (array $column): string => (string) ($column['key'] ?? ''), $spintestColumns)
+            array_map(fn(array $column): string => (string) ($column['key'] ?? ''), $spintestColumns)
         )));
 
         foreach ($performanceKeys as $groupKey) {
@@ -2808,7 +2816,7 @@ class ProcessController extends Controller
         }
 
         $normalizedTeamMembers = array_map(
-            fn ($member): string => strtoupper(trim((string) $member)),
+            fn($member): string => strtoupper(trim((string) $member)),
             $teamMembers
         );
 
@@ -3412,61 +3420,63 @@ class ProcessController extends Controller
             return (int) $intervals[$groupKey];
         }
 
-        if (in_array($groupKey, [
-            'ffa_moisture',
-            'spintest_cot',
-            'underflow_cst_1',
-            'underflow_cst_2',
-            'feed_decanter_alfa_laval_1',
-            'feed_decanter_alfa_laval_2',
-            'feed_decanter_gea',
-            'feed_decanter_flottweg',
-            'light_phase_alfa_laval_1',
-            'light_phase_alfa_laval_2',
-            'light_phase_gea',
-            'light_phase_flottweg',
-            'sterilizer_1',
-            'sterilizer_2',
-            'sterilizer_3',
-            'sterilizer_4',
-            'sterilizer_5',
-            'sterilizer_6',
-            'sterilizer_7',
-            'sterilizer_8',
-            'cot_in',
-            'cot_2',
-            'cst',
-            'fd1',
-            'fd2',
-            'fd3',
-            'fd4',
-            'hp1',
-            'hp2',
-            'hp3',
-            'hp4',
-            'sd1',
-            'sd2',
-            'sd3',
-            'sd4',
-            'hpl1',
-            'hpl2',
-            'hpl3',
-            'fe',
-            'fbp1',
-            'fbp2',
-            'fbp3',
-            'fbp4',
-            'fbp5',
-            'fp1',
-            'fp2',
-            'fp3',
-            'fp4',
-            'fp5',
-            'fp6',
-            'fp7',
-            'fp8',
-            'fp9',
-        ], true)) {
+        if (
+            in_array($groupKey, [
+                'ffa_moisture',
+                'spintest_cot',
+                'underflow_cst_1',
+                'underflow_cst_2',
+                'feed_decanter_alfa_laval_1',
+                'feed_decanter_alfa_laval_2',
+                'feed_decanter_gea',
+                'feed_decanter_flottweg',
+                'light_phase_alfa_laval_1',
+                'light_phase_alfa_laval_2',
+                'light_phase_gea',
+                'light_phase_flottweg',
+                'sterilizer_1',
+                'sterilizer_2',
+                'sterilizer_3',
+                'sterilizer_4',
+                'sterilizer_5',
+                'sterilizer_6',
+                'sterilizer_7',
+                'sterilizer_8',
+                'cot_in',
+                'cot_2',
+                'cst',
+                'fd1',
+                'fd2',
+                'fd3',
+                'fd4',
+                'hp1',
+                'hp2',
+                'hp3',
+                'hp4',
+                'sd1',
+                'sd2',
+                'sd3',
+                'sd4',
+                'hpl1',
+                'hpl2',
+                'hpl3',
+                'fe',
+                'fbp1',
+                'fbp2',
+                'fbp3',
+                'fbp4',
+                'fbp5',
+                'fp1',
+                'fp2',
+                'fp3',
+                'fp4',
+                'fp5',
+                'fp6',
+                'fp7',
+                'fp8',
+                'fp9',
+            ], true)
+        ) {
             return self::SPINTEST_SAMPLING_INTERVAL_MINUTES;
         }
 
@@ -5302,10 +5312,22 @@ class ProcessController extends Controller
 
         $headings = array_merge($headings, [
             'Impurities',
-            'COT Oil', 'COT Emulsi', 'COT Air', 'COT Nos',
-            'CST Oil', 'CST Emulsi', 'CST Air', 'CST Nos',
-            'Feed Oil', 'Feed Emulsi', 'Feed Air', 'Feed Nos',
-            'Light Oil', 'Light Emulsi', 'Light Air', 'Light Nos',
+            'COT Oil',
+            'COT Emulsi',
+            'COT Air',
+            'COT Nos',
+            'CST Oil',
+            'CST Emulsi',
+            'CST Air',
+            'CST Nos',
+            'Feed Oil',
+            'Feed Emulsi',
+            'Feed Air',
+            'Feed Nos',
+            'Light Oil',
+            'Light Emulsi',
+            'Light Air',
+            'Light Nos',
         ]);
 
         return $this->downloadAnalysisExport(
@@ -5792,7 +5814,7 @@ class ProcessController extends Controller
         }
 
         $sortedRows = $rows
-            ->sortBy(fn (array $row): string => $row['_sort_date'] . '|' . $row['_sort_time'] . '|' . $row['alasan'] . '|' . $row['team_name'])
+            ->sortBy(fn(array $row): string => $row['_sort_date'] . '|' . $row['_sort_time'] . '|' . $row['alasan'] . '|' . $row['team_name'])
             ->map(function (array $row): array {
                 unset($row['_sort_date'], $row['_sort_time'], $row['team_name']);
 

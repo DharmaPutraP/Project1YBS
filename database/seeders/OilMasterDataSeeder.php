@@ -33,25 +33,27 @@ class OilMasterDataSeeder extends Seeder
                 // FEED DECANTER (FD1-4)
                 // ═══════════════════════════════════════════════════════════════════
                 ['kode' => 'FD1', 'column_name' => 'FEED DECANTER ALVA LAFAL 1', 'jenis' => 'FEED DECANTER', 'persen' => 0, 'persen4' => 0, 'pivot' => 'FEED 1', 'limitOLWB' => 6.00, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Feed Decanter Alva Laval 1', 'is_active' => true],
-                ['kode' => 'FD2', 'column_name' => 'FEED DECANTER IHI 2', 'jenis' => 'FEED DECANTER', 'persen' => 0, 'persen4' => 0, 'pivot' => 'FEED 2', 'limitOLWB' => 6.00, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Feed Decanter IHI 2', 'is_active' => true],
+                ['kode' => 'FD2', 'column_name' => 'FEED DECANTER IHI 2', 'jenis' => 'FEED DECANTER', 'persen' => 0, 'persen4' => 0, 'pivot' => 'FEED 2', 'limitOLWB' => 6.00, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Feed Decanter IHI 2', 'is_active' => false],
                 ['kode' => 'FD3', 'column_name' => 'FEED DECANTER ALVA LAFAL 2', 'jenis' => 'FEED DECANTER', 'persen' => 0, 'persen4' => 0, 'pivot' => 'FEED 3', 'limitOLWB' => 6.00, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Feed Decanter Alfa Laval 2', 'is_active' => true],
                 ['kode' => 'FD4', 'column_name' => 'FEED DECANTER FLOTTWEG', 'jenis' => 'FEED DECANTER', 'persen' => 0, 'persen4' => 0, 'pivot' => 'FEED 4', 'limitOLWB' => 6.00, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Feed Decanter Flottweg', 'is_active' => true],
-
+                ['kode' => 'FD5', 'column_name' => 'FEED DECANTER GEA', 'jenis' => 'FEED DECANTER', 'persen' => 0, 'persen4' => 0, 'pivot' => 'FEED 5', 'limitOLWB' => 6.00, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Feed Decanter GEA', 'is_active' => true],
                 // ═══════════════════════════════════════════════════════════════════
                 // HEAVY PHASE (HP1-4)
                 // ═══════════════════════════════════════════════════════════════════
                 ['kode' => 'HP1', 'column_name' => 'HEAVY PHASE ALFA LAVAL 1', 'jenis' => 'HEAVY PHASE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'HEAVY PHASE 1', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase Alfa Laval 1', 'is_active' => true],
-                ['kode' => 'HP2', 'column_name' => 'HEAVY PHASE IHI', 'jenis' => 'HEAVY PHASE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'HEAVY PHASE 2', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase IHI', 'is_active' => true],
+                ['kode' => 'HP2', 'column_name' => 'HEAVY PHASE IHI', 'jenis' => 'HEAVY PHASE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'HEAVY PHASE 2', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase IHI', 'is_active' => false],
                 ['kode' => 'HP3', 'column_name' => 'HEAVY PHASE ALFA LAVAL 2', 'jenis' => 'HEAVY PHASE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'HEAVY PHASE 3', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase Alfa Laval 2', 'is_active' => true],
                 ['kode' => 'HP4', 'column_name' => 'HEAVY PHASE FLOTTWEG', 'jenis' => 'HEAVY PHASE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'HEAVY PHASE 4', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase Flottweg', 'is_active' => true],
+                ['kode' => 'HP5', 'column_name' => 'HEAVY PHASE GEA', 'jenis' => 'HEAVY PHASE', 'persen' => 0, 'persen4' => 0, 'pivot' => 'HEAVY PHASE 5', 'limitOLWB' => 1.00, 'limitOLDB' => null, 'limitOL' => null, 'description' => 'Heavy Phase GEA', 'is_active' => true],
 
                 // ═══════════════════════════════════════════════════════════════════
                 // SOLID DECANTER (SD1-4)
                 // ═══════════════════════════════════════════════════════════════════
                 ['kode' => 'SD1', 'column_name' => 'SOLID ALFA LAVAL 1', 'jenis' => 'SOLID', 'persen' => 0.02, 'persen4' => 0, 'pivot' => 'SOLID 1', 'limitOLWB' => 2.50, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Solid Alfa Laval 1', 'is_active' => true],
-                ['kode' => 'SD2', 'column_name' => 'SOLID IHI', 'jenis' => 'SOLID', 'persen' => 0.02, 'persen4' => 0, 'pivot' => 'SOLID 2', 'limitOLWB' => 2.50, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Solid IHI', 'is_active' => true],
+                ['kode' => 'SD2', 'column_name' => 'SOLID IHI', 'jenis' => 'SOLID', 'persen' => 0.02, 'persen4' => 0, 'pivot' => 'SOLID 2', 'limitOLWB' => 2.50, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Solid IHI', 'is_active' => false],
                 ['kode' => 'SD3', 'column_name' => 'SOLID ALFA LAVAL 2', 'jenis' => 'SOLID', 'persen' => 0.02, 'persen4' => 0, 'pivot' => 'SOLID 3', 'limitOLWB' => 2.50, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Solid Alfa Laval 2', 'is_active' => true],
                 ['kode' => 'SD4', 'column_name' => 'SOLID FLOTTWEG', 'jenis' => 'SOLID', 'persen' => 0.02, 'persen4' => 0, 'pivot' => 'SOLID 4', 'limitOLWB' => 2.50, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Solid Flottweg', 'is_active' => true],
+                ['kode' => 'SD5', 'column_name' => 'SOLID GEA', 'jenis' => 'SOLID', 'persen' => 0.02, 'persen4' => 0, 'pivot' => 'SOLID 5', 'limitOLWB' => 2.50, 'limitOLDB' => null, 'limitOL' => 0.09, 'description' => 'Solid GEA', 'is_active' => true],
 
                 // ═══════════════════════════════════════════════════════════════════
                 // HEAVY PHASE CENTRIFUGE (HPL1-3)

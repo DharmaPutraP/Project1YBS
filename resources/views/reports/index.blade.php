@@ -88,12 +88,19 @@
 
         {{-- Export Button --}}
         @canany(['export laporan oil losses'])
-            <form method="POST" action="{{ route('reports.export') }}" class="mt-4">
+            <form method="POST" action="{{ route('reports.export') }}" class="mt-4" data-no-lock>
                 @csrf
                 <input type="hidden" name="office" value="{{ $officeFilter }}">
                 <input type="hidden" name="kode" value="{{ request('kode') }}">
                 <input type="hidden" name="start_date" value="{{ $startDate }}">
                 <input type="hidden" name="end_date" value="{{ $endDate }}">
+                <button type="submit"
+                    class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                     <input type="hidden" name="numeric_only" value="{{ request('numeric_only') ? '1' : '0' }}">
                     Export ke Excel
                 </button>

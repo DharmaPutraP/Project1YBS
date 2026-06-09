@@ -136,7 +136,8 @@ Menyertakan sidebar navigasi dan topbar.
             }
 
             const method = (form.getAttribute('method') || 'get').toLowerCase();
-            if (method === 'get' || event.defaultPrevented) {
+            const action = (form.getAttribute('action') || '').toLowerCase();
+            if (method === 'get' || event.defaultPrevented || form.hasAttribute('data-no-lock') || action.includes('export')) {
                 return;
             }
 

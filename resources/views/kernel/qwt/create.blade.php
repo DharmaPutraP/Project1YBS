@@ -181,6 +181,7 @@
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Sampel Setelah
                                             Kuarter</label>
                                         <input type="number" step="0.0001" name="rows[{{ $kode }}][sampel_setelah_kuarter]"
+                                            data-losses="sampel-setelah-kuarter"
                                             value="{{ old("rows.$kode.sampel_setelah_kuarter") }}" placeholder="0.0000"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                     </div>
@@ -189,13 +190,15 @@
                                         <div>
                                             <label class="block text-xs font-medium text-gray-700 mb-1">Berat Nut Utuh</label>
                                             <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_nut_utuh]"
-                                                value="{{ old("rows.$kode.berat_nut_utuh") }}" placeholder="0.0000"
+                                                data-losses="berat-nut-utuh" value="{{ old("rows.$kode.berat_nut_utuh") }}"
+                                                placeholder="0.0000"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                         </div>
                                         <div>
                                             <label class="block text-xs font-medium text-gray-700 mb-1">Berat Nut Pecah</label>
                                             <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_nut_pecah]"
-                                                value="{{ old("rows.$kode.berat_nut_pecah") }}" placeholder="0.0000"
+                                                data-losses="berat-nut-pecah" value="{{ old("rows.$kode.berat_nut_pecah") }}"
+                                                placeholder="0.0000"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                         </div>
                                     </div>
@@ -205,14 +208,16 @@
                                             <label class="block text-xs font-medium text-gray-700 mb-1">Berat Kernel
                                                 Utuh</label>
                                             <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_kernel_utuh]"
-                                                value="{{ old("rows.$kode.berat_kernel_utuh") }}" placeholder="0.0000"
+                                                data-losses="berat-kernel" value="{{ old("rows.$kode.berat_kernel_utuh") }}"
+                                                placeholder="0.0000"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                         </div>
                                         <div>
                                             <label class="block text-xs font-medium text-gray-700 mb-1">Berat Kernel
                                                 Pecah</label>
                                             <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_kernel_pecah]"
-                                                value="{{ old("rows.$kode.berat_kernel_pecah") }}" placeholder="0.0000"
+                                                data-losses="berat-kernel" value="{{ old("rows.$kode.berat_kernel_pecah") }}"
+                                                placeholder="0.0000"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                         </div>
                                     </div>
@@ -221,13 +226,15 @@
                                         <div>
                                             <label class="block text-xs font-medium text-gray-700 mb-1">Berat Cangkang</label>
                                             <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_cangkang]"
-                                                value="{{ old("rows.$kode.berat_cangkang") }}" placeholder="0.0000"
+                                                data-losses="berat-cangkang" value="{{ old("rows.$kode.berat_cangkang") }}"
+                                                placeholder="0.0000"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                         </div>
                                         <div>
                                             <label class="block text-xs font-medium text-gray-700 mb-1">Berat Batu</label>
                                             <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_batu]"
-                                                value="{{ old("rows.$kode.berat_batu") }}" placeholder="0.0000"
+                                                data-losses="berat-batu" value="{{ old("rows.$kode.berat_batu") }}"
+                                                placeholder="0.0000"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                         </div>
                                     </div>
@@ -247,6 +254,14 @@
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                         </div>
                                     </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-medium text-gray-600">
+                                        Preview Losses
+                                    </span>
+                                    <span class="text-sm font-bold text-indigo-600" data-kernel-losses>
+                                        0.000000
+                                    </span>
                                 </div>
                             </div>
                         @endforeach
@@ -290,6 +305,60 @@
                     }
                 }
             });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            function calculateLosses(card) {
+                const getValue = (selector, index = 0) =>
+                    parseFloat(card.querySelectorAll(selector)[index]?.value) || 0;
+
+                const sampelSetelahKuarter = getValue('[data-losses="sampel-setelah-kuarter"]');
+
+                const beratNutUtuh = getValue('[data-losses="berat-nut-utuh"]');
+                const beratNutPecah = getValue('[data-losses="berat-nut-pecah"]');
+
+                const beratKernelUtuh = getValue('[data-losses="berat-kernel"]', 0);
+                const beratKernelPecah = getValue('[data-losses="berat-kernel"]', 1);
+
+                const beratCangkang = getValue('[data-losses="berat-cangkang"]');
+                const beratBatu = getValue('[data-losses="berat-batu"]');
+
+                const totalBeratNut =
+                    beratNutUtuh +
+                    beratNutPecah +
+                    beratKernelUtuh +
+                    beratKernelPecah +
+                    beratCangkang;
+
+                const beratBrokenNut =
+                    beratNutPecah +
+                    beratKernelUtuh +
+                    beratKernelPecah +
+                    beratCangkang;
+
+                const losses =
+                    sampelSetelahKuarter > 0 && totalBeratNut > 0
+                        ? (beratBrokenNut / totalBeratNut) * 100
+                        : 0;
+
+                card.querySelector('[data-kernel-losses]')
+                    .textContent = losses.toFixed(2);
+            }
+
+            document.querySelectorAll('[data-kernel-row]').forEach(card => {
+
+                card.querySelectorAll('[data-losses]').forEach(input => {
+
+                    input.addEventListener('input', () => {
+                        calculateLosses(card);
+                    });
+
+                });
+
+                calculateLosses(card);
+            });
+
         });
 
         function updateClock() {

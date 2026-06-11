@@ -169,17 +169,43 @@
                                 </div>
 
                                 <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_sampel]"
-                                    value="{{ old("rows.$kode.berat_sampel") }}" placeholder="Berat Sampel (gram)"
+                                    data-losses="berat-sampel" value="{{ old("rows.$kode.berat_sampel") }}"
+                                    placeholder="Berat Sampel (gram)"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                                <input type="number" step="0.0001" name="rows[{{ $kode }}][time]"
+                                <input type="number" step="0.0001" name="rows[{{ $kode }}][time]" data-losses="time"
                                     value="{{ old("rows.$kode.time") }}" placeholder="Time (detik)"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                                <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_nut]"
+                                <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_nut]" data-losses="berat-nut"
                                     value="{{ old("rows.$kode.berat_nut") }}" placeholder="Berat Nut (gram)"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_kernel]"
-                                    value="{{ old("rows.$kode.berat_kernel") }}" placeholder="Berat Kernel (gram)"
+                                    data-losses="berat-kernel" value="{{ old("rows.$kode.berat_kernel") }}"
+                                    placeholder="Berat Kernel (gram)"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-medium text-gray-600">
+                                        Preview Losses Kernel
+                                    </span>
+                                    <span class="text-sm font-bold text-indigo-600" data-kernel-losses>
+                                        0.000000
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-medium text-gray-600">
+                                        Loss Kernel/Jam
+                                    </span>
+                                    <span class="text-sm font-bold text-indigo-600" data-kernel-jam>
+                                        0.000000
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-medium text-gray-600">
+                                        Loss Kernel/TBS
+                                    </span>
+                                    <span class="text-sm font-bold text-indigo-600" data-kernel-tbs>
+                                        0.000000
+                                    </span>
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -223,6 +249,51 @@
                 }
             });
         });
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            function calculateLosses(card) {
+                const getValue = (selector, index = 0) =>
+                    parseFloat(card.querySelectorAll(selector)[index]?.value) || 0;
+
+                const beratSampel = getValue('[data-losses="berat-sampel"]');
+                const time = getValue('[data-losses="time"]');
+                const beratNut = getValue('[data-losses="berat-nut"]');
+                const beratKernel = getValue('[data-losses="berat-kernel"]');
+
+                const konversiKg = beratSampel / 1000;
+                const rasioJamKg = konversiKg * 3600 / time;
+                const persenNut = (beratNut / beratSampel) * 50;
+                const persenKernel = (beratKernel / beratSampel) * 100;
+                const totalLossesKernel = persenKernel + persenNut;
+                const lossKernelJam = (totalLossesKernel * rasioJamKg) / 100;
+                const lossKernelTbs = lossKernelJam / 600;
+
+                card.querySelector('[data-kernel-losses]')
+                    .textContent = totalLossesKernel.toFixed(2);
+
+                card.querySelector('[data-kernel-jam]')
+                    .textContent = lossKernelJam.toFixed(2);
+
+                card.querySelector('[data-kernel-tbs]')
+                    .textContent = lossKernelTbs.toFixed(7);
+            }
+
+            document.querySelectorAll('[data-kernel-row]').forEach(card => {
+
+                card.querySelectorAll('[data-losses]').forEach(input => {
+
+                    input.addEventListener('input', () => {
+                        calculateLosses(card);
+                    });
+
+                });
+
+                calculateLosses(card);
+            });
+
+        });
+
 
         function updateClock() {
             const now = new Date();

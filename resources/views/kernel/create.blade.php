@@ -190,7 +190,8 @@
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Berat Sampel (gram)</label>
                                     <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_sampel]"
-                                        value="{{ old("rows.$kode.berat_sampel") }}" placeholder="0.0000"
+                                        data-losses="berat-sampel" value="{{ old("rows.$kode.berat_sampel") }}"
+                                        placeholder="0.0000"
                                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error("rows.$kode.berat_sampel") border-red-400 bg-red-50 @enderror">
                                     @error("rows.$kode.berat_sampel")<p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                     @enderror
@@ -201,14 +202,14 @@
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Nut Utuh - Nut
                                             (gram)</label>
                                         <input type="number" step="0.0001" name="rows[{{ $kode }}][nut_utuh_nut]"
-                                            data-pair="nut-utuh-nut" data-code="{{ $kode }}"
+                                            data-losses="nut-utuh-nut" data-pair="nut-utuh-nut" data-code="{{ $kode }}"
                                             value="{{ old("rows.$kode.nut_utuh_nut") }}" placeholder="0.0000"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Nut Utuh - Kernel</label>
                                         <input type="number" step="0.0001" name="rows[{{ $kode }}][nut_utuh_kernel]"
-                                            data-pair="nut-utuh-kernel" data-code="{{ $kode }}"
+                                            data-losses="nut-utuh-kernel" data-pair="nut-utuh-kernel" data-code="{{ $kode }}"
                                             value="{{ old("rows.$kode.nut_utuh_kernel") }}" placeholder="0.0000"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100"
                                             readonly>
@@ -220,14 +221,14 @@
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Nut Pecah - Nut
                                             (gram)</label>
                                         <input type="number" step="0.0001" name="rows[{{ $kode }}][nut_pecah_nut]"
-                                            data-pair="nut-pecah-nut" data-code="{{ $kode }}"
+                                            data-losses="nut-pecah-nut" data-pair="nut-pecah-nut" data-code="{{ $kode }}"
                                             value="{{ old("rows.$kode.nut_pecah_nut") }}" placeholder="0.0000"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Nut Pecah - Kernel</label>
                                         <input type="number" step="0.0001" name="rows[{{ $kode }}][nut_pecah_kernel]"
-                                            data-pair="nut-pecah-kernel" data-code="{{ $kode }}"
+                                            data-losses="nut-pecah-kernel" data-pair="nut-pecah-kernel" data-code="{{ $kode }}"
                                             value="{{ old("rows.$kode.nut_pecah_kernel") }}" placeholder="0.0000"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100"
                                             readonly>
@@ -238,17 +239,26 @@
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Kernel Utuh (gram)</label>
                                         <input type="number" step="0.0001" name="rows[{{ $kode }}][kernel_utuh]"
-                                            value="{{ old("rows.$kode.kernel_utuh") }}" placeholder="0.0000"
+                                            data-losses="kernel-utuh" value="{{ old("rows.$kode.kernel_utuh") }}"
+                                            placeholder="0.0000"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Kernel Pecah (gram)</label>
                                         <input type="number" step="0.0001" name="rows[{{ $kode }}][kernel_pecah]"
-                                            value="{{ old("rows.$kode.kernel_pecah") }}" placeholder="0.0000"
+                                            data-losses="kernel-pecah" value="{{ old("rows.$kode.kernel_pecah") }}"
+                                            placeholder="0.0000"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     </div>
                                 </div>
-
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-medium text-gray-600">
+                                        Preview Kernel Losses
+                                    </span>
+                                    <span class="text-sm font-bold text-indigo-600" data-kernel-losses>
+                                        0.000000
+                                    </span>
+                                </div>
                                 @error("rows.$kode.kode")<p class="text-xs text-red-600">{{ $message }}</p>@enderror
                             </div>
                         @endforeach
@@ -284,6 +294,52 @@
                     }
                 }
             });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            function calculateLosses(card) {
+                const getValue = (selector, index = 0) =>
+                    parseFloat(card.querySelectorAll(selector)[index]?.value) || 0;
+
+                const beratSampel = getValue('[data-losses="berat-sampel"]');
+
+                const nutUtuhKernel = getValue('[data-losses="nut-utuh-kernel"]');
+
+                const nutPecahKernel = getValue('[data-losses="nut-pecah-kernel"]');
+
+                const kernelUtuh = getValue('[data-losses="kernel-utuh"]');
+
+                const kernelPecah = getValue('[data-losses="kernel-pecah"]');
+
+                let losses = 0;
+
+                if (beratSampel > 0) {
+                    losses =
+                        ((nutUtuhKernel +
+                            nutPecahKernel +
+                            kernelUtuh +
+                            kernelPecah)
+                            / beratSampel) * 100;
+                }
+
+                card.querySelector('[data-kernel-losses]')
+                    .textContent = losses.toFixed(2);
+            }
+
+            document.querySelectorAll('[data-kernel-row]').forEach(card => {
+
+                card.querySelectorAll('[data-losses]').forEach(input => {
+
+                    input.addEventListener('input', () => {
+                        calculateLosses(card);
+                    });
+
+                });
+
+                calculateLosses(card);
+            });
+
         });
 
         function updateClock() {

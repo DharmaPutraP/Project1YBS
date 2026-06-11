@@ -242,6 +242,28 @@ class OilService
                 throw new Exception("Kode '{$kode}' untuk office {$userOffice} sudah memiliki data tahap awal yang belum diselesaikan. Selesaikan dengan menginput tahap akhir terlebih dahulu, atau hubungi administrator untuk koreksi.");
             }
 
+            // ── Validasi logis Tahap 1 ──────────────────────────────────────
+            // Pastikan nilai-nilai tidak terbalik:
+            // labu_kosong > cawan_kosong, dan cawan_kosong > berat_basah
+            $cawanKosong = (float) ($step1Data['cawan_kosong'] ?? 0);
+            $beratBasah = (float) ($step1Data['berat_basah'] ?? 0);
+            $labuKosong = (float) ($step1Data['labu_kosong'] ?? 0);
+
+            if ($labuKosong < $cawanKosong) {
+                throw new Exception(
+                    "Tahap 1 – Kode {$kode}: Labu Kosong ({$labuKosong}) harus lebih besar dari Cawan Kosong ({$cawanKosong}). "
+                    . 'Pastikan tidak terbalik antara Labu Kosong dan Cawan Kosong.'
+                );
+            }
+
+            if ($cawanKosong < $beratBasah) {
+                throw new Exception(
+                    "Tahap 1 – Kode {$kode}: Cawan Kosong ({$cawanKosong}) harus lebih besar dari Berat Sampel Basah ({$beratBasah}). "
+                    . 'Pastikan tidak terbalik antara Cawan Kosong dan Berat Sampel Basah.'
+                );
+            }
+            // ───────────────────────────────────────────────────────────────
+
             $payload = array_merge($basePayload, [
                 'phase' => 'initial',
                 'status' => 'partial',
@@ -275,6 +297,19 @@ class OilService
             if ($mergedData['cawan_kosong'] === null || $mergedData['berat_basah'] === null || $mergedData['labu_kosong'] === null) {
                 throw new Exception("Data Tahap 1 untuk kode '{$kode}' belum lengkap. Lengkapi Tahap 1 terlebih dahulu.");
             }
+
+            // ── Validasi logis Tahap 2 ──────────────────────────────────────
+            // Cawan + Sampel Kering harus lebih besar dari Cawan Kosong (yang tersimpan di DB)
+            $cawanKosongDb = (float) $existingOpenBatch->cawan_kosong;
+            $cawanSampleKering = (float) ($step2Data['cawan_sample_kering'] ?? 0);
+
+            if ($cawanSampleKering < $cawanKosongDb) {
+                throw new Exception(
+                    "Tahap 2 – Kode {$kode}: Cawan + Sampel Kering ({$cawanSampleKering}) harus lebih besar dari "
+                    . "Cawan Kosong yang tersimpan ({$cawanKosongDb}). "
+                );
+            }
+            // ───────────────────────────────────────────────────────────────
 
             $payload = array_merge($basePayload, $this->normalizeInitialPayload($mergedData), $this->normalizeFinalPayload($mergedData), [
                 'phase' => 'final',
@@ -311,6 +346,18 @@ class OilService
                 throw new Exception("Tahap akhir membutuhkan data lengkap Tahap 1 dan Tahap 2. Field '{$field}' belum tersedia untuk kode '{$kode}'.");
             }
         }
+
+        // ── Validasi logis Tahap 3 (Akhir) ─────────────────────────────────
+        // Oil + Labu harus lebih besar dari Labu Kosong (yang tersimpan di DB)
+        $labuKosongDb = (float) ($existingOpenBatch?->labu_kosong ?? $mergedForComplete['labu_kosong'] ?? 0);
+        $oilLabu = (float) ($finalData['oil_labu'] ?? $mergedForComplete['oil_labu'] ?? 0);
+
+        if ($oilLabu < $labuKosongDb) {
+            throw new Exception(
+                "Tahap Akhir – Kode {$kode}: Oil + Labu ({$oilLabu}) harus lebih besar dari Labu Kosong ({$labuKosongDb}). "
+            );
+        }
+        // ───────────────────────────────────────────────────────────────────
 
         $calculations = $this->calculateAllValues($mergedForComplete, $masterData);
         $payload = array_merge($basePayload, $calculations, $this->normalizeInitialPayload($mergedForComplete), $this->normalizeFinalPayload($mergedForComplete), [
@@ -376,6 +423,7 @@ class OilService
         // Hitung oil losses
         $olwb = ($minyak / $beratBasah) * 100;
         $oldb = $dmwm / 100 != 0 ? ($olwb / ($dmwm / 100)) : 0;
+        $olwb = max(0, $olwb);
 
         // Get persen dari master data
         $persen = $this->parseNum($masterData->persen);

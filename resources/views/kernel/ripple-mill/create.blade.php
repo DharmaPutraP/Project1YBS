@@ -181,13 +181,24 @@
 
                                 <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_sampel]"
                                     value="{{ old("rows.$kode.berat_sampel") }}" placeholder="Berat Sampel"
+                                    data-losses="berat-sampel"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_nut_utuh]"
                                     value="{{ old("rows.$kode.berat_nut_utuh") }}" placeholder="Berat Nut Utuh"
+                                    data-losses="berat-nut-utuh"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_nut_pecah]"
                                     value="{{ old("rows.$kode.berat_nut_pecah") }}" placeholder="Berat Nut Pecah"
+                                    data-losses="berat-nut-pecah"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-medium text-gray-600">
+                                        Preview Losses
+                                    </span>
+                                    <span class="text-sm font-bold text-indigo-600" data-kernel-losses>
+                                        0.000000
+                                    </span>
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -230,6 +241,40 @@
                     }
                 }
             });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            function calculateLosses(card) {
+                const getValue = (selector, index = 0) =>
+                    parseFloat(card.querySelectorAll(selector)[index]?.value) || 0;
+
+                const beratSampel = getValue('[data-losses="berat-sampel"]');
+
+                const beratNutUtuh = getValue('[data-losses="berat-nut-utuh"]');
+                const beratNutPecah = getValue('[data-losses="berat-nut-pecah"]');
+
+                const sampelNutUtuh = beratNutUtuh / beratSampel * 100;
+                const sampelNutPecah = beratNutPecah / beratSampel * 100;
+                const losses = 100 - sampelNutPecah - sampelNutUtuh;
+
+                card.querySelector('[data-kernel-losses]')
+                    .textContent = losses.toFixed(2);
+            }
+
+            document.querySelectorAll('[data-kernel-row]').forEach(card => {
+
+                card.querySelectorAll('[data-losses]').forEach(input => {
+
+                    input.addEventListener('input', () => {
+                        calculateLosses(card);
+                    });
+
+                });
+
+                calculateLosses(card);
+            });
+
         });
 
         function updateClock() {

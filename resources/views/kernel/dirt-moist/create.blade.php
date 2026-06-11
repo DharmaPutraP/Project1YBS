@@ -187,14 +187,14 @@
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Berat Sampel (gram)</label>
                                     <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_sampel]"
-                                        value="{{ old("rows.$kode.berat_sampel") }}" placeholder="0.0000"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                        data-losses="berat-sampel" value="{{ old("rows.$kode.berat_sampel") }}"
+                                        placeholder="0.0000" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Berat Dirty (gram)</label>
                                     <input type="number" step="0.0001" name="rows[{{ $kode }}][berat_dirty]"
-                                        value="{{ old("rows.$kode.berat_dirty") }}" placeholder="0.0000"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                        data-losses="berat-dirty" value="{{ old("rows.$kode.berat_dirty") }}"
+                                        placeholder="0.0000" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 </div>
                                 @if(!$isInlet)
                                     <div>
@@ -204,6 +204,14 @@
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                     </div>
                                 @endif
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-medium text-gray-600">
+                                        Preview Losses
+                                    </span>
+                                    <span class="text-sm font-bold text-indigo-600" data-kernel-losses>
+                                        0.000000
+                                    </span>
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -246,6 +254,41 @@
                     }
                 }
             });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            function calculateLosses(card) {
+                const beratSampel = parseFloat(
+                    card.querySelector('[data-losses="berat-sampel"]')?.value
+                ) || 0;
+
+                const beratDirty = parseFloat(
+                    card.querySelector('[data-losses="berat-dirty"]')?.value
+                ) || 0;
+
+                let losses = 0;
+
+                if (beratSampel > 0) {
+                    losses =
+                        (beratDirty / beratSampel) * 100;
+                }
+
+                card.querySelector('[data-kernel-losses]')
+                    .textContent = losses.toFixed(2);
+            }
+
+            document.querySelectorAll('[data-kernel-row]').forEach(card => {
+
+                card.querySelectorAll('[data-losses]').forEach(input => {
+
+                    input.addEventListener('input', () => {
+                        calculateLosses(card);
+                    });
+                });
+                calculateLosses(card);
+            });
+
         });
 
         function updateClock() {

@@ -53,6 +53,9 @@ Menyertakan sidebar navigasi dan topbar.
 
             form.dataset.submitting = '1';
 
+            const action = (form.getAttribute('action') || '').toLowerCase();
+            const isExport = action.includes('export') || form.hasAttribute('data-no-lock');
+
             const submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
             submitButtons.forEach((button) => {
                 button.disabled = true;
@@ -62,17 +65,45 @@ Menyertakan sidebar navigasi dan topbar.
                         button.dataset.originalHtml = button.innerHTML;
                     }
                     if (button === submitter) {
-                        button.innerHTML = 'Menyimpan...';
+                        button.innerHTML = isExport ? 'Memproses...' : 'Menyimpan...';
                     }
                 } else if (button.tagName === 'INPUT') {
                     if (!button.dataset.originalValue) {
                         button.dataset.originalValue = button.value;
                     }
                     if (button === submitter) {
-                        button.value = 'Menyimpan...';
+                        button.value = isExport ? 'Memproses...' : 'Menyimpan...';
                     }
                 }
             });
+
+            if (isExport) {
+                // Remove cookie before request
+                document.cookie = "export_done=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                
+                const interval = setInterval(() => {
+                    if (document.cookie.indexOf("export_done=1") !== -1) {
+                        clearInterval(interval);
+                        
+                        submitButtons.forEach((button) => {
+                            button.disabled = false;
+                            if (button === submitter) {
+                                if (button.tagName === 'BUTTON') {
+                                    button.innerHTML = button.dataset.originalHtml || 'Export';
+                                } else {
+                                    button.value = button.dataset.originalValue || 'Export';
+                                }
+                            }
+                        });
+                        
+                        // Reset submitting state so form can be submitted again
+                        form.dataset.submitting = '0';
+                        
+                        // Clean up cookie
+                        document.cookie = "export_done=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    }
+                }, 500);
+            }
         }
 
         window.lockFormSubmission = lockFormSubmission;
@@ -136,8 +167,7 @@ Menyertakan sidebar navigasi dan topbar.
             }
 
             const method = (form.getAttribute('method') || 'get').toLowerCase();
-            const action = (form.getAttribute('action') || '').toLowerCase();
-            if (method === 'get' || event.defaultPrevented || form.hasAttribute('data-no-lock') || action.includes('export')) {
+            if (method === 'get' || event.defaultPrevented) {
                 return;
             }
 

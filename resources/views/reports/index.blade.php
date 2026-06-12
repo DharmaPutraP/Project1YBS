@@ -273,8 +273,9 @@
                         <th class="bg-red-600 text-red-100 border border-red-500/50 text-right">OIL LOSSES</th>
                         <th class="bg-red-600 text-red-100 border border-red-500/50 text-right">LIMIT OL</th>
 
-                        {{-- Persen 4 --}}
-                        <th class="bg-amber-500 text-amber-100 border border-amber-400/50 text-right">PERSEN 4</th>
+                        {{-- Persen --}}
+                        <th class="bg-amber-500 text-amber-100 border border-amber-400/50 text-right">%</th>
+                        <th class="bg-amber-500 text-amber-100 border border-amber-400/50 text-right">%2</th>
                     </tr>
                 </thead>
 
@@ -417,9 +418,10 @@
                             </td>
                             <td class="border-r border-red-200 px-3 py-2.5 text-right font-mono bg-red-50/40 text-red-700">
                                 {{ $calc->limitOL_fmt }}</td>
-
-                            {{-- PERSEN 4 --}}
-                            <td class="px-3 py-2.5 text-right font-mono bg-amber-50/50 text-amber-800">
+                            {{-- PERSEN --}}
+                            <td class="border-r border-amber-200 px-3 py-2.5 text-right font-mono bg-amber-50/50 text-amber-800">
+                                {{ $calc->persen_fmt }}</td>
+                            <td class="border-r border-amber-200 px-3 py-2.5 text-right font-mono bg-amber-50/50 text-amber-800">
                                 {{ $calc->persen4_fmt }}</td>
                         </tr>
                         {{-- Child detail row (expandable, DataTables-style) --}}
@@ -567,6 +569,11 @@
                                     <div>
                                         <p class="text-[10px] font-bold text-red-500 uppercase tracking-wider">Limit OL</p>
                                         <p class="mt-0.5 font-mono text-red-600">{{ $calc->limitOL_fmt }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold text-amber-500 uppercase tracking-wider">%
+                                        </p>
+                                        <p class="mt-0.5 font-mono text-amber-700">{{ $calc->persen_fmt }}</p>
                                     </div>
                                     <div>
                                         <p class="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Persen 4

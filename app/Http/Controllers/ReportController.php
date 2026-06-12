@@ -88,6 +88,7 @@ class ReportController extends Controller
                 'c.limitOLDB',
                 'c.oil_losses',
                 'c.limitOL',
+                'c.persen',
                 'c.persen4',
             ]);
 
@@ -143,6 +144,7 @@ class ReportController extends Controller
                 'c.limitOLDB',
                 'c.oil_losses',
                 'c.limitOL',
+                'c.persen',
                 'c.persen4',
             ]);
 
@@ -207,6 +209,7 @@ class ReportController extends Controller
                 DB::raw('NULL as limitOLDB'),
                 DB::raw('NULL as oil_losses'),
                 DB::raw('NULL as limitOL'),
+                DB::raw('NULL as persen'),
                 DB::raw('NULL as persen4'),
             ]);
 
@@ -260,6 +263,9 @@ class ReportController extends Controller
             $report->limitOL_fmt = ($report->limitOL === null || $report->limitOL == 0)
                 ? '-'
                 : $this->formatNumber($report->limitOL, 2);
+            $report->persen_fmt = ($report->persen === null || $report->persen == 0)
+                ? '-'
+                : $this->formatNumber($report->persen, 2);
             $report->persen4_fmt = ($report->persen4 === null || $report->persen4 == 0)
                 ? '-'
                 : $this->formatNumber($report->persen4, 2);
@@ -404,6 +410,7 @@ class ReportController extends Controller
                 'c.limitOLDB',
                 'c.oil_losses',
                 'c.limitOL',
+                'c.persen',
                 'c.persen4',
             ]);
 
@@ -452,6 +459,7 @@ class ReportController extends Controller
                 'c.limitOLDB',
                 'c.oil_losses',
                 'c.limitOL',
+                'c.persen',
                 'c.persen4',
             ]);
 
@@ -508,6 +516,7 @@ class ReportController extends Controller
                 DB::raw('NULL as limitOLDB'),
                 DB::raw('NULL as oil_losses'),
                 DB::raw('NULL as limitOL'),
+                DB::raw('NULL as persen'),
                 DB::raw('NULL as persen4'),
             ]);
 

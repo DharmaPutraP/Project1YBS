@@ -13,6 +13,24 @@ use Illuminate\Support\Facades\Log;
 class OilService
 {
     /**
+     * Batas maksimum OLWB (%) per jenis.
+     *
+     * Jika hasil kalkulasi OLWB melebihi nilai ini, input dianggap salah
+     * dan Exception dilempar sebelum data disimpan ke DB.
+     *
+     * Berbeda dari limitOLWB di master data (target produksi per kode),
+     * nilai di sini adalah batas "pasti salah input" berdasarkan data lapangan.
+     */
+    private const OLWB_MAX_BY_JENIS = [
+        'FEED DECANTER' => 8.0,
+        'HEAVY PHASE' => 1.5,
+        'SOLID' => 3.5,
+        'EFFLUENT' => 3.0,
+        'BUNCH PRESS' => 2.5,
+        'PRESS' => 5.0,
+    ];
+
+    /**
      * Validasi dan simpan data lab dengan dual-mode input
      * 
      * Mode 1: Non-numeric data (kode, jenis, operator, dll) - bisa multiple per day
@@ -424,6 +442,17 @@ class OilService
         $olwb = ($minyak / $beratBasah) * 100;
         $oldb = $dmwm / 100 != 0 ? ($olwb / ($dmwm / 100)) : 0;
         $olwb = max(0, $olwb);
+
+        // Validasi OLWB tidak melebihi batas maksimum per jenis
+        $jenis = strtoupper(trim($masterData->jenis));
+        $olwbMax = self::OLWB_MAX_BY_JENIS[$jenis] ?? null;
+        if ($olwbMax !== null && $olwb > $olwbMax) {
+            throw new Exception(
+                "Kode {$masterData->kode} ({$jenis}): OLWB = " . round($olwb, 4) . "% "
+                . "melebihi batas maksimum {$olwbMax}%. "
+                . 'Periksa kembali nilai cawan kosong, berat basah, labu kosong, dan oil labu.'
+            );
+        }
 
         // Get persen dari master data
         $persen = $this->parseNum($masterData->persen);

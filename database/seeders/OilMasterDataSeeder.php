@@ -77,7 +77,7 @@ class OilMasterDataSeeder extends Seeder
                 ['kode' => 'FBP2', 'column_name' => 'FIBRE EX BUNCH PRESS 2', 'jenis' => 'BUNCH PRESS', 'persen' => 0.13, 'persen4' => 0, 'pivot' => 'BUNCH PRESS 2', 'limitOLWB' => 1.30, 'limitOLDB' => null, 'limitOL' => 0.75, 'description' => 'Fibre Ex Bunch Press 2', 'is_active' => true],
                 ['kode' => 'FBP3', 'column_name' => 'FIBRE EX BUNCH PRESS 3', 'jenis' => 'BUNCH PRESS', 'persen' => 0.13, 'persen4' => 0, 'pivot' => 'BUNCH PRESS 3', 'limitOLWB' => 1.30, 'limitOLDB' => null, 'limitOL' => 0.75, 'description' => 'Fibre Ex Bunch Press 3', 'is_active' => true],
                 ['kode' => 'FBP4', 'column_name' => 'FIBRE EX BUNCH PRESS 4', 'jenis' => 'BUNCH PRESS', 'persen' => 0.13, 'persen4' => 0, 'pivot' => 'BUNCH PRESS 4', 'limitOLWB' => 1.30, 'limitOLDB' => null, 'limitOL' => 0.75, 'description' => 'Fibre Ex Bunch Press 4', 'is_active' => true],
-                ['kode' => 'FBP5', 'column_name' => 'FIBRE EX BUNCH PRESS 5', 'jenis' => 'BUNCH PRESS', 'persen' => 0.13, 'persen4' => 0, 'pivot' => 'BUNCH PRESS 5', 'limitOLWB' => 1.30, 'limitOLDB' => null, 'limitOL' => 0.20, 'description' => 'Fibre Ex Bunch Press 5', 'is_active' => true],
+                ['kode' => 'FBP5', 'column_name' => 'FIBRE EX BUNCH PRESS 5', 'jenis' => 'BUNCH PRESS', 'persen' => 0.13, 'persen4' => 0, 'pivot' => 'BUNCH PRESS 5', 'limitOLWB' => 1.30, 'limitOLDB' => null, 'limitOL' => 0.75, 'description' => 'Fibre Ex Bunch Press 5', 'is_active' => true],
 
                 // ═══════════════════════════════════════════════════════════════════
                 // FIBRE PRESS (FP1-9)

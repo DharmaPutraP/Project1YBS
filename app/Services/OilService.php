@@ -22,9 +22,9 @@ class OilService
      * nilai di sini adalah batas "pasti salah input" berdasarkan data lapangan.
      */
     private const OLWB_MAX_BY_JENIS = [
-        'FEED DECANTER' => 8.0,
+        'FEED DECANTER' => 16.0,
         'HEAVY PHASE' => 1.5,
-        'SOLID' => 3.5,
+        'SOLID' => 5.0,
         'EFFLUENT' => 3.0,
         'BUNCH PRESS' => 2.5,
         'PRESS' => 5.0,

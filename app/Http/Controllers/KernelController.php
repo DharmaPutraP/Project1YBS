@@ -646,8 +646,8 @@ class KernelController extends Controller
 
                 $limitConfig = $limitMap[$kode] ?? ['dirty' => null, 'moist' => null];
 
-                if ($dirtyToSampel > 10) {
-                    $rowErrors['rows.' . $kode . '.kode'] = "Total kernel losses untuk kode {$kode} melebihi batas wajar (10%).";
+                if ($dirtyToSampel > 16) {
+                    $rowErrors['rows.' . $kode . '.kode'] = "Total kernel losses untuk kode {$kode} melebihi batas wajar (16%).";
                     continue;
                 }
 
@@ -1023,8 +1023,8 @@ class KernelController extends Controller
                 );
                 $bnTn = $totalBeratNut > 0 ? round(($beratBrokenNut / $totalBeratNut) * 100, 6) : 0;
 
-                if ($bnTn > 25) {
-                    $rowErrors['rows.' . $kode . '.kode'] = "Total kernel losses untuk kode {$kode} melebihi batas wajar (25%).";
+                if ($bnTn > 30) {
+                    $rowErrors['rows.' . $kode . '.kode'] = "Total kernel losses untuk kode {$kode} melebihi batas wajar (30%).";
                     continue;
                 }
 
@@ -1737,11 +1737,6 @@ class KernelController extends Controller
                 $totalLossesKernel = $persenKernel + $persenNut;
                 $lossKernelJam = ($totalLossesKernel * $rasioJamKg) / 100;
                 $lossKernelTbs = $lossKernelJam / 600;
-
-                if ($totalLossesKernel > 20) {
-                    $rowErrors['rows.' . $kode . '.kode'] = "Total kernel losses untuk kode {$kode} melebihi batas wajar (20%).";
-                    continue;
-                }
 
                 $destonerPayload = [
                     'user_id' => Auth::id(),

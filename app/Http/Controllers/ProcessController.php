@@ -2664,9 +2664,12 @@ class ProcessController extends Controller
             $perfExpectedTotal += (int) ($expectedByGroup[$groupKey] ?? 0);
         }
 
-        $perfTotal = $perfExpectedTotal > 0
-            ? number_format(($perfActualTotal / $perfExpectedTotal) * 100, 2) . '%'
-            : '-';
+        $perfTotal = '-';
+        if ($perfExpectedTotal > 0) {
+            $perfPercentage = ($perfActualTotal / $perfExpectedTotal) * 100;
+            $perfPercentage = min(100, $perfPercentage);
+            $perfTotal = number_format($perfPercentage, 2) . '%';
+        }
 
         return [
             'tanggal' => optional($record->process_date)->format('d/m/Y'),
@@ -3502,7 +3505,12 @@ class ProcessController extends Controller
                 continue;
             }
 
-            $expectedSamples += intdiv($durationMinutes, $intervalMinutes);
+            $samplesPerSegment = intdiv($durationMinutes, $intervalMinutes);
+            if ($intervalMinutes === 60 && $samplesPerSegment > 0) {
+                $samplesPerSegment = max(0, $samplesPerSegment - 1);
+            }
+
+            $expectedSamples += $samplesPerSegment;
         }
 
         return $expectedSamples;

@@ -3244,7 +3244,8 @@ class ProcessController extends Controller
         }
 
         foreach ($groupSlots as $groupKey => $slots) {
-            $groupActual[$groupKey] = count($slots);
+            $intervalMinutes = (int) ($this->getIntervalMinutesForOffice($office === '' ? 'YBS' : $office)[$groupKey] ?? 0);
+            $groupActual[$groupKey] = $this->adjustSampleCountForInterval(count($slots), $intervalMinutes);
         }
 
         return [
@@ -3497,7 +3498,7 @@ class ProcessController extends Controller
         }
 
         $segments = $this->buildEffectiveMachineSegmentsForExpected($record, $teamName, $rows);
-        $expectedSamples = 0;
+        $totalDurationMinutes = 0;
 
         foreach ($segments as $segment) {
             $durationMinutes = max(0, (int) $segment['end'] - (int) $segment['start']);
@@ -3505,15 +3506,22 @@ class ProcessController extends Controller
                 continue;
             }
 
-            $samplesPerSegment = intdiv($durationMinutes, $intervalMinutes);
-            if ($intervalMinutes === 60 && $samplesPerSegment > 0) {
-                $samplesPerSegment = max(0, $samplesPerSegment - 1);
-            }
-
-            $expectedSamples += $samplesPerSegment;
+            $totalDurationMinutes += $durationMinutes;
         }
 
-        return $expectedSamples;
+        return $this->adjustSampleCountForInterval(
+            intdiv($totalDurationMinutes, $intervalMinutes),
+            $intervalMinutes
+        );
+    }
+
+    private function adjustSampleCountForInterval(int $sampleCount, int $intervalMinutes): int
+    {
+        if ($intervalMinutes === 60 && $sampleCount > 0) {
+            return max(0, $sampleCount - 1);
+        }
+
+        return max(0, $sampleCount);
     }
 
     private function buildEffectiveMachineSegmentsForExpected(object $record, string $teamName, Collection $rows): array

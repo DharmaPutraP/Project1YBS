@@ -1023,8 +1023,8 @@ class KernelController extends Controller
                 );
                 $bnTn = $totalBeratNut > 0 ? round(($beratBrokenNut / $totalBeratNut) * 100, 6) : 0;
 
-                if ($bnTn > 30) {
-                    $rowErrors['rows.' . $kode . '.kode'] = "Total kernel losses untuk kode {$kode} melebihi batas wajar (30%).";
+                if ($bnTn > 40) {
+                    $rowErrors['rows.' . $kode . '.kode'] = "Total kernel losses untuk kode {$kode} melebihi batas wajar (40%).";
                     continue;
                 }
 

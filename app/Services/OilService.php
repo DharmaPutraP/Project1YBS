@@ -491,15 +491,15 @@ class OilService
         $olwb = max(0, $olwb);
 
         // Validasi OLWB tidak melebihi batas maksimum per jenis
-        $jenis = strtoupper(trim($masterData->jenis));
-        $olwbMax = self::OLWB_MAX_BY_JENIS[$jenis] ?? null;
-        if ($olwbMax !== null && $olwb > $olwbMax) {
-            throw new Exception(
-                "Kode {$masterData->kode} ({$jenis}): OLWB = " . round($olwb, 4) . "% "
-                . "melebihi batas maksimum {$olwbMax}%. "
-                . 'Periksa kembali nilai cawan kosong, berat basah, labu kosong, dan oil labu.'
-            );
-        }
+        // $jenis = strtoupper(trim($masterData->jenis));
+        // $olwbMax = self::OLWB_MAX_BY_JENIS[$jenis] ?? null;
+        // if ($olwbMax !== null && $olwb > $olwbMax) {
+        //     throw new Exception(
+        //         "Kode {$masterData->kode} ({$jenis}): OLWB = " . round($olwb, 4) . "% "
+        //         . "melebihi batas maksimum {$olwbMax}%. "
+        //         . 'Periksa kembali nilai cawan kosong, berat basah, labu kosong, dan oil labu.'
+        //     );
+        // }
 
         // Get persen dari master data
         $persen = $this->parseNum($masterData->persen);

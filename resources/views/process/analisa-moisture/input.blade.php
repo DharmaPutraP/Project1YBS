@@ -38,12 +38,12 @@
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
-                            <label for="ffa_tanggal" class="mb-2 block text-sm font-medium text-slate-700">TANGGAL</label>
+                            <label for="ffa_tanggal" class="mb-2 block text-sm font-medium text-slate-700">Tanggal Sampel</label>
                             <input type="date" id="ffa_tanggal" name="ffa[tanggal]" value="{{ old('ffa.tanggal') }}"
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                         </div>
                         <div>
-                            <label for="ffa_jam" class="mb-2 block text-sm font-medium text-slate-700">JAM</label>
+                            <label for="ffa_jam" class="mb-2 block text-sm font-medium text-slate-700">Jam Sampel</label>
                             <input type="time" id="ffa_jam" name="ffa[jam]" value="{{ old('ffa.jam') }}"
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                         </div>
@@ -97,12 +97,12 @@
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
-                            <label for="cot_tanggal" class="mb-2 block text-sm font-medium text-slate-700">TANGGAL</label>
+                            <label for="cot_tanggal" class="mb-2 block text-sm font-medium text-slate-700">Tanggal Sampel</label>
                             <input type="date" id="cot_tanggal" name="cot[tanggal]" value="{{ old('cot.tanggal') }}"
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                         </div>
                         <div>
-                            <label for="cot_jam" class="mb-2 block text-sm font-medium text-slate-700">JAM</label>
+                            <label for="cot_jam" class="mb-2 block text-sm font-medium text-slate-700">Jam Sampel</label>
                             <input type="time" id="cot_jam" name="cot[jam]" value="{{ old('cot.jam') }}"
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                         </div>

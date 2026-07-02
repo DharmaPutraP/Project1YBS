@@ -159,9 +159,12 @@ class KernelController extends Controller
 
         $validated = $request->validate([
             'kegiatan_dispek' => 'nullable|boolean',
+            'tanggal_sampel' => 'nullable|date|before_or_equal:today',
             'rounded_time' => 'nullable|date_format:H:i',
             'rows' => 'required|array',
             'rows.*.kode' => ['required', 'string', Rule::in(array_keys($kodeOptions))],
+            'rows.*.tanggal_sampel' => 'nullable|date|before_or_equal:today',
+            'rows.*.rounded_time' => 'nullable|date_format:H:i',
             'rows.*.jenis' => 'nullable|string',
             'rows.*.operator' => $this->getOperatorValidationRules($userOffice, false, 'kernel'),
             'rows.*.pengulangan' => 'nullable|boolean',
@@ -189,9 +192,11 @@ class KernelController extends Controller
             ]);
         }
 
-        $roundedTime = $isKegiatanDispek
-            ? $this->resolveInputRoundedTime($validated['rounded_time'])
-            : $this->getRoundedTime();
+                $roundedTime = $this->resolveKernelSampleTimestamp(
+                    $row['tanggal_sampel'] ?? $validated['tanggal_sampel'] ?? null,
+                    $row['rounded_time'] ?? $validated['rounded_time'] ?? null,
+                    $isKegiatanDispek || $userOffice === 'YBS'
+                );
         $numericFields = [
             'berat_sampel',
             'nut_utuh_nut',
@@ -529,9 +534,12 @@ class KernelController extends Controller
 
         $validated = $request->validate([
             'kegiatan_dispek' => 'nullable|boolean',
+            'tanggal_sampel' => 'nullable|date|before_or_equal:today',
             'rounded_time' => 'nullable|date_format:H:i',
             'rows' => 'required|array',
             'rows.*.kode' => ['required', 'string', Rule::in(array_keys($kodeOptions))],
+            'rows.*.tanggal_sampel' => 'nullable|date|before_or_equal:today',
+            'rows.*.rounded_time' => 'nullable|date_format:H:i',
             'rows.*.jenis' => 'nullable|string',
             'rows.*.operator' => $this->getOperatorValidationRules($userOffice, false, 'dirt_moist'),
             'rows.*.pengulangan' => 'nullable|boolean',
@@ -555,9 +563,11 @@ class KernelController extends Controller
             ]);
         }
 
-        $roundedTime = $isKegiatanDispek
-            ? $this->resolveInputRoundedTime($validated['rounded_time'])
-            : $this->getRoundedTime();
+                $roundedTime = $this->resolveKernelSampleTimestamp(
+                    $row['tanggal_sampel'] ?? $validated['tanggal_sampel'] ?? null,
+                    $row['rounded_time'] ?? $validated['rounded_time'] ?? null,
+                    $isKegiatanDispek || $userOffice === 'YBS'
+                );
         $rowsToSave = [];
 
         foreach (($validated['rows'] ?? []) as $row) {
@@ -886,9 +896,12 @@ class KernelController extends Controller
 
         $validated = $request->validate([
             'kegiatan_dispek' => 'nullable|boolean',
+            'tanggal_sampel' => 'nullable|date|before_or_equal:today',
             'rounded_time' => 'nullable|date_format:H:i',
             'rows' => 'required|array',
             'rows.*.kode' => ['required', 'string', Rule::in(array_keys($kodeOptions))],
+            'rows.*.tanggal_sampel' => 'nullable|date|before_or_equal:today',
+            'rows.*.rounded_time' => 'nullable|date_format:H:i',
             'rows.*.jenis' => 'nullable|string',
             'rows.*.operator' => $this->getOperatorValidationRules($userOffice, false, 'qwt'),
             'rows.*.pengulangan' => 'nullable|boolean',
@@ -918,9 +931,11 @@ class KernelController extends Controller
             ]);
         }
 
-        $roundedTime = $isKegiatanDispek
-            ? $this->resolveInputRoundedTime($validated['rounded_time'])
-            : $this->getRoundedTime();
+                $roundedTime = $this->resolveKernelSampleTimestamp(
+                    $row['tanggal_sampel'] ?? $validated['tanggal_sampel'] ?? null,
+                    $row['rounded_time'] ?? $validated['rounded_time'] ?? null,
+                    $isKegiatanDispek || $userOffice === 'YBS'
+                );
         $requiredFields = [
             'sampel_setelah_kuarter',
             'berat_nut_utuh',
@@ -1288,9 +1303,12 @@ class KernelController extends Controller
 
         $validated = $request->validate([
             'kegiatan_dispek' => 'nullable|boolean',
+            'tanggal_sampel' => 'nullable|date|before_or_equal:today',
             'rounded_time' => 'nullable|date_format:H:i',
             'rows' => 'required|array',
             'rows.*.kode' => ['required', 'string', Rule::in(array_keys($kodeOptions))],
+            'rows.*.tanggal_sampel' => 'nullable|date|before_or_equal:today',
+            'rows.*.rounded_time' => 'nullable|date_format:H:i',
             'rows.*.jenis' => 'nullable|string',
             'rows.*.operator' => $this->getOperatorValidationRules($userOffice, false, 'ripple_mill'),
             'rows.*.pengulangan' => 'nullable|boolean',
@@ -1314,9 +1332,11 @@ class KernelController extends Controller
             ]);
         }
 
-        $roundedTime = $isKegiatanDispek
-            ? $this->resolveInputRoundedTime($validated['rounded_time'])
-            : $this->getRoundedTime();
+                $roundedTime = $this->resolveKernelSampleTimestamp(
+                    $row['tanggal_sampel'] ?? $validated['tanggal_sampel'] ?? null,
+                    $row['rounded_time'] ?? $validated['rounded_time'] ?? null,
+                    $isKegiatanDispek || $userOffice === 'YBS'
+                );
         $requiredFields = ['berat_sampel', 'berat_nut_utuh', 'berat_nut_pecah'];
         $rowsToSave = [];
 
@@ -1623,9 +1643,12 @@ class KernelController extends Controller
 
         $validated = $request->validate([
             'kegiatan_dispek' => 'nullable|boolean',
+            'tanggal_sampel' => 'nullable|date|before_or_equal:today',
             'rounded_time' => 'nullable|date_format:H:i',
             'rows' => 'required|array',
             'rows.*.kode' => ['required', 'string', Rule::in(array_keys($kodeOptions))],
+            'rows.*.tanggal_sampel' => 'nullable|date|before_or_equal:today',
+            'rows.*.rounded_time' => 'nullable|date_format:H:i',
             'rows.*.jenis' => 'nullable|string',
             'rows.*.operator' => $this->getOperatorValidationRules($userOffice, false, 'destoner'),
             'rows.*.pengulangan' => 'nullable|boolean',
@@ -1651,9 +1674,11 @@ class KernelController extends Controller
             ]);
         }
 
-        $roundedTime = $isKegiatanDispek
-            ? $this->resolveInputRoundedTime($validated['rounded_time'])
-            : $this->getRoundedTime();
+                $roundedTime = $this->resolveKernelSampleTimestamp(
+                    $row['tanggal_sampel'] ?? $validated['tanggal_sampel'] ?? null,
+                    $row['rounded_time'] ?? $validated['rounded_time'] ?? null,
+                    $isKegiatanDispek || $userOffice === 'YBS'
+                );
         $requiredFields = ['operator', 'berat_sampel', 'time', 'berat_nut', 'berat_kernel'];
         $rowsToSave = [];
 
@@ -3269,6 +3294,26 @@ class KernelController extends Controller
         [$hour, $minute] = array_map('intval', explode(':', $value));
 
         return now()->copy()->setTime($hour, $minute, 0);
+    }
+
+    private function resolveKernelSampleTimestamp(?string $sampleDate, ?string $sampleTime, bool $useManualTime): Carbon
+    {
+        $dateValue = trim((string) ($sampleDate ?? ''));
+        $timeValue = trim((string) ($sampleTime ?? ''));
+
+        if ($dateValue === '' && !$useManualTime) {
+            return $this->getRoundedTime();
+        }
+
+        if ($dateValue === '') {
+            $dateValue = now()->toDateString();
+        }
+
+        if (!preg_match('/^\d{2}:\d{2}$/', $timeValue)) {
+            $timeValue = $useManualTime ? now()->format('H:i') : $this->getRoundedTime()->format('H:i');
+        }
+
+        return Carbon::parse($dateValue . ' ' . $timeValue)->setSecond(0);
     }
 
     private function buildProofInput(string $label, $value, string $unit = '', int $decimals = 2): array

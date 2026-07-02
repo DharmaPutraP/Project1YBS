@@ -1,4 +1,7 @@
 <x-layouts.app title="Input Data QWT Fibre Press">
+    @php
+        $isYbsOffice = Auth::user()?->office === 'YBS';
+    @endphp
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         .select2-container--default .select2-selection--single {
@@ -64,26 +67,28 @@
         }
     </style>
     <x-ui.card title="Input Data QWT Fibre Press">
-        <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
-            <div class="flex items-start">
-                <svg class="w-5 h-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div class="flex-1">
-                    <h4 class="text-sm font-semibold text-indigo-900 mb-1">Jam Pengambilan Checklist</h4>
-                    <p class="text-sm text-indigo-800">Isi jam pengambilan saat checklist. Jam ini dipakai untuk
-                        validasi interval dan jam proses.</p>
-                    <div class="mt-2 p-3 bg-white rounded border border-indigo-200">
-                        <div class="text-xs text-indigo-700">Waktu Saat Ini (Preview):</div>
-                        <div class="text-lg font-bold text-indigo-900" id="currentDateTime">
-                            {{ now()->format('d/m/Y H:i:s') }}
+        @if(!$isYbsOffice)
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div class="flex-1">
+                        <h4 class="text-sm font-semibold text-indigo-900 mb-1">Jam Pengambilan Checklist</h4>
+                        <p class="text-sm text-indigo-800">Isi jam pengambilan saat checklist. Jam ini dipakai untuk
+                            validasi interval dan jam proses.</p>
+                        <div class="mt-2 p-3 bg-white rounded border border-indigo-200">
+                            <div class="text-xs text-indigo-700">Waktu Saat Ini (Preview):</div>
+                            <div class="text-lg font-bold text-indigo-900" id="currentDateTime">
+                                {{ now()->format('d/m/Y H:i:s') }}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        @endif
 
         @if ($errors->any())
             <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
@@ -134,6 +139,24 @@
                                 </div>
 
                                 <input type="hidden" name="rows[{{ $kode }}][kode]" value="{{ $kode }}">
+
+                                @if($isYbsOffice)
+                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">Tanggal Sampel</label>
+                                            <input type="date" name="rows[{{ $kode }}][tanggal_sampel]"
+                                                value="{{ old("rows.$kode.tanggal_sampel", now()->toDateString()) }}"
+                                                max="{{ now()->toDateString() }}"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">Jam Sampel</label>
+                                            <input type="time" name="rows[{{ $kode }}][rounded_time]"
+                                                value="{{ old("rows.$kode.rounded_time", now()->format('H:i')) }}"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                        </div>
+                                    </div>
+                                @endif
 
                                 <label class="inline-flex items-center gap-2 text-xs font-medium text-gray-700">
                                     <input type="checkbox" name="rows[{{ $kode }}][pengulangan]" value="1" {{ old("rows.$kode.pengulangan") ? 'checked' : '' }} data-remarks-toggle

@@ -112,11 +112,11 @@
                                         <div class="space-y-4 p-5">
                                             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-medium text-slate-700">TANGGAL</label>
+                                                    <label class="mb-2 block text-sm font-medium text-slate-700">Tanggal Sampel</label>
                                                     <input type="date" name="rows[{{ $machine['key'] }}][tanggal]" value="{{ old('rows.' . $machine['key'] . '.tanggal', now()->toDateString()) }}" class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-medium text-slate-700">WAKTU</label>
+                                                    <label class="mb-2 block text-sm font-medium text-slate-700">Jam Sampel</label>
                                                     <input type="time" name="rows[{{ $machine['key'] }}][waktu]" value="{{ old('rows.' . $machine['key'] . '.waktu', now()->format('H:i')) }}" class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                                                 </div>
                                             </div>

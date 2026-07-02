@@ -185,7 +185,9 @@ class OilController extends Controller
             'oil_labu' => 'nullable|numeric|min:0',
             'tanggal_sampel_mode2' => $mode2HasAnyValue ? 'required|date|before_or_equal:today' : 'nullable|date|before_or_equal:today',
             'mode1_rows.*.tanggal_sampel' => 'nullable|date|before_or_equal:today',
+            'mode1_rows.*.jam_sampel' => 'nullable|date_format:H:i',
             'mode2_rows.*.tanggal_sampel' => 'nullable|date|before_or_equal:today',
+            'mode2_rows.*.jam_sampel' => 'nullable|date_format:H:i',
         ], [
             'kode.required' => 'Kode wajib diisi jika Anda mengisi Operator',
             'kode.exists' => 'Kode tidak valid atau tidak ditemukan di master data',
@@ -364,6 +366,7 @@ class OilController extends Controller
                 'sampel_boy' => $row['sampel_boy'] ?? Auth::user()->name,
                 'parameter_lain' => $row['parameter_lain'] ?? null,
                 'tanggal_sampel' => $row['tanggal_sampel'] ?? $defaultMode1Date,
+                'jam_sampel' => $row['jam_sampel'] ?? null,
             ];
 
             $result = $this->oilService->store($payload, $userId, $userOffice);
@@ -403,6 +406,7 @@ class OilController extends Controller
                 'labu_kosong' => $row['labu_kosong'] ?? null,
                 'oil_labu' => $row['oil_labu'] ?? null,
                 'tanggal_sampel' => $row['tanggal_sampel'] ?? $defaultMode2Date,
+                'jam_sampel' => $row['jam_sampel'] ?? null,
             ];
 
             $result = $this->oilService->store($payload, $userId, $userOffice);

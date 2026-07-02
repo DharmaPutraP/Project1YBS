@@ -6,6 +6,7 @@ use App\Models\OilCalculation;
 use App\Models\OilMasterData;
 use App\Models\OilRecord;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -162,6 +163,11 @@ class OilService
             'tanggal_sampel' => $sampleDate,
         ]);
 
+        $sampleTimestamp = $this->resolveSampleTimestamp($data, 'tanggal_sampel', 'jam_sampel');
+        if ($sampleTimestamp) {
+            $this->applyTimestamp($record, $sampleTimestamp);
+        }
+
         return [
             'type' => 'non_numeric',
             'record' => $record,
@@ -289,6 +295,11 @@ class OilService
 
             $calculation = OilCalculation::create($payload);
 
+            $sampleTimestamp = $this->resolveSampleTimestamp($data, 'tanggal_sampel', 'jam_sampel');
+            if ($sampleTimestamp) {
+                $this->applyTimestamp($calculation, $sampleTimestamp);
+            }
+
             return [
                 'type' => 'numeric',
                 'calculation' => $calculation,
@@ -335,6 +346,16 @@ class OilService
             ]);
 
             $existingOpenBatch->update($payload);
+
+            $sampleTimestamp = $this->resolveSampleTimestamp($data, 'tanggal_sampel', 'jam_sampel');
+            if ($sampleTimestamp) {
+                $this->applyTimestamp($existingOpenBatch, $sampleTimestamp);
+            }
+
+            $sampleTimestamp = $this->resolveSampleTimestamp($data, 'tanggal_sampel', 'jam_sampel');
+            if ($sampleTimestamp) {
+                $this->applyTimestamp($existingOpenBatch, $sampleTimestamp);
+            }
 
             return [
                 'type' => 'numeric',
@@ -395,6 +416,32 @@ class OilService
             'status' => 'complete',
             'message' => "Tahap akhir (oil + labu) untuk kode {$kode} berhasil disimpan. Hasil perhitungan sudah lengkap.",
         ];
+    }
+
+    private function resolveSampleTimestamp(array $data, string $dateKey, string $timeKey): ?Carbon
+    {
+        $dateValue = trim((string) ($data[$dateKey] ?? ''));
+        $timeValue = trim((string) ($data[$timeKey] ?? ''));
+
+        if ($dateValue === '' || $timeValue === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($dateValue . ' ' . $timeValue)->setSecond(0);
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    private function applyTimestamp(Model $model, Carbon $timestamp): void
+    {
+        DB::table($model->getTable())
+            ->where($model->getKeyName(), $model->getKey())
+            ->update([
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ]);
     }
 
     /**

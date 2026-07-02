@@ -2,6 +2,8 @@
 
     @php
         $defaultSampleDate = now()->toDateString();
+        $defaultSampleTime = now()->format('H:i');
+        $isYbsOffice = Auth::user()?->office === 'YBS';
         $oldMode1Rows = old('mode1_rows', []);
         $oldMode2Rows = old('mode2_rows', []);
     @endphp
@@ -83,27 +85,12 @@
             onsubmit="return handleFormSubmit(event, this)">
             @csrf
 
-            {{-- Info: Tanggal & Jam Otomatis --}}
-            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                <div class="flex items-start">
-                    <svg class="w-5 h-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div class="flex-1">
-                        <h4 class="text-sm font-semibold text-indigo-900 mb-1">⏰ Waktu Input Otomatis</h4>
-                        <p class="text-sm text-indigo-800">
-                            Tanggal & Jam akan diisi otomatis saat Anda klik <strong>Simpan Data</strong> </p>
-                        <div class="mt-2 p-3 bg-white rounded border border-indigo-200">
-                            <div class="text-xs text-indigo-700">Waktu Saat Ini (Preview):</div>
-                            <div class="text-lg font-bold text-indigo-900" id="currentDateTime">
-                                {{ now()->format('d/m/Y H:i:s') }}
-                            </div>
-                        </div>
-                    </div>
+            @if($isYbsOffice)
+                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                    <div class="text-sm text-indigo-900 font-semibold mb-1">Tanggal dan jam diisi manual per kartu.</div>
+                    <div class="text-sm text-indigo-800">Silakan lengkapi tanggal sampel dan jam sampel di kartu yang dipakai.</div>
                 </div>
-            </div>
+            @endif
 
             <hr class="my-6 border-gray-200">
 
@@ -147,6 +134,17 @@
                                     max="{{ $defaultSampleDate }}"
                                     class="mode1-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500">
                             </div>
+
+                            @if($isYbsOffice)
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                                        Jam Sampel
+                                    </label>
+                                    <input type="time" name="mode1_rows[{{ $rowIndex }}][jam_sampel]"
+                                        value="{{ $oldMode1Rows[$rowIndex]['jam_sampel'] ?? $defaultSampleTime }}"
+                                        class="mode1-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            @endif
 
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 mb-1.5">
@@ -237,6 +235,17 @@
                                     class="mode2-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500">
                             </div>
 
+                            @if($isYbsOffice)
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                                        Jam Sampel
+                                    </label>
+                                    <input type="time" name="mode2_rows[{{ $rowIndex }}][jam_sampel]"
+                                        value="{{ $oldMode2Rows[$rowIndex]['jam_sampel'] ?? $defaultSampleTime }}"
+                                        class="mode2-user-field w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-green-500">
+                                </div>
+                            @endif
+
                             <div>
                                 <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                                     <div>
@@ -315,6 +324,7 @@
     <script>
         $(document).ready(function () {
             const defaultSampleDate = @json($defaultSampleDate);
+            const defaultSampleTime = @json($defaultSampleTime);
 
             // Initialize Select2 for Kode dropdown
             $('.select2-kode').select2({
@@ -415,6 +425,10 @@
                     }
 
                     if (field.type === 'date' && value === defaultSampleDate) {
+                        return false;
+                    }
+
+                    if (field.type === 'time' && value === defaultSampleTime) {
                         return false;
                     }
 
@@ -556,8 +570,9 @@
                     const jenis = getVal('jenis');
                     const operator = getVal('operator');
                     const tanggalSampel = getVal('tanggal_sampel');
+                    const jamSampel = getVal('jam_sampel');
 
-                    const hasAnyValue = operator !== '' || (tanggalSampel !== '' && tanggalSampel !== defaultSampleDate) || (jenis !== '' && jenis !== 'TBS');
+                    const hasAnyValue = operator !== '' || (tanggalSampel !== '' && tanggalSampel !== defaultSampleDate) || (jamSampel !== '' && jamSampel !== defaultSampleTime) || (jenis !== '' && jenis !== 'TBS');
 
                     if (!hasAnyValue) {
                         return;
@@ -593,6 +608,7 @@
 
                     const kode = getVal('kode_mode2');
                     const tanggalSampel = getVal('tanggal_sampel');
+                    const jamSampel = getVal('jam_sampel');
                     const cawanKosong = getVal('cawan_kosong');
                     const beratBasah = getVal('berat_basah');
                     const cawanSampleKering = getVal('cawan_sample_kering');
@@ -600,10 +616,11 @@
                     const oilLabu = getVal('oil_labu');
 
                     const hasDate = tanggalSampel !== '' && tanggalSampel !== defaultSampleDate;
+                    const hasTime = jamSampel !== '' && jamSampel !== defaultSampleTime;
                     const hasStep1 = cawanKosong !== '' || beratBasah !== '' || labuKosong !== '';
                     const hasStep2 = cawanSampleKering !== '';
                     const hasFinal = oilLabu !== '';
-                    const hasAnyNumeric = hasDate || hasStep1 || hasStep2 || hasFinal;
+                    const hasAnyNumeric = hasDate || hasTime || hasStep1 || hasStep2 || hasFinal;
 
                     if (!hasAnyNumeric && kode === '') {
                         return;
